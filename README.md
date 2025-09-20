@@ -1,93 +1,117 @@
-# shreyas kalvankar
+# Master Thesis Project
 
+Welcome to your master thesis project! This document outlines the key steps, resources, and recommendations to help you successfully complete your project.
 
+---
 
-## Getting started
+## Getting Started
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+### Supervision Meetings
+Regular meetings with your daily supervisors are essential for staying on track. Aim for weekly or bi-weekly meetings. [Schedule a meeting with Alexander Heinlein](https://outlook.office.com/bookwithme/user/8c40d346703344f2bbeb0132b51295f1@tudelft.nl?anonymous&ep=plink). For each meeting:
+- **Prepare an agenda**: Outline the topics you want to discuss.
+- **Prepare slides**: Summarize your progress and key points.
+- **Follow up**: Share brief meeting minutes and outline next steps.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+---
 
-## Add your files
+## Timeline
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+### Initial Setup
+- [ ] Register the project in MaRe.
+- [ ] Upload the DCO to MaRe.
+- [ ] Prepare and upload the project description in MaRe.
 
-```
-cd existing_repo
-git remote add origin https://gitlab.ewi.tudelft.nl/scala/student-projects/master-thesis-projects/shreyas-kalvankar.git
-git branch -M main
-git push -uf origin main
-```
+### Interim Thesis
+- [ ] Conduct a literature study.
+- [ ] Set up the software environment and begin preliminary implementation and experiments.
+- [ ] Formulate research questions.
+- [ ] Write the interim thesis and submit it for feedback.
+- [ ] Send the interim thesis to all supervisors as well as the committee members before the interim thesis presentation.
 
-## Integrate with your tools
+*The interim thesis and presentation should be completed after roughly 2-3 months of starting the project.*
 
-- [ ] [Set up project integrations](https://gitlab.ewi.tudelft.nl/scala/student-projects/master-thesis-projects/shreyas-kalvankar/-/settings/integrations)
+### Interim Presentation
+- [ ] Find all committee members (at least one external to the Numerical Analysis group).
+- [ ] Schedule the presentation and invite all committee members (attendance by daily supervisors is mandatory; others are optional).
+- [ ] Prepare the presentation.
 
-## Collaborate with your team
+### Research
+- [ ] Perform research based on the formulated research questions.
+    - *Note*: Research questions serve as a guideline. During the research process, it may become necessary to adapt or refine them based on new findings or challenges.
+- [ ] Continuously document your progress, including experiments, results, and challenges.
+- [ ] Regularly discuss your findings with your supervisors to ensure alignment with the project goals.
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+### Final Thesis
+- [ ] Write the thesis, ensuring it adheres to the structure and guidelines provided in this document.
+- [ ] Finalize the thesis after incorporating feedback from supervisors.
+- [ ] Send the thesis to committee members for feedback (at least 2 weeks before the defense).
 
-## Test and Deploy
+### Defense
+- [ ] Schedule a green light meeting (minimum 6 weeks before the defense).
+    - **Green light**: Daily supervisors agree the thesis is ready for defense, except for minor adjustments.
+- [ ] Prepare for the defense presentation.
+- [ ] Attend the defense and respond to questions from the committee.
 
-Use the built-in continuous integration in GitLab.
+*The total duration of the project is flexible and depends on the intensity with which the student works on the project.*
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+---
 
-***
+## General Tips
+- **Continuously collect literature** throughout the project.
+- **Write regularly** to avoid last-minute stress.
+- **Review the grading rubric** to ensure alignment with evaluation criteria.
+- **Access to Resources**: Arrange access to data and/or computing resources early. For instance, familiarize yourself with compute clusters if you plan to use them.
+- **Make a Timeline**: Create (at least roughly) a timeline for your thesis project. Since research is not always plannable, update it as needed during the project. Keeping track of your progress is essential.
 
-# Editing this README
+---
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+## General Remarks on Thesis Writing
 
-## Suggestions for a good README
+### Writing Style
+- **Clarity and Precision**: Be concise, precise, and mathematically rigorous. Quality is more important than quantity.
+- **Figures and Tables**: Ensure all labels and legends are readable (font size similar to the main text, not less than half as large). Captions should make figures and tables self-explanatory.
+- **Equations**: Number only those equations referenced later in the text.
+- **Abbreviations**: Introduce abbreviations once and use them consistently.
+- **Computational Results**: Mention software packages (with versions) and hardware used. Acknowledge computing resources like Delft Blue if applicable.
+- **Understandability**: Write at a level of detail understandable to your peers.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+### Referencing
+- Reference every source you use. Justify statements or cite relevant work. If a section is based on a reference, mention it at the beginning. Incorporate references grammatically into sentences.
 
-## Name
-Choose a self-explaining name for your project.
+### Relevant Results
+- Include only results used in your discussion. Move other results to an appendix if necessary.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+### AI Disclosure
+- If you use AI tools for writing, disclose this in your thesis.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+---
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## Useful Links and Software
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+### Useful Links
+- [Google Scholar](https://scholar.google.com)
+- [MathSciNet](https://mathscinet.ams.org)
+- [ResearchGate](https://www.researchgate.net)
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+### Useful Software
+- [TexStudio](https://www.texstudio.org)
+- [Visual Studio Code (VS Code)](https://code.visualstudio.com)
+- [Spyder](https://www.spyder-ide.org)
+- [PyCharm](https://www.jetbrains.com/pycharm)
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+---
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+## Repository Structure
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+- **[code](code)**: Contains all project-related code. Use [Git Submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) to manage external repositories.
+- **[data](data)**: Contains datasets and related files.
+- **[defense](defense)**: Contains materials for the defense.
+- **[final_thesis](final_thesis)**: Contains the final thesis document.
+- **[interim_presentation](interim_presentation)**: Contains materials for the interim presentation.
+- **[interim_thesis](interim_thesis)**: Contains the interim thesis document.
+- **[manuscript](manuscript)**: Contains the work-in-progress manuscript for the thesis.
+- **[meetings](meetings)**: Contains meeting notes and related materials.
+- **[project_description](project_description)**: Contains the project description.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+*Note*: Use Git submodules to manage external resources or collaborative documents within the same project structure. Refer to the [Git Submodules documentation](https://git-scm.com/book/en/v2/Git-Tools-Submodules) for more information.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.

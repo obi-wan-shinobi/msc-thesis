@@ -1,0 +1,27 @@
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage[numbers]{natbib}
+\usepackage{hyperref}
+\usepackage{mathtools}
+\hypersetup{
+	colorlinks=true,
+	urlcolor=blue,
+	citecolor=blue,
+	linkcolor=blue
+}
+
+\numberwithin{equation}{section}
+
+% Theorem-style environments
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}[theorem]{Assumption}
+\newtheorem{example}[theorem]{Example}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}

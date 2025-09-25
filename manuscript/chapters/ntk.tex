@@ -126,9 +126,9 @@ with $w\sim \mathcal N(0,\frac{\sigma_w^2}{d}I_d)$.
 % 	Without the $1/d$ factor in $w$'s covariance, the variance of $w^\top x$ would scale like $\|x\|^2 d$, making the expectations above diverge or degenerate. The $1/d$ scaling keeps $\Var(w^\top x)=\frac{\sigma_w^2}{d}\|x\|^2=O(1)$, so the expectations are well-defined and the LLN applies cleanly.
 % \end{remark}
 
-\subsection{One Hidden Layer: Adding Biases (What Changes)}\label{subsec:ntk-onelayer-bias}
+\subsection{One Hidden Layer: Adding Biases}\label{subsec:ntk-onelayer-bias}
 
-We now allow per-neuron biases and show the minimal changes from \autoref{subsec:ntk-onelayer}.
+If we allow per-neuron biases, we get minimal changes from \autoref{subsec:ntk-onelayer}.
 Consider
 \[
 	f(x)\;=\;\frac{1}{\sqrt{m}}\sum_{r=1}^m a_r\,\sigma\!\big(w_r^\top x + b_r\big),
@@ -139,7 +139,7 @@ Consider
 \]
 independently across $r$. Let $u_r(x):=w_r^\top x + b_r$.
 
-\paragraph{Finite width (extra bias-gradient term).}
+\paragraph{Finite width}
 
 Gradients are
 \[
@@ -173,63 +173,71 @@ we have
 
 \subsection{Extension to Deep Fully--Connected Networks}\label{subsec:deep-ntk}
 
-\paragraph{No biases (matches the one-layer setup).}
-
-Let $n_0=d,\ n_1,\ldots,n_{L-1}$ be layer widths and
+\paragraph{No biases. }
+Let $n_0=d,\ n_1,\ldots,n_{L-1}$ be layer widths and define
 \[
-	\alpha^{(0)}(x)=x,\quad
-	\tilde\alpha^{(\ell+1)}(x)=\frac{\sigma_w}{\sqrt{n_\ell}}\,W^{(\ell)}\alpha^{(\ell)}(x),\quad
+	\alpha^{(0)}(x)=x,\qquad
+	\tilde\alpha^{(\ell+1)}(x)=W^{(\ell)}\alpha^{(\ell)}(x),\qquad
 	\alpha^{(\ell+1)}(x)=\sigma\!\big(\tilde\alpha^{(\ell+1)}(x)\big),
 \]
-for $\ell=0,\dots,L-2$, with rows $w^{(\ell)}_r \sim \mathcal N\!\big(0,I\big)$ and scalar output
-$f_\theta(x)=\tfrac{1}{\sqrt{n_{L-1}}}\sum_{r=1}^{n_{L-1}} a_r\,\alpha^{(L-1)}_r(x)$,
-$a_r\sim\mathcal N(0,\sigma_a^2)$.
-Define the (activation) covariance
+for $\ell=0,\dots,L-2$, with entries $W^{(\ell)}\stackrel{\text{i.i.d.}}{\sim}\mathcal N\!\Big(0,\frac{\sigma_w^2}{n_\ell}\Big)$.
+The scalar output is
+\[
+	f_\theta(x)=\frac{1}{\sqrt{n_{L-1}}}\sum_{r=1}^{n_{L-1}} a_r\,\alpha^{(L-1)}_r(x),\qquad a_r\sim\mathcal N(0,\sigma_a^2).
+\]
+
+\medskip\noindent
+Define the activation covariance
 \[
 	\Sigma^{(\ell)}(x,x'):=\mathbb E\!\big[\alpha^{(\ell)}_r(x)\,\alpha^{(\ell)}_r(x')\big],\qquad
-	q^{(\ell)}(x)=\Sigma^{(\ell)}(x,x).
+	q^{(\ell)}(x):=\Sigma^{(\ell)}(x,x),
 \]
-Then
+with base $\Sigma^{(0)}(x,x')=\tfrac{1}{d}\,x^\top x'$.
+Then the forward (NNGP) recursion is
 \[
-	\Sigma^{(1)}(x,x')=\frac{\sigma_w^2}{d}\,x^\top x',
-	\qquad
-	\boxed{\;\Sigma^{(\ell+1)}(x,x')
-	=\sigma_w^2\,\mathbb E_{(U,V)\sim\mathcal N(0,\Lambda^{(\ell)})}\![\sigma(U)\sigma(V)]\;},
+	\boxed{\;
+		\Sigma^{(\ell+1)}(x,x')
+		=\mathbb E_{f\,\sim\,\mathcal{GP}\!\big(0,\ \sigma_w^2\,\Sigma^{(\ell)}\big)}\!
+		\big[\sigma\!\big(f(x)\big)\,\sigma\!\big(f(x')\big)\big]\;}.
 \]
-where $\Lambda^{(\ell)}=\begin{psmallmatrix}q^{(\ell)}(x)&\Sigma^{(\ell)}(x,x')\\ \Sigma^{(\ell)}(x,x')&q^{(\ell)}(x')\end{psmallmatrix}$.
-Define
+Define the derivative–correlation kernel
 \[
-	\dot\Sigma^{(\ell+1)}(x,x'):=\mathbb E_{(U,V)\sim\mathcal N(0,\Lambda^{(\ell)})}\![\sigma'(U)\sigma'(V)].
+	\boxed{\;
+		\dot\Sigma^{(\ell+1)}(x,x')
+		:=\mathbb E_{f\,\sim\,\mathcal{GP}\!\big(0,\ \sigma_w^2\,\Sigma^{(\ell)}\big)}\!
+		\big[\sigma'\!\big(f(x)\big)\,\sigma'\!\big(f(x')\big)\big]\; }.
 \]
-The limiting NTK recursion (Jacot et al.\ 2018) is
+The limiting NTK satisfies
 \[
 	\boxed{\;
 		\Theta_\infty^{(1)}(x,x')=\Sigma^{(1)}(x,x'),\qquad
 		\Theta_\infty^{(\ell+1)}(x,x')
 		=\Theta_\infty^{(\ell)}(x,x')\,\dot\Sigma^{(\ell+1)}(x,x')+\Sigma^{(\ell+1)}(x,x')\; }.
 \]
-For a dataset $\{x_i\}$ this becomes
-$\Theta^{(\ell+1)}=\Theta^{(\ell)}\odot \dot\Sigma^{(\ell+1)}+\Sigma^{(\ell+1)}$
-with elementwise expectations; $\odot$ is the Hadamard product.
+For a dataset $\{x_i\}$:
+\[
+	\Theta^{(\ell+1)}=\Theta^{(\ell)}\odot \dot\Sigma^{(\ell+1)}+\Sigma^{(\ell+1)},\qquad
+	\Theta^{(1)}=\Sigma^{(1)}.
+\]
 Setting $L=2$ recovers the two-term one-layer kernel.
 
-\paragraph{Including biases}
-
-Introduce the \emph{preactivation} covariance
-$Q^{(\ell)}(x,x'):=\mathbb E[\tilde\alpha^{(\ell)}_r(x)\,\tilde\alpha^{(\ell)}_r(x')]$.
-Initialize and recurse
-\[
-	Q^{(1)}(x,x')=\frac{\sigma_w^2}{d}\,x^\top x' + \sigma_b^2,\qquad
-	\Sigma^{(\ell)}(x,x')=\mathbb E_{(U,V)\sim\mathcal N(0,Q^{(\ell)}(x,x'))}\![\sigma(U)\sigma(V)],
-\]
-\[
-	\boxed{\;Q^{(\ell+1)}(x,x')=\sigma_w^2\,\Sigma^{(\ell)}(x,x')+\sigma_b^2,\qquad
-	\dot\Sigma^{(\ell)}(x,x')=\mathbb E_{(U,V)\sim\mathcal N(0,Q^{(\ell)}(x,x'))}\![\sigma'(U)\sigma'(V)]\; }.
-\]
-The NTK recursion \emph{itself} stays the same:
-$\Theta_\infty^{(\ell+1)}=\Theta_\infty^{(\ell)}\,\dot\Sigma^{(\ell+1)}+\Sigma^{(\ell+1)}$.
-At $L=2$, this reproduces the one-layer bias effects in \autoref{subsec:ntk-onelayer-bias}
-(added constant direction via biases and the $x^\top x' + 1$ factor in the propagated term).
+% \paragraph{Including biases}
+%
+% Introduce the \emph{preactivation} covariance
+% $Q^{(\ell)}(x,x'):=\mathbb E[\tilde\alpha^{(\ell)}_r(x)\,\tilde\alpha^{(\ell)}_r(x')]$.
+% Initialize and recurse
+% \[
+% 	Q^{(1)}(x,x')=\frac{\sigma_w^2}{d}\,x^\top x' + \sigma_b^2,\qquad
+% 	\Sigma^{(\ell)}(x,x')=\mathbb E_{(U,V)\sim\mathcal N(0,Q^{(\ell)}(x,x'))}\![\sigma(U)\sigma(V)],
+% \]
+% \[
+% 	\boxed{\;Q^{(\ell+1)}(x,x')=\sigma_w^2\,\Sigma^{(\ell)}(x,x')+\sigma_b^2,\qquad
+% 	\dot\Sigma^{(\ell)}(x,x')=\mathbb E_{(U,V)\sim\mathcal N(0,Q^{(\ell)}(x,x'))}\![\sigma'(U)\sigma'(V)]\; }.
+% \]
+% The NTK recursion \emph{itself} stays the same:
+% $\Theta_\infty^{(\ell+1)}=\Theta_\infty^{(\ell)}\,\dot\Sigma^{(\ell+1)}+\Sigma^{(\ell+1)}$.
+% At $L=2$, this reproduces the one-layer bias effects in \autoref{subsec:ntk-onelayer-bias}
+% (added constant direction via biases and the $x^\top x' + 1$ factor in the propagated term).
 
 \subsection{Training Dynamics under NTK}
 

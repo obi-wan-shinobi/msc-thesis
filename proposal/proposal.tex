@@ -1,0 +1,203 @@
+\documentclass[11pt,a4paper]{article}
+
+% --- packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{hyperref}
+\usepackage[round,authoryear]{natbib}
+\usepackage{geometry}
+
+\geometry{margin=1in}
+
+% --- title info ---
+\title{Thesis Proposal \\[0.5em]
+Training and Generalization of Overparametrized Neural Networks}
+\author{Shreyas Kalvankar}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+Overparametrized neural networks (models with more parameters than training
+samples) are capable of perfectly interpolating data, yet they often generalize
+surprisingly well. The \emph{Neural Tangent Kernel} (NTK) framework
+\citep{jacot2018ntk,lee2020wide} provides a rigorous description of infinitely
+wide networks: in this regime, training is equivalent to kernel regression with
+a fixed kernel, so optimization and generalization can be analyzed with
+classical kernel methods. However, this ``lazy training'' limit rules out
+feature learning, since the kernel does not evolve during training.
+
+Recent results show that in realistic finite-width and finite-depth networks,
+the NTK is random at initialization and evolves non-trivially during training
+\citep{haninNica2019finite}. This suggests the existence of a ``weak feature
+learning regime,'' where kernel evolution remains small but non-negligible,
+interpolating between lazy training and full representation learning.
+
+This thesis will develop an analysis of the training dynamics under an evolving
+NTK, quantify how kernel drift scales with the depth($d$)/width($n$) ratio $\beta=d/n$,
+and interpret the induced sequence of RKHSs $(\mathcal H_t)_{t\geq0}$ to
+understand the regimes where weak feature learning arises and how it affects
+generalization.
+
+\section{Research Question}
+\textbf{Main research question:}
+\begin{quote}
+	How can we characterize the evolution of the NTK in finite-width and finite-depth neural networks, and what does this imply for effective function spaces and generalization?
+\end{quote}
+
+% \subsection*{Sub-questions (current version)}
+% \begin{enumerate}
+% 	\item How can NTK evolution be expressed analytically, for example via perturbation of the lazy kernel $K_0$?
+% 	\item How does kernel drift affect the gradient flow equation $\dot f_t = -K_t(f_t-y)$ compared to the lazy prediction?
+% 	\item Can we bound or characterize the regimes (lazy, weak feature learning, unstable) in terms of $\beta=d/n$?
+% 	\item How can NTK evolution be interpreted as movement between function spaces (e.g.\ RKHSs)?
+% 	      % \item How do higher-order expansions \citep{bai2020linearizationquadratichigherorderapproximation} relate to kernel evolution corrections?
+% \end{enumerate}
+
+\subsection*{Sub-questions}
+\begin{enumerate}
+	\item How can the NTK evolution be written as $K_t = K_0 + \Delta K_t$, and how does this perturbation affect the gradient flow dynamics relative to $K_0$?
+	\item How does the size of $\Delta K_t$ scale with $\beta = d/n$? Can we identify thresholds for when $\Delta K_t$ significantly alters training dynamics?
+	\item How can we describe the evolving RKHSs $(\mathcal H_t)$ induced by $K_t$? Do these spaces enlarge compared to $\mathcal H_0$ and allow approximation of functions outside $\mathcal H_0$?
+	\item How does movement between RKHSs affect the inductive bias, e.g.\ via eigenvalue decay of $K_t$ and the minimal-norm interpolant in $\mathcal H_t$?
+\end{enumerate}
+
+\section{Background}
+
+\subsection{Overparametrized Neural Networks}
+Overparametrized models often interpolate the training data yet generalize
+well. This paradoxical behavior connects to the implicit bias of gradient-based
+optimization, whereby gradient descent converges to specific low-complexity
+solutions among many possible interpolants
+\citep{soudry2024implicit,gunasekar2018implicit}. Phenomena such as double
+descent and benign overfitting underscore the need for new analytical
+frameworks.
+
+\subsection{Neural Tangent Kernel}
+The NTK provides one such framework: by linearizing a network at
+initialization, one defines a kernel that describes parameter coupling during
+training \citep{jacot2018ntk}. In the infinite-width limit, this kernel is
+deterministic and fixed, reducing training to kernel regression
+\citep{lee2020wide}. While elegant, this ``lazy training'' regime excludes
+feature learning, since the feature map is frozen at initialization.
+
+\subsection{Finite Depth/Width Corrections}
+\citet{haninNica2019finite} show that when depth and width co-scale, the NTK is
+stochastic and evolves over training. They identify $\beta = d/n$ as a key
+scaling parameter: the NTK variance grows like $\exp(c\beta)$, and even the
+first SGD update changes the kernel. This suggests a weak feature learning
+regime $0<\beta\ll 1$ where kernel drift is non-negligible but stable.
+
+\subsection{Function Spaces and RKHS Perspective}
+Every positive definite kernel $K$ defines a Reproducing Kernel Hilbert Space
+(RKHS) $\mathcal H$, consisting of functions with an inner product structure
+induced by $K$. In the NTK framework, the infinite-width limit corresponds to
+kernel regression in the RKHS $\mathcal H_0$ induced by the initialization
+kernel \citep{jacot2018ntk,bartolucci2023rkbs}. This space encodes the inductive bias of lazy
+training: solutions are minimum-norm interpolants in $\mathcal H_0$. When the
+kernel evolves during training, the effective hypothesis space can be viewed as
+a sequence of RKHSs $(\mathcal H_t)_{t\geq0}$. Studying how these spaces change
+provides an interpretation of weak feature learning.
+
+% \subsection{Beyond NTK}
+% \citet{bai2020linearizationquadratichigherorderapproximation} propose higher-order expansions of network dynamics, capturing quadratic and beyond-linear terms in the training trajectory.
+% These corrections highlight alternative analytical approaches to finite-width behavior and motivate comparison with kernel-evolution perspectives.
+
+\section{Research Gap}
+Current theory establishes that the NTK is fixed at infinite width and evolves when depth and width co-scale.
+However, several gaps remain:
+\begin{itemize}
+	\item No formal perturbation analysis connecting kernel drift to deviations in training dynamics.
+	\item Limited characterization of the boundary between lazy and weak feature learning regimes in terms of $\beta$.
+	\item Lack of interpretation of evolving NTKs as a path of RKHSs.
+	      % \item No unifying comparison between finite-width NTK evolution and higher-order Taylor expansions.
+\end{itemize}
+
+\section{Scope}
+The work will be analytical in nature, focusing on:
+\begin{itemize}
+	\item Perturbation expansions of the training dynamics under evolving $K_t$.
+	\item Bounds on kernel drift as a function of depth/width scaling.
+	\item Analysis of the RKHS sequence $(\mathcal H_t)_{t\geq0}$ induced by $K_t$.
+	      % \item Conceptual comparison between NTK corrections and higher-order expansions.
+\end{itemize}
+
+\section{Methodology}
+\subsection{Perturbation Analysis of Kernel Dynamics}
+Write $K_t = K_0 + \Delta K_t$, with $K_0$ the lazy NTK.
+Substitute into the gradient flow ODE and develop a perturbation expansion.
+% \[
+% 	f_t \approx y + e^{-K_0t}(f_0-y) + \int_0^t e^{-K_0(t-s)} \Delta K_s (f_s-y)\, ds.
+% \]
+Analyze conditions on $\Delta K_t$ (e.g.\ scaling in $\beta$) under which corrections are small or large.
+%
+% \medskip
+% \textbf{Note.} This section still needs brainstorming.
+
+\subsection{Scaling Regimes}
+The aim here is to understand how the depth/width ratio $\beta = d/n$ marks
+transitions between lazy, weak feature learning, and unstable regimes. This
+involves considering how measures of kernel drift depend on $\beta$, in light
+of theoretical results such as Hanin--Nica’s exponential scaling.
+%
+% \medskip
+% \textbf{Note.} This section still needs brainstorming.
+
+\subsection{Functional Analysis Perspective}
+We view training as generating a family of RKHSs $\{\mathcal H_t\}_{t\ge 0}$,
+where each $\mathcal H_t$ is induced by the kernel $K_t$. This provides a
+function-space lens on kernel evolution where changes in $K_t$ correspond to changes
+in the associated norm and hypothesis space. The question is then can we use this
+to understand generalization?
+%
+% \medskip
+% \textbf{Note.} This section still needs brainstorming.
+
+\section{Expected Outcomes}
+\begin{itemize}
+	\item Perturbation-theoretic description of NTK evolution and its effect on
+	      training dynamics.
+	\item Theoretical characterization of scaling regimes in terms of $\beta$
+	      (lazy, weak feature learning, unstable).
+	\item Functional analysis interpretation of evolving NTKs as a family of RKHSs.
+	      % \item Conceptual comparison between kernel-evolution corrections and higher-order Taylor expansions.
+\end{itemize}
+
+\section{Tentative Timeline (partial)}\label{sec:Tentative Timeline} % (fold)
+\begin{itemize}
+	\item \textbf{Weeks 1--2} \\
+	      Refine understanding of NTK theory and finite-width corrections.
+	      Implement a small-scale JAX setup to reproduce key diagnostics from
+	      \citet{haninNica2019finite}
+	      \begin{enumerate}
+		      \item Verify the explosion of the normalized second moment of $K_N(x,x)$ at initialization,
+		            scaling like $\exp(5\beta)$ with $\beta = d/n$.
+		      \item Measure the expected first-step kernel update $\Delta K$, confirming its growth with $\beta$
+		            as predicted by their theory.
+	      \end{enumerate}
+
+	\item \textbf{Weeks 3--6} \\
+	      Develop the perturbative description $K_t = K_0 + \Delta K_t$.
+	      Derive preliminary bounds or conditions on $\Delta K_t$. Set up some
+	      experiments to test the bounds.
+
+	\item \textbf{Weeks 7--10} \\
+	      Analyze how $\Delta K_t$ depends on $\beta = d/n$ using existing
+	      results (e.g., Hanin--Nica). Try to characterize regime boundaries
+	      (lazy, weak feature learning, unstable).
+
+	\item \textbf{Weeks 11--14} \\
+	      Frame $K_t$ as inducing a family of RKHSs $(\mathcal H_t)_{t\ge 0}$.
+	      Explore preliminary results on how $\mathcal H_t$ compares to $\mathcal H_0$ in terms of approximation or inductive bias.
+
+\end{itemize}
+% section Tentative Timeline (end)
+
+\bibliographystyle{plainnat}
+\bibliography{bibliography}
+
+\end{document}

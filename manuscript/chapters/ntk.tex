@@ -11,7 +11,7 @@ $f:\mathbb{R}^d \times \Theta \to \mathbb{R}$ is parameterized by $\theta \in
 	\leavevmode
 	\begin{enumerate}
 		\item (\emph{Differentiability}) The network $f(x ;\theta)$ is differentiable in $\theta$.
-		\item (\emph{Random initialization}) We initialize parameters $\theta_0$ i.i.d.\ with zero mean and variance scaled according to layer input dimensions (e.g.\ NTK or Xavier/He schemes), so that activations and gradients remain well-behaved as depth/width grow \citep{neal1996priors, jacot2018ntk, lee2019wide}.
+		\item (\emph{Random initialization}) We initialize parameters $\theta_0$ i.i.d.\ with zero mean and variance scaled according to layer input dimensions (e.g.\ NTK or Xavier/He schemes), so that activations and gradients remain well-behaved as depth/width grow \citep{neal1996priors, jacot2018ntk, lee2020wide}.
 		\item (\emph{Training})
 		      We train $f$ by gradient descent on the squared loss:
 		      \[
@@ -52,11 +52,11 @@ The NTK captures how parameter updates couple the outputs of $x$ and $x'$.
 	\leavevmode
 	\begin{itemize}
 		\item $K(x,x')$ is positive semidefinite \citep{jacot2018ntk}.
-		\item In the infinite-width limit, under common initializations, $K(x,x')$ converges almost surely to a deterministic kernel depending only on architecture and activation \citep{jacot2018ntk, lee2019wide}.
+		\item In the infinite-width limit, under common initializations, $K(x,x')$ converges almost surely to a deterministic kernel depending only on architecture and activation \citep{jacot2018ntk, lee2020wide}.
 		\item For finite but large width, $K$ is still a random kernel due to random initialization,
 		      but it concentrates around its infinite-width expectation.
 		      Fluctuations vanish at rate $O(1/\sqrt{m})$ as width $m \to \infty$
-		      \citep{jacot2018ntk, lee2019wide}.
+		      \citep{jacot2018ntk, lee2020wide}.
 	\end{itemize}
 \end{remark}
 
@@ -111,7 +111,7 @@ the (strong) law of large numbers gives, almost surely,
 	\sigma_a^2\,\mathbb E_{w}\big[\sigma'(w^\top x)\,\sigma'(w^\top x')\big].
 \]
 Thus, in the infinite-width limit, the empirical NTK converges almost surely to a deterministic kernel
-\citep{jacot2018ntk, lee2019wide}.
+\citep{jacot2018ntk, lee2020wide}.
 \[
 	\boxed{\;
 		K_\infty(x,x')
@@ -126,9 +126,9 @@ with $w\sim \mathcal N(0,\frac{\sigma_w^2}{d}I_d)$.
 % 	Without the $1/d$ factor in $w$'s covariance, the variance of $w^\top x$ would scale like $\|x\|^2 d$, making the expectations above diverge or degenerate. The $1/d$ scaling keeps $\Var(w^\top x)=\frac{\sigma_w^2}{d}\|x\|^2=O(1)$, so the expectations are well-defined and the LLN applies cleanly.
 % \end{remark}
 
-\subsection{One Hidden Layer: Adding Biases (What Changes)}\label{subsec:ntk-onelayer-bias}
+\subsection{One Hidden Layer: Adding Biases}\label{subsec:ntk-onelayer-bias}
 
-We now allow per-neuron biases and show the minimal changes from \autoref{subsec:ntk-onelayer}.
+If we allow per-neuron biases, we get minimal changes from \autoref{subsec:ntk-onelayer}.
 Consider
 \[
 	f(x)\;=\;\frac{1}{\sqrt{m}}\sum_{r=1}^m a_r\,\sigma\!\big(w_r^\top x + b_r\big),
@@ -139,7 +139,7 @@ Consider
 \]
 independently across $r$. Let $u_r(x):=w_r^\top x + b_r$.
 
-\paragraph{Finite width (extra bias-gradient term).}
+\paragraph{Finite width}
 
 Gradients are
 \[
@@ -173,63 +173,71 @@ we have
 
 \subsection{Extension to Deep Fully--Connected Networks}\label{subsec:deep-ntk}
 
-\paragraph{No biases (matches the one-layer setup).}
-
-Let $n_0=d,\ n_1,\ldots,n_{L-1}$ be layer widths and
+\paragraph{No biases. }
+Let $n_0=d,\ n_1,\ldots,n_{L-1}$ be layer widths and define
 \[
-	\alpha^{(0)}(x)=x,\quad
-	\tilde\alpha^{(\ell+1)}(x)=\frac{\sigma_w}{\sqrt{n_\ell}}\,W^{(\ell)}\alpha^{(\ell)}(x),\quad
+	\alpha^{(0)}(x)=x,\qquad
+	\tilde\alpha^{(\ell+1)}(x)=W^{(\ell)}\alpha^{(\ell)}(x),\qquad
 	\alpha^{(\ell+1)}(x)=\sigma\!\big(\tilde\alpha^{(\ell+1)}(x)\big),
 \]
-for $\ell=0,\dots,L-2$, with rows $w^{(\ell)}_r \sim \mathcal N\!\big(0,I\big)$ and scalar output
-$f_\theta(x)=\tfrac{1}{\sqrt{n_{L-1}}}\sum_{r=1}^{n_{L-1}} a_r\,\alpha^{(L-1)}_r(x)$,
-$a_r\sim\mathcal N(0,\sigma_a^2)$.
-Define the (activation) covariance
+for $\ell=0,\dots,L-2$, with entries $W^{(\ell)}\stackrel{\text{i.i.d.}}{\sim}\mathcal N\!\Big(0,\frac{\sigma_w^2}{n_\ell}\Big)$.
+The scalar output is
+\[
+	f_\theta(x)=\frac{1}{\sqrt{n_{L-1}}}\sum_{r=1}^{n_{L-1}} a_r\,\alpha^{(L-1)}_r(x),\qquad a_r\sim\mathcal N(0,\sigma_a^2).
+\]
+
+\medskip\noindent
+Define the activation covariance
 \[
 	\Sigma^{(\ell)}(x,x'):=\mathbb E\!\big[\alpha^{(\ell)}_r(x)\,\alpha^{(\ell)}_r(x')\big],\qquad
-	q^{(\ell)}(x)=\Sigma^{(\ell)}(x,x).
+	q^{(\ell)}(x):=\Sigma^{(\ell)}(x,x),
 \]
-Then
+with base $\Sigma^{(0)}(x,x')=\tfrac{1}{d}\,x^\top x'$.
+Then the forward (NNGP) recursion is
 \[
-	\Sigma^{(1)}(x,x')=\frac{\sigma_w^2}{d}\,x^\top x',
-	\qquad
-	\boxed{\;\Sigma^{(\ell+1)}(x,x')
-	=\sigma_w^2\,\mathbb E_{(U,V)\sim\mathcal N(0,\Lambda^{(\ell)})}\![\sigma(U)\sigma(V)]\;},
+	\boxed{\;
+		\Sigma^{(\ell+1)}(x,x')
+		=\mathbb E_{f\,\sim\,\mathcal{GP}\!\big(0,\ \sigma_w^2\,\Sigma^{(\ell)}\big)}\!
+		\big[\sigma\!\big(f(x)\big)\,\sigma\!\big(f(x')\big)\big]\;}.
 \]
-where $\Lambda^{(\ell)}=\begin{psmallmatrix}q^{(\ell)}(x)&\Sigma^{(\ell)}(x,x')\\ \Sigma^{(\ell)}(x,x')&q^{(\ell)}(x')\end{psmallmatrix}$.
-Define
+Define the derivative–correlation kernel
 \[
-	\dot\Sigma^{(\ell+1)}(x,x'):=\mathbb E_{(U,V)\sim\mathcal N(0,\Lambda^{(\ell)})}\![\sigma'(U)\sigma'(V)].
+	\boxed{\;
+		\dot\Sigma^{(\ell+1)}(x,x')
+		:=\mathbb E_{f\,\sim\,\mathcal{GP}\!\big(0,\ \sigma_w^2\,\Sigma^{(\ell)}\big)}\!
+		\big[\sigma'\!\big(f(x)\big)\,\sigma'\!\big(f(x')\big)\big]\; }.
 \]
-The limiting NTK recursion (Jacot et al.\ 2018) is
+The limiting NTK satisfies
 \[
 	\boxed{\;
 		\Theta_\infty^{(1)}(x,x')=\Sigma^{(1)}(x,x'),\qquad
 		\Theta_\infty^{(\ell+1)}(x,x')
 		=\Theta_\infty^{(\ell)}(x,x')\,\dot\Sigma^{(\ell+1)}(x,x')+\Sigma^{(\ell+1)}(x,x')\; }.
 \]
-For a dataset $\{x_i\}$ this becomes
-$\Theta^{(\ell+1)}=\Theta^{(\ell)}\odot \dot\Sigma^{(\ell+1)}+\Sigma^{(\ell+1)}$
-with elementwise expectations; $\odot$ is the Hadamard product.
+For a dataset $\{x_i\}$:
+\[
+	\Theta^{(\ell+1)}=\Theta^{(\ell)}\odot \dot\Sigma^{(\ell+1)}+\Sigma^{(\ell+1)},\qquad
+	\Theta^{(1)}=\Sigma^{(1)}.
+\]
 Setting $L=2$ recovers the two-term one-layer kernel.
 
-\paragraph{Including biases}
-
-Introduce the \emph{preactivation} covariance
-$Q^{(\ell)}(x,x'):=\mathbb E[\tilde\alpha^{(\ell)}_r(x)\,\tilde\alpha^{(\ell)}_r(x')]$.
-Initialize and recurse
-\[
-	Q^{(1)}(x,x')=\frac{\sigma_w^2}{d}\,x^\top x' + \sigma_b^2,\qquad
-	\Sigma^{(\ell)}(x,x')=\mathbb E_{(U,V)\sim\mathcal N(0,Q^{(\ell)}(x,x'))}\![\sigma(U)\sigma(V)],
-\]
-\[
-	\boxed{\;Q^{(\ell+1)}(x,x')=\sigma_w^2\,\Sigma^{(\ell)}(x,x')+\sigma_b^2,\qquad
-	\dot\Sigma^{(\ell)}(x,x')=\mathbb E_{(U,V)\sim\mathcal N(0,Q^{(\ell)}(x,x'))}\![\sigma'(U)\sigma'(V)]\; }.
-\]
-The NTK recursion \emph{itself} stays the same:
-$\Theta_\infty^{(\ell+1)}=\Theta_\infty^{(\ell)}\,\dot\Sigma^{(\ell+1)}+\Sigma^{(\ell+1)}$.
-At $L=2$, this reproduces the one-layer bias effects in \autoref{subsec:ntk-onelayer-bias}
-(added constant direction via biases and the $x^\top x' + 1$ factor in the propagated term).
+% \paragraph{Including biases}
+%
+% Introduce the \emph{preactivation} covariance
+% $Q^{(\ell)}(x,x'):=\mathbb E[\tilde\alpha^{(\ell)}_r(x)\,\tilde\alpha^{(\ell)}_r(x')]$.
+% Initialize and recurse
+% \[
+% 	Q^{(1)}(x,x')=\frac{\sigma_w^2}{d}\,x^\top x' + \sigma_b^2,\qquad
+% 	\Sigma^{(\ell)}(x,x')=\mathbb E_{(U,V)\sim\mathcal N(0,Q^{(\ell)}(x,x'))}\![\sigma(U)\sigma(V)],
+% \]
+% \[
+% 	\boxed{\;Q^{(\ell+1)}(x,x')=\sigma_w^2\,\Sigma^{(\ell)}(x,x')+\sigma_b^2,\qquad
+% 	\dot\Sigma^{(\ell)}(x,x')=\mathbb E_{(U,V)\sim\mathcal N(0,Q^{(\ell)}(x,x'))}\![\sigma'(U)\sigma'(V)]\; }.
+% \]
+% The NTK recursion \emph{itself} stays the same:
+% $\Theta_\infty^{(\ell+1)}=\Theta_\infty^{(\ell)}\,\dot\Sigma^{(\ell+1)}+\Sigma^{(\ell+1)}$.
+% At $L=2$, this reproduces the one-layer bias effects in \autoref{subsec:ntk-onelayer-bias}
+% (added constant direction via biases and the $x^\top x' + 1$ factor in the propagated term).
 
 \subsection{Training Dynamics under NTK}
 
@@ -325,4 +333,47 @@ Training is in the \emph{lazy regime} if parameter updates stay small relative t
 \]
 Then $\phi(x)$ and the NTK remain essentially constant and training is equivalent to kernel regression with fixed kernel $K$. When $\|\theta_t-\theta_0\|$ is not negligible, $\phi(x)$ evolves, yielding adaptive feature learning beyond NTK.
 
-To be continued\ldots
+\subsection{Finite Depth/Width Corrections to the NTK (Hanin--Nica)}\label{subsec:finite-dw-ntk}
+
+The classical NTK result with \emph{fixed} depth and width $\to\infty$ yields a deterministic, fixed kernel throughout training \citep{jacot2018ntk,lee2020wide}. In contrast, \citet{haninNica2019finite} analyze fully--connected ReLU networks at \emph{finite} depth and width and show that when depth $d$ and widths $\{n_\ell\}$ grow \emph{together}, the NTK exhibits substantial stochasticity at initialization and evolves non--trivially during training.
+
+\paragraph{Setup.}
+Let the network have input dimension $n_0$, hidden widths $n_1,\dots,n_{d-1}$, output dimension $n_d=1$, ReLU activations, zero biases at init (but biases are trainable), and standard variance--preserving scalings. Define the ``inverse temperature''
+\[
+	\beta \;:=\; \sum_{\ell=1}^{d-1} \frac{1}{n_\ell}\,,\qquad\text{(equal widths $n_\ell=n$ give $\beta=d/n$).}
+\]
+
+\paragraph{Fluctuations of the NTK at initialization.}
+Denote the (on--diagonal) NTK by $K_N(x,x)$ for input $x$. Hanin--Nica prove
+\[
+	\mathbb{E}\!\big[K_N(x,x)\big] \;=\; d\!\left(\tfrac12 + \frac{\|x\|_2^2}{n_0}\right),
+\]
+and show that the normalized second moment scales as
+\[
+	\frac{\mathbb{E}\!\big[K_N(x,x)^2\big]}{\mathbb{E}\!\big[K_N(x,x)\big]^2}
+	\;\simeq\; \exp\!\big(5\,\beta\big)\,\bigl(1 + O(\textstyle\sum_\ell n_\ell^{-2})\bigr).
+\]
+In particular, for $n_\ell=n$ this ratio is $\simeq \exp(5d/n)$, so when $d/n$ is bounded away from $0$ the standard deviation is of the same order as the mean: the NTK is \emph{not} concentrated (hence not deterministic) even if $d,n\to\infty$ jointly with $d/n=\Theta(1)$.
+
+\paragraph{Training--time evolution at initialization.}
+For squared loss and a single--example SGD step on $x$, the mean update of $K_N(x,x)$ at $t=0$ satisfies
+\[
+	\frac{\mathbb{E}\,[\Delta K_N(x,x)]}{\mathbb{E}[K_N(x,x)]}
+	\;\asymp\; \frac{d\,\beta}{n_0}\,\exp(5\beta)\,\Bigl(1+O(\textstyle\sum_\ell n_\ell^{-2})\Bigr),
+\]
+which, for equal widths, becomes $\asymp \tfrac{d^2}{n\,n_0}\exp(5d/n)$. Thus, unlike the fixed--depth infinite--width setting, the NTK generically \emph{evolves} (data--dependently) when depth and width co--scale.
+
+\begin{remark}[Weak feature learning regime]
+	The results suggest a regime with $0<\beta\ll 1$ (e.g.\ $0<d/n\ll 1$) where training remains numerically stable while $K_N$ still evolves, enabling \emph{weak} feature learning beyond the strictly lazy NTK limit. This gives a concrete knob ($\beta$) to interpolate between kernel--like behavior and feature adaptation.
+\end{remark}
+
+\paragraph{Notes}
+\begin{itemize}
+	\item The constant--kernel ODE in \S\ref{sec:ntk-formalization} (\emph{gradient flow under fixed $K$}) exactly matches the fixed--depth, infinite--width limit. When $d$ and $n$ co--scale, $K_t$ becomes stochastic and time--varying, so the ODE becomes
+	      \[
+		      \frac{d}{dt} f_t \;=\; -\,K_t\,(f_t - y),\qquad K_t\ \text{random and evolving},
+	      \]
+	      with fluctuations and drift controlled by $\beta$.
+	\item Practically, this could help explain empirical gaps between NTK predictions and real networks, and motivates experiments in the small--$\beta$ region to observe ``weak'' feature learning.
+\end{itemize}
+

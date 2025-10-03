@@ -111,10 +111,10 @@
 
 % -----------------------
 \begin{frame}{Setup}
-	\textbf{Supervised learning:} data $\{(\bx_i,y_i)\}_{i=1}^n$, $\bx_i\in\R^d$.
+	\textbf{Supervised learning:} data $\{(\bx_i,y_i)\}_{i=1}^n$, $\bx_i\in\R^d, y_i\in\R$.
 
 	\pause
-	Neural network $f:\R^d\times\Theta\to\R$ with parameters $\btheta\in\R^p$.
+	Neural network $f:\R^d\times\Theta\to\R$ with parameters $\btheta\in \Theta \subset \R^p$.
 	\pause
 
 	Trained by (continuous-time) gradient flow on squared loss:
@@ -199,6 +199,18 @@
 	Key point: in the wide limit, $K_t\approx K_0$ remains \emph{essentially constant} during training (lazy regime).
 	\vspace{0.4em}
 	\footnotesize \emph{Refs:} \citep{neal1996priors,lee2019wide}\normalsize
+
+	\note{
+		Explain the logic slowly:
+		\begin{itemize}
+			\item Each of the two sums is just an average of i.i.d.\ terms (from random init).
+			\item By the law of large numbers, as $m\to\infty$ they converge to their expectations.
+			\item That’s why the NTK at infinite width is \emph{deterministic} — randomness washes out.
+			\item In this regime, $K_t\approx K_0$: the kernel stays constant during training.
+			\item This is the essence of the \textbf{lazy training regime}: no feature movement, training = kernel regression.
+		\end{itemize}
+		Emphasize: this is a clean baseline, but also a limitation — finite networks won’t behave this way exactly.
+	}
 \end{frame}
 
 % -----------------------
@@ -313,6 +325,22 @@
 	\vspace{0.3em}
 	\footnotesize\emph{See: “Towards a Statistical Understanding of Neural Networks: Beyond the NTK Theories.”}\normalsize
 \end{frame}
+
+% -----------------------
+\begin{frame}{Beyond NTK III: finite depth/width corrections}
+	\begin{itemize}
+		\item \citet{haninNica2019finite} study networks where depth $d$ and width $n$ grow together.
+		\item Key finding: the NTK is \textbf{not deterministic} at init — its variance scales
+		      roughly $\exp(c\,d/n)$.
+		\item Even the first SGD step can change $K_t$ significantly $\;\Rightarrow\;$ kernels evolve, enabling
+		      \emph{weak feature learning}.
+		\item Proposed \textbf{weak feature learning regime:} $0<d/n\ll 1$ where training is stable but $K_t$ still moves.
+	\end{itemize}
+	\vspace{0.3em}
+	\footnotesize\emph{See: Hanin \& Nica, “Finite Depth and Width Corrections to the NTK.”}\normalsize
+\end{frame}
+% -----------------------
+
 % % -----------------------
 % \begin{frame}{How This Extends to General Networks (Project Scope)}
 % 	We keep derivations simple for slides, but the program targets:
@@ -338,6 +366,7 @@
 		      \begin{itemize}
 			      \item \emph{Quadratic / higher-order} near init \citep{bai2020beyond}.
 			      \item \emph{Adaptive / time-varying kernels} and alignment \citep{zhang2024beyondntk}.
+			      \item \emph{Finite depth/width corrections:} NTK variance grows with $d/n$; even early updates can move $K_t$ (weak feature learning) \citep{haninNica2019finite}.
 		      \end{itemize}
 	\end{itemize}
 \end{frame}

@@ -1,0 +1,95 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{natbib}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.75em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.5em}{}
+\title{NTK vs Feature Learning, Spectral Bias, and Functional-Analytic Perspectives}
+\author{Shreyas Kalvankar}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Feature Learning Beyond the NTK Regime}
+\subsection{Background}
+The Neural Tangent Kernel (NTK) linearizes neural networks around initialization and predicts
+training dynamics for infinitely wide networks \citep{jacot2018ntk,lee2019wide}. Empirically, however,
+trained networks often outperform their linearized or fixed-kernel counterparts, suggesting that real
+networks move beyond the ``lazy'' regime and engage in non-trivial \emph{feature learning}.
+
+\subsection{Main Ideas in the Literature}
+\paragraph{Beyond Linearization.}
+\citet{bai2020beyond} analyze higher-order Taylor approximations of overparameterized networks to
+capture behavior beyond NTK. They show that (i) higher-order terms can govern training,
+and (ii) suitable randomization can decouple models from their NTK linearization and couple them
+to quadratic (or higher-order) models, with implications for expressivity and sample complexity.
+
+\paragraph{Statistical Perspective on Feature Learning.}
+\citet{zhang2024statistical} argue that the advantage of deep networks arises from \emph{adaptive feature learning},
+which fixed-kernel approaches such as NTK cannot capture. They propose prototypical models (e.g. over-parameterized Gaussian sequence models)
+to study feature adaptation and its generalization benefits.
+
+\subsection{Future Directions / Open Questions}
+\begin{itemize}
+	\item \textbf{Transition to feature learning:} When (as a function of width, depth, learning rate, and data) do higher-order terms dominate over NTK dynamics?
+	\item \textbf{Provable gains:} Can we mathematically prove cases where feature learning requires fewer training examples than fixed-kernel methods such as NTK? In other words, can we show that adaptive features always help reduce sample complexity in certain problems?
+	\item \textbf{Operator viewpoint:} In NTK, the kernel (similarity between data points) stays fixed, but in real networks it evolves during training. Can we describe this evolving similarity as a changing operator in function space, and analyze its dynamics to better understand how features adapt?
+\end{itemize}
+
+\section{Spectral Bias and Frequency Dynamics}
+\subsection{Background}
+During training, neural networks tend to learn \emph{low-frequency} (low-complexity) components first, and only later fit
+high-frequency modes, a phenomenon known as \emph{spectral bias} \citep{rahaman2019spectral}. This perspective
+helps explain why overparameterized models can generalize despite their capacity to fit noise.
+
+\subsection{Main Ideas in the Literature}
+\paragraph{Empirical Fourier Analysis.}
+\citet{rahaman2019spectral} analyze ReLU networks via Fourier tools and show: (i) low frequencies are learned earlier, (ii) they are more robust to parameter perturbations,
+and (iii) manifold geometry can make high frequencies easier to learn by reparameterization effects.
+
+\paragraph{Rigorous NTK-based Characterization.}
+\citet{cao2020spectral} decompose training dynamics along the eigenfunctions of the NTK: components associated with larger eigenvalues converge faster,
+implying that lower-complexity (often low-frequency) components are learned first. For inputs uniform on the sphere, lower-degree spherical harmonics are learned earlier.
+
+\subsection{Future Directions / Open Questions}
+\begin{itemize}
+	\item \textbf{Beyond the lazy regime:} Current theory explains spectral bias only when networks behave like fixed kernels (NTK). What happens when networks move beyond this regime and actively change their features during training?
+	\item \textbf{Data geometry:} Real data lies on low-dimensional manifolds (e.g. image manifolds). How does the shape of these manifolds affect which frequencies are learned first?
+	\item \textbf{Architectural effects:} Do different architectures (CNNs, Transformers, different activations) show different kinds of spectral bias, and if so, why?
+	\item \textbf{Practical leverage:} Can spectral bias be exploited to design better training strategies, such as curriculum learning, early stopping, or frequency-based regularizers?
+\end{itemize}
+
+\section{Functional Analytic / Operator-Theoretic Perspectives}
+\subsection{Background}
+Functional analysis characterizes networks as elements of function spaces (RKHS/RKBS), making inductive biases explicit and analyzable via operators, spectra, and norms.
+
+\subsection{Main Ideas in the Literature}
+\paragraph{Inductive Bias of NTKs.}
+\citet{bietti2019inductive} investigate the Reproducing Kernel Hilbert Space (RKHS) associated
+with the Neural Tangent Kernel (NTK), including convolutional variants. They analyze properties
+such as smoothness, spectral approximation, and stability to input deformations. Their results show
+that while NTK-RKHSs have strong approximation capabilities, their smoothness and stability
+properties are weaker: the kernel maps are not Lipschitz, but satisfy only weaker H\"older-type
+continuity.
+
+\paragraph{RKBS and Radon-based Norms.}
+\citet{bartolucci2023rkbs} extend the functional analytic study of neural networks
+from reproducing kernel Hilbert spaces (RKHS) to reproducing kernel Banach spaces (RKBS),
+focusing on one-hidden-layer ReLU networks. They establish representer theorems using integral
+representations of such networks, and show that the associated RKBS norm can be characterized
+via Radon transforms as the total variation of certain measures. This provides an alternative
+functional framework for studying neural networks, distinct from the Hilbert space setting.
+
+\subsection{Future Directions / Open Questions}
+\begin{itemize}
+	\item \textbf{Banach vs Hilbert:} When do RKBS norms better capture implicit biases of gradient descent than RKHS norms?
+	\item \textbf{Evolving kernels:} Track NTK eigenspectra during finite-width training and relate to approximation/stability trade-offs.
+	\item \textbf{Invariances:} Link functional norms and deformation stability to data invariances (translations/rotations/manifolds).
+	\item \textbf{Gradient flows in function space:} View training as flows in RKHS/RKBS and study resulting regularization.
+\end{itemize}
+
+\bibliographystyle{abbrvnat}
+\bibliography{refs}
+\end{document}

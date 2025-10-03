@@ -1,0 +1,350 @@
+\documentclass[10pt,aspectratio=169]{beamer}
+
+% --- pdflatex-safe font & micro-typography ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% --- math & symbols ---
+\usepackage{amsmath,amssymb,mathtools,bm}
+
+% --- hyperlinks (Beamer already loads hyperref; this is safe) ---
+\hypersetup{hidelinks}
+
+% --- theme ---
+\usetheme[numbering=fraction]{metropolis}
+
+\usepackage{pgfpages} % for notes layouts
+
+% --- bibliography ---
+\usepackage[round,authoryear]{natbib}
+
+% --- Choose ONE of these toggles when compiling ---
+% \setbeameroption{hide notes}                        % audience version (default)
+% \setbeameroption{show notes}                        % notes printed under each slide
+% \setbeameroption{show only notes}                   % notes-only PDF (for printing)
+% \setbeameroption{show notes on second screen=right} % slide + notes side-by-side
+
+% --- shortcuts ---
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\btheta}{\boldsymbol{\theta}}
+\newcommand{\bx}{\boldsymbol{x}}
+
+% --- title info ---
+\title{Infinite Width, NTK, and Feature Learning}
+\subtitle{Student Meeting 1}
+\author{Shreyas Kalvankar}
+\institute{TU Delft}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+% -----------------------
+\begin{frame}{Agenda}
+	\textbf{Goal of this talk}
+	\begin{itemize}
+		\item Introduce the infinite-width lens, NTK, and the lazy training regime via a simple one-layer example.
+		\item Situate these ideas within related work: baseline results at infinite width and viewpoints that go beyond linearization.
+	\end{itemize}
+	\medskip
+	\textbf{What I would like from you}
+	\begin{itemize}
+		\item Conceptual clarifications and critiques of how I’m connecting the papers.
+		\item Suggestions for key references I might be missing.
+		\item Pointers to alternative frameworks worth comparing (mean-field, functional-analytic, optimization bias).
+	\end{itemize}
+
+	\note{
+		Emphasize this is a literature discussion: I’m laying out how different results fit together,
+		not presenting a concrete plan. Invite refs and corrections rather than action items.
+	}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Why theory?}
+	\begin{itemize}
+		\item Larger models keep improving, but we don’t fully know \emph{why}.
+		      \pause
+		\item \textbf{A solvable starting point:} infinite width gives a clean
+		      baseline; modern models are large-but-finite, deep, and do feature
+		      learning.
+		      \pause
+		\item \textbf{What can theory help in:} explanations of
+		      convergence/generalization, signals for when features move, and
+		      guidance on design choices (init, learning rate, normalization).
+	\end{itemize}
+
+	\note{
+		Scaling helps, but the mechanisms are unclear. Infinite-width theory is
+		a useful baseline, not the endpoint—real models are large-but-finite
+		and learn features. We can study these settings to see what theory
+		already explains about convergence and when feature learning kicks in.
+	}
+\end{frame}
+
+% -----------------------
+
+% -----------------------
+\begin{frame}{Motivation}
+	\begin{itemize}
+		\item \textbf{Infinite width:} clean, analyzable baseline; randomness averages to a deterministic kernel.
+		      \pause
+		\item \textbf{NTK:} first-order (linear) view of training; clear convergence intuition via a fixed kernel.
+		      \pause
+		\item \textbf{Beyond the linear NTK picture:} when does it stop being accurate?
+		      \begin{itemize}
+			      \item Does the \emph{kernel} change during training?
+			            \pause
+			      \item Do the model’s internal features move?
+			            \pause
+			      \item Do training curves deviate from the NTK baseline prediction?
+			            \pause
+			      \item Possible causes: higher-order effects, useful parameter
+			            re-organization that push the model out of the lazy regime.
+		      \end{itemize}
+	\end{itemize}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Setup}
+	\textbf{Supervised learning:} data $\{(\bx_i,y_i)\}_{i=1}^n$, $\bx_i\in\R^d$.
+
+	\pause
+	Neural network $f:\R^d\times\Theta\to\R$ with parameters $\btheta\in\R^p$.
+	\pause
+
+	Trained by (continuous-time) gradient flow on squared loss:
+	\[
+		L(\btheta)=\tfrac{1}{2}\sum_{i=1}^n (f(\bx_i;\btheta)-y_i)^2,
+		\qquad
+		\pause
+		\frac{d}{dt}\btheta_t=-\nabla_{\btheta} L(\btheta_t).
+	\]
+\end{frame}
+
+% -----------------------
+\begin{frame}{Linearization at Initialization}
+	First-order Taylor around $\btheta_0$:
+	\[
+		f(\bx;\btheta)\approx f(\bx;\btheta_0)+\underbrace{\nabla_{\btheta} f(\bx;\btheta_0)^{\top}}_{:=~\phi(\bx)^{\top}}(\btheta-\btheta_0).
+	\]
+	\pause
+	This induces the \textbf{Neural Tangent Kernel (NTK)} at $\btheta_0$:
+	\[
+		K(\bx,\bx')=\phi(\bx)^{\top}\phi(\bx')=\nabla_{\btheta} f(\bx;\btheta_0)^{\top}\nabla_{\btheta} f(\bx';\btheta_0).
+	\]
+
+	\vspace{0.4em}
+	\footnotesize \emph{Ref:} \citep{jacot2018ntk}\normalsize
+\end{frame}
+
+% -----------------------
+\begin{frame}{Illustrative Model (One Hidden Layer, No Biases)}
+	Consider a \textit{m}-width neural network
+
+	\[
+		f(\bx)=\frac{1}{\sqrt{m}}\sum_{r=1}^m a_r\, \sigma(\mathbf{w}_r^{\top} \bx),\quad \pause
+		a_r\sim\mathcal N(0,\sigma_a^2),\;
+		\mathbf{w}_r\sim\mathcal N\!\Big(0,\tfrac{\sigma_w^2}{d}I\Big).
+	\]
+
+	\pause
+	Gradients:
+	\[
+		\nabla_{a_r} f(\bx)=\frac{1}{\sqrt{m}}\sigma(\mathbf{w}_r^{\top} \bx),\quad
+		\pause
+		\nabla_{\mathbf{w}_r} f(\bx)=\frac{1}{\sqrt{m}}\,a_r\,\sigma'(\mathbf{w}_r^{\top} \bx)\,\bx.
+	\]
+	\pause
+	Finite-width NTK:
+	\[
+		\boxed{
+		K_m(\bx,\bx')
+		=\frac{1}{m}\sum_{r=1}^m \sigma(\mathbf{w}_r^{\top} \bx)\,\sigma(\mathbf{w}_r^{\top} \bx')
+		+\frac{1}{m}\sum_{r=1}^m a_r^{2}\,\sigma'(\mathbf{w}_r^{\top} \bx)\,\sigma'(\mathbf{w}_r^{\top} \bx')\,\bx^{\top}\bx'.
+		}
+	\]
+\end{frame}
+
+% -----------------------
+\begin{frame}{Infinite-Width NTK}
+	The two sums are empirical averages of i.i.d.\ terms. Since $a_r$ and $w_r$ are independent with finite moments,
+	the (strong) law of large numbers gives, almost surely, as width $m\to\infty$:
+	\pause
+	\[
+		\frac{1}{m}\sum_{r=1}^m \sigma(w_r^\top x)\,\sigma(w_r^\top x')
+		\;\longrightarrow\;
+		\mathbb E_{w}\big[\sigma(w^\top x)\,\sigma(w^\top x')\big],
+	\]
+	\pause
+	\[
+		\frac{1}{m}\sum_{r=1}^m a_r^2\,\sigma'(w_r^\top x)\,\sigma'(w_r^\top x')
+		\;\longrightarrow\;
+		\sigma_a^2\,\mathbb E_{w}\big[\sigma'(w^\top x)\,\sigma'(w^\top x')\big].
+	\]
+	\pause
+	Thus, in the infinite-width limit, the empirical NTK converges almost surely to a deterministic kernel
+	\[
+		\boxed{
+			K_{\infty}(\bx,\bx')=
+			\E_{\mathbf{w}}\!\big[\sigma(\mathbf{w}^{\top}\bx)\sigma(\mathbf{w}^{\top}\bx')\big]
+			+\sigma_a^2\,\bx^{\top}\bx'\,\E_{\mathbf{w}}\!\big[\sigma'(\mathbf{w}^{\top}\bx)\sigma'(\mathbf{w}^{\top}\bx')\big].
+		}
+	\]
+	\pause
+	Key point: in the wide limit, $K_t\approx K_0$ remains \emph{essentially constant} during training (lazy regime).
+	\vspace{0.4em}
+	\footnotesize \emph{Refs:} \citep{neal1996priors,lee2019wide}\normalsize
+\end{frame}
+
+% -----------------------
+\begin{frame}{Training dynamics: mini-derivation}
+	\textbf{Gradient flow \& chain rule:} Let $f_t(x_i):=f(x_i;\theta_t)$. Then
+	\[
+		\frac{d}{dt} f_t(x_i)
+		= \nabla_\theta f(x_i;\theta_t)^{\top}\,\dot{\theta}_t
+		= -\,\nabla_\theta f(x_i;\theta_t)^{\top}\,\nabla_\theta L(\theta_t).
+	\]
+	\pause
+	\textbf{Loss gradient (squared loss):}
+	\[
+		L(\theta)=\tfrac{1}{2}\sum_{j=1}^n \big(f(x_j;\theta)-y_j\big)^2,
+		\qquad
+		\nabla_\theta L(\theta_t)
+		= \sum_{j=1}^n \big(f_t(x_j)-y_j\big)\,\nabla_\theta f(x_j;\theta_t).
+	\]
+\end{frame}
+
+\begin{frame}{Training dynamics: constant kernel}
+	\textbf{Substitute and define the (time–dependent) NTK.}
+	\[
+		\frac{d}{dt} f_t(x_i)
+		= -\sum_{j=1}^n \underbrace{\nabla_\theta f(x_i;\theta_t)^{\top}\nabla_\theta f(x_j;\theta_t)}_{=:~K_t(x_i,x_j)}
+		\big(f_t(x_j)-y_j\big).
+	\]
+	\pause
+	\textbf{Vectorized form:}
+	\[
+		\boxed{~\dot f_t \;=\; -\,K_t\,(f_t-y).~}
+	\]
+	\pause
+	\textbf{Constant-kernel (NTK) regime.} If $K_t \approx K_0 \equiv K$ (infinite width / lazy),
+	\[
+		\dot f_t = -K(f_t-y)
+		\quad\Rightarrow\quad
+		\boxed{~f_t = y + e^{-Kt}\,(f_0-y).~}
+	\]
+
+	\vspace{0.4em}
+	\footnotesize \emph{Refs:} \citep{jacot2018ntk,lee2019wide}\normalsize
+
+	\note{
+		Read: gradient flow + chain rule $\Rightarrow$ $\dot f_t=-K_t(f_t-y)$. In the constant-kernel regime $K_t\approx K$, we get linear kernel flow with closed-form solution.
+	}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Lazy Training}
+	\textbf{Lazy regime:} parameter drift is small, $\|\btheta_t-\btheta_0\|\ll \|\btheta_0\|$.
+	\begin{itemize}
+		\item Features $\phi(\bx)$ and kernel $K$ stay (approximately) constant.
+		\item Training reduces to kernel regression with fixed $K$.
+	\end{itemize}
+	\textbf{Limitation:} suppresses \emph{feature learning} (representation change).
+	\medskip
+
+	\textbf{Aim:} quantify \emph{when} lazy holds/breaks and \emph{how} to model beyond it.
+\end{frame}
+% -----------------------
+\begin{frame}{Diagnosing the transition to feature learning}
+	\textbf{Some signals to consider}
+	\begin{itemize}
+		\item \textbf{Kernel drift:} Does the NTK matrix $K_t$ change during training?
+		      Compare $K_t$ to $K_0$ on the (same) data. Bigger change $\Rightarrow$ more feature learning.
+		      \pause
+		\item \textbf{Feature drift:} Do the tangent features
+		      $\phi_t(x)=\nabla_\theta f(x;\theta_t)$ move on a small fixed set $\mathcal S$?
+		      Track the average change from $t=0$.
+	\end{itemize}
+
+	\pause
+	\medskip
+	\textbf{How to (often) push out of lazy}
+	\begin{itemize}
+		\item larger learning rate \hfill \item smaller width \hfill \item more depth / biases / normalization
+	\end{itemize}
+
+	\note{
+		Quick metrics (optional): kernel drift $\approx \|K_t-K_0\|/\|K_0\|$ (Frobenius or operator norm);
+		feature drift on $\mathcal S$: average relative change or 1–cosine between $\phi_t(x)$ and $\phi_0(x)$.
+		Rising drift over time indicates leaving the lazy (fixed-kernel) regime.
+	}
+\end{frame}
+% -----------------------
+\begin{frame}{Beyond linearization I: quadratic / higher-order}
+	\[
+		f(\bx;\btheta) \approx f(\bx;\btheta_0)
+		+ \phi(\bx)^{\top}\Delta\btheta
+		+ \tfrac12\,\Delta\btheta^{\top} H_f(\bx)\,\Delta\btheta,
+		\qquad \Delta\btheta=\btheta-\btheta_0.
+	\]
+	\begin{itemize}
+		\item \textbf{Mechanism (\citet{bai2020beyond}):} construct regimes where the linear term is suppressed so the \emph{quadratic} term governs the dynamics; extendable to $k\!>\!2$ (“higher-order NTKs”).
+		\item \textbf{Findings:} with the linear term suppressed, progress
+		      comes from \emph{feature changes}; this adaptive
+		      regime is easy to optimize and can beat NTK in sample use on simple
+		      tasks.
+	\end{itemize}
+	\vspace{0.3em}
+	\footnotesize\emph{See: “Beyond Linearization: On Quadratic and Higher-Order Approximation of Wide Neural Networks.”}\normalsize
+\end{frame}
+
+% -----------------------
+\begin{frame}{Beyond linearization II: adaptive / time-varying kernels}
+	\begin{itemize}
+		\item \citet{zhang2024beyondntk} replace the fixed NTK with a \emph{time-varying} kernel $K_t$ that evolves during training (“kernel drift”).
+		\item Features adapt during training and increasingly align with label-relevant directions (growing alignment).
+		\item They provide a prototype of an over-parameterized Gaussian sequence model to analyze feature learning beyond the NTK picture.
+	\end{itemize}
+	\vspace{0.3em}
+	\footnotesize\emph{See: “Towards a Statistical Understanding of Neural Networks: Beyond the NTK Theories.”}\normalsize
+\end{frame}
+% % -----------------------
+% \begin{frame}{How This Extends to General Networks (Project Scope)}
+% 	We keep derivations simple for slides, but the program targets:
+% 	\begin{enumerate}
+% 		\item \textbf{General architectures} (biases, depth, common activations).
+% 		\item \textbf{Initialization/scale choices} ensuring well-posed preactivations.
+% 		\item \textbf{Continuous-time training} (gradient flow) for clarity.
+% 	\end{enumerate}
+% 	\textbf{Plan:} Use first-order NTK to set the baseline, then introduce controlled
+% 	second-order corrections that remain tractable at scale (statistics of $H_f$ under initialization).
+% \end{frame}
+
+% -----------------------
+
+% -----------------------
+\begin{frame}{Summary \& discussion}
+	\begin{itemize}
+		\item Infinite width as a clean baseline; NTK via linearization at initialization.
+		\item Constant–kernel training dynamics: $\dot f_t=-K(f_t-y)$ with solution $f_t=y+e^{-Kt}(f_0-y)$.
+		\item Lazy training $\Rightarrow$ features (and $K$) stay essentially fixed.
+		\item How to spot leaving lazy: \emph{kernel drift} ($K_t\neq K_0$) and \emph{feature drift} on a probe set.
+		\item Beyond NTK in the literature:
+		      \begin{itemize}
+			      \item \emph{Quadratic / higher-order} near init \citep{bai2020beyond}.
+			      \item \emph{Adaptive / time-varying kernels} and alignment \citep{zhang2024beyondntk}.
+		      \end{itemize}
+	\end{itemize}
+\end{frame}
+% -----------------------
+\begin{frame}{References}
+	\bibliographystyle{abbrvnat}  % or plainnat
+	\bibliography{refs}
+\end{frame}
+% -----------------------
+\end{document}

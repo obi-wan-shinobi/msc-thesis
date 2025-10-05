@@ -60,10 +60,16 @@ generalization.
 
 \subsection*{Sub-questions}
 \begin{enumerate}
-	\item How can the NTK evolution be written as $K_t = K_0 + \Delta K_t$, and how does this perturbation affect the gradient flow dynamics relative to $K_0$?
-	\item How does the size of $\Delta K_t$ scale with $\beta = d/n$? Can we identify thresholds for when $\Delta K_t$ significantly alters training dynamics?
-	\item How can we describe the evolving RKHSs $(\mathcal H_t)$ induced by $K_t$? Do these spaces enlarge compared to $\mathcal H_0$ and allow approximation of functions outside $\mathcal H_0$?
-	\item How does movement between RKHSs affect the inductive bias, e.g.\ via eigenvalue decay of $K_t$ and the minimal-norm interpolant in $\mathcal H_t$?
+	\item How can the NTK evolution be written as $K_t = K_0 + \Delta K_t$, and
+	      how does this perturbation affect the gradient flow dynamics relative to
+	      $K_0$?
+	\item How does the size of $A_t$ scale with $\beta = d/n$? Can we identify
+	      thresholds for when $A_t$ significantly alters training dynamics?
+	\item How can we describe the evolving RKHSs $(\mathcal H_t)$ induced by
+	      $K_t$?
+	      % \item How does movement between RKHSs affect the inductive bias, e.g.\ via
+	      %       eigenvalue decay of $K_t$ and the minimal-norm interpolant in $\mathcal
+	      % H_t$?
 \end{enumerate}
 
 \section{Background}

@@ -1,0 +1,12 @@
+# Requirements for NTK experiments (CPU)
+# Tested combo chosen to avoid jax.linear_util issues and keep Neural Tangents stax working.
+# Python 3.9–3.11 recommended.
+flax==0.10.6
+jax==0.5.1
+neural_tangents==0.6.5
+matplotlib>=3.7
+tqdm>=4.66
+
+# Notes:
+# - For GPU installs, follow JAX's official instructions to pick the correct CUDA wheels.
+# - If you later upgrade JAX beyond 0.5.x, Neural Tangents (archived) may break.

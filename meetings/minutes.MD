@@ -27,3 +27,25 @@
 - [ ] Draft a simplified formalization of the NTK problem.
 - [ ] Write and document initial NTK code experiments.
 - [ ] Propose a recurring weekly meeting time with advisor and supervisor.
+
+---
+
+## 2025-10-09
+
+### Attendees
+- Shreyas
+- Francesca
+- Alexander
+
+### Agenda
+- Go over the thesis proposal, feedback on the approach and tentative plan
+- Discuss goals and set expectations for the first stage review
+- Discuss communication channels and schedule for weekly meetings
+
+### Discussion & Decisions
+- Hanin-Nica is from 2019, comparatively old research with seemlingly less follow-up.
+- Go through more literature to find references for weak learning or look at more approaches.
+
+### Action Items
+- [ ] Set up a regular meeting with Francesca and Alexander after figuring out a common time.
+- [ ] Implement Hanin-Nica baseline to verify the existence of weak learning.

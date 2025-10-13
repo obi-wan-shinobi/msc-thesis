@@ -1,0 +1,139 @@
+\documentclass{beamer}
+
+% --- Theme & packages ---
+\usetheme{metropolis}
+\usecolortheme{seahorse}
+\usefonttheme{professionalfonts}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+\usepackage{amsmath, amssymb, bm}
+
+% --- Title info ---
+\title[Thesis Proposal]{Training and Generalization of Overparametrized Neural Networks}
+\author[Shreyas Kalvankar]{Shreyas Kalvankar}
+\institute{Master's Thesis Proposal Meeting}
+\date{\today}
+
+% --- Document ---
+\begin{document}
+
+% ------------------------------
+\begin{frame}
+	\titlepage
+\end{frame}
+
+% ------------------------------
+\begin{frame}{Agenda}
+	\begin{itemize}
+		\item Go over the thesis proposal, feedback on the approach and tentative plan
+		\item Discuss goals and set expectations for the first stage review
+		\item Discuss communication channels and schedule for weekly meetings
+	\end{itemize}
+\end{frame}
+
+% ------------------------------
+\begin{frame}{Motivation}
+	\begin{itemize}
+		\item Overparametrized neural networks can perfectly fit data yet generalize well.
+		\item The \textbf{Neural Tangent Kernel (NTK)} provides a framework for analyzing training dynamics at infinite width.
+		\item However, the NTK remains fixed during training — no feature learning.
+		\item Recent results (e.g.\ Hanin--Nica, 2019) show that when depth and width co-scale,
+		      finite-width networks exhibit evolving but \emph{stable} kernels for small $\beta = d/n$,
+		      marking a weak feature-learning regime between lazy and fully non-linear training.
+		\item \textbf{Goal:} Understand the ``weak feature learning" regime where kernel evolution is small but significant.
+	\end{itemize}
+\end{frame}
+
+% ------------------------------
+\begin{frame}{Research Question}
+	\textbf{Main Question:}
+	\begin{quote}
+		How can we characterize the evolution of the NTK in finite-width and finite-depth neural networks, and what does this imply for effective function spaces and generalization?
+	\end{quote}
+	\vspace{0.5em}
+	\textbf{Sub-questions:}
+	\begin{enumerate}
+		\item How can NTK evolution be written as $K_t = K_0 + \Delta K_t$?
+		\item How does the size of $\Delta K_t$ scale with $\beta = d/n$?
+		\item How can we interpret the evolving RKHSs $(\mathcal{H}_t)$ induced by $K_t$?
+	\end{enumerate}
+\end{frame}
+
+% ------------------------------
+\begin{frame}{Background Overview}
+	\begin{itemize}
+		\item \textbf{NTK framework:} training dynamics $\dot f_t = -K(f_t - y)$ with fixed kernel in infinite width.
+		\item \textbf{Finite-width correction:} NTK is random and evolves; its variance scales as $\exp(c \beta)$.
+		\item \textbf{RKHS perspective:} each kernel defines an RKHS $\mathcal H_t$; evolving kernels imply changing spaces.
+	\end{itemize}
+	\vfill
+	\centering
+	\emph{Understanding kernel drift = understanding feature learning beyond lazy training.}
+\end{frame}
+
+% ------------------------------
+\begin{frame}{Research Gap and Scope}
+	\textbf{Gaps:}
+	\begin{itemize}
+		\item Lack of perturbative link between kernel drift and dynamics.
+		\item Limited understanding of $\beta$ thresholds for regime transitions.
+		\item No formal interpretation of evolving RKHSs.
+	\end{itemize}
+	\vspace{0.8em}
+	\textbf{Scope:}
+	\begin{itemize}
+		\item Analytical focus: perturbation expansions and scaling analysis.
+		\item Empirical validation on small-scale JAX experiments (Hanin–Nica diagnostics).
+	\end{itemize}
+\end{frame}
+
+% ------------------------------
+\begin{frame}{Methodology Overview}
+	\begin{enumerate}
+		\item \textbf{Perturbation Analysis:}
+		      Expand $K_t = K_0 + \Delta K_t$ and study its effect on $\dot f_t = -K_t(f_t - y)$.
+		\item \textbf{Scaling Regimes:}
+		      Analyze how $\beta = d/n$ separates lazy, weak, and unstable training regimes.
+		\item \textbf{Functional Analysis View:}
+		      Interpret training as motion through a family of RKHSs $(\mathcal H_t)$ to study generalization.
+	\end{enumerate}
+\end{frame}
+
+% ------------------------------
+\begin{frame}{Expected Outcomes}
+	\begin{itemize}
+		\item Perturbation-theoretic model of NTK evolution.
+		\item Characterization of training regimes via $\beta$ scaling.
+		\item Functional-analytic interpretation of kernel drift as evolving hypothesis spaces.
+		\item Empirical validation of theoretical predictions on finite-width networks.
+	\end{itemize}
+\end{frame}
+
+% ------------------------------
+\begin{frame}{Tentative Timeline}
+	\small
+	\textbf{Weeks 1–2:} Study NTK theory; reproduce Hanin–Nica results in JAX.\\
+	\textbf{Weeks 3–6:} Develop perturbation expansion $K_t = K_0 + \Delta K_t$.\\
+	\textbf{Weeks 7–10:} Analyze dependence on $\beta = d/n$; identify regime boundaries.\\
+	\textbf{Weeks 11–14:} Study evolving RKHSs $(\mathcal H_t)$ and generalization effects.\\[1em]
+	\textbf{Deliverables:}
+	Interim report + preliminary empirical findings for first-stage review.
+\end{frame}
+
+% ------------------------------
+\begin{frame}{Discussion Points}
+	\begin{itemize}
+		\item Are the proposed analytical directions realistic for the first-stage timeline?
+		\item How to balance theoretical and experimental parts?
+		\item Feedback on feasibility of RKHS interpretation.
+	\end{itemize}
+\end{frame}
+
+% ------------------------------
+\begin{frame}
+	\Large Thank you! \\
+	\vspace{0.5em}
+	\normalsize Looking forward to your feedback.
+\end{frame}
+
+\end{document}

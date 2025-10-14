@@ -49,3 +49,21 @@
 ### Action Items
 - [ ] Set up a regular meeting with Francesca and Alexander after figuring out a common time.
 - [ ] Implement Hanin-Nica baseline to verify the existence of weak learning.
+---
+
+## 2025-10-13
+
+### Attendees
+- Shreyas
+- David
+
+### Agenda
+- Discuss communication channel
+- Give a brief of the previous meeting
+- Go over the initial plan for baseline testing
+
+### Discussion & Decisions
+- Briefly went over NTK theory and discussed the claims from Hanin-Nica
+
+### Action Items
+- [ ] Implement Hanin-Nica baseline to verify the existence of weak learning.

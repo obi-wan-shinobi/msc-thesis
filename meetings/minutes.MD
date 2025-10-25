@@ -67,3 +67,35 @@
 
 ### Action Items
 - [ ] Implement Hanin-Nica baseline to verify the existence of weak learning.
+
+## 2025-10-20
+
+### Attendees
+- Shreyas
+- David
+
+### Agenda
+- Discuss the initial NTK experiment 
+
+### Discussions & Decisions
+- Discussed the preliminary results, agreement on the experiments to run
+
+### Action Items
+- [ ] Create an experiment log for logging all results.
+
+## 2025-10-27
+
+### Attendees
+- Shreyas
+- David
+
+### Agenda
+- Status of current experiment
+    - Kernel-profile replication done (variance $\downarrow$ with width).
+    - Function-space experiments on \(S^1\): simple vs complex targets; width×seed sweeps; RelErr computed.
+- Discuss experiment for Hanin-Nica weak-learning regime.
+
+### Discussions & Decisions
+
+### Action Items
+

@@ -1,0 +1,25 @@
+experiment:
+  name: ntk_regression_simple
+  task_type: simple # use the simple circle task f*(x)=x1*x2
+  save_dir: results
+  seed: 0
+
+data:
+  n_eval: 720 # points on circle for evaluation
+  M_train: 64 # training subset size
+
+model:
+  depth_hidden: 1 # 1 hidden layer + output layer
+  b_std: 0.1
+
+train:
+  steps: 30000
+  lr: 1.0e-2
+  log_every: 5000
+
+sweep:
+  widths: [512, 1024, 2048, 4096, 8192]
+  seeds: 10 # number of random initializations
+
+analysis:
+  reg: 1.0e-6 # ridge for analytic NTK predictor

@@ -1,0 +1,28 @@
+{
+  "dataset": "data_simple.npz",
+  "analytic_predictor": "analytic_predictor.npz",
+  "predictions": {
+    "512": "predictions/width_512.npz",
+    "1024": "predictions/width_1024.npz",
+    "2048": "predictions/width_2048.npz",
+    "4096": "predictions/width_4096.npz",
+    "8192": "predictions/width_8192.npz"
+  },
+  "meta": {
+    "task_type": "simple",
+    "depth_hidden": 1,
+    "b_std": 0.1,
+    "train_steps": 30000,
+    "lr": 0.01,
+    "reg": 1e-06,
+    "seeds": 10,
+    "widths": [
+      512,
+      1024,
+      2048,
+      4096,
+      8192
+    ]
+  },
+  "runtime_sec": 286.51
+}

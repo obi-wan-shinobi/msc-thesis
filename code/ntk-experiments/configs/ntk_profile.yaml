@@ -1,0 +1,21 @@
+experiment:
+  name: "ntk_profile_convergence"
+  seed: 0
+  save_dir: "results"
+
+data:
+  n_profile: 360 # probe points on the circle
+  M_train: 512 # Gaussian regression samples (task)
+
+sweep:
+  widths: [100, 500, 2000]
+  seeds: 10
+
+model:
+  depth_hidden: 4
+  b_std: 0.1
+
+train:
+  lr: 1.0
+  steps: 200
+  log_every: 50

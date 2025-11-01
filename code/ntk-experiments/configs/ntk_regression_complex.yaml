@@ -1,0 +1,31 @@
+experiment:
+  name: ntk_regression_fourier_complex
+  task_type: fourier # Fourier mixture task
+  save_dir: results
+  seed: 0
+
+data:
+  n_eval: 720
+  M_train: 256
+  noise_std: 0.02 # label noise added to y_train
+
+target:
+  Ks: [2, 4, 7, 11, 16, 23, 32]
+  amps: [0.9, 0.7, 0.55, 0.45, 0.35, 0.28, 0.22]
+  phases: [0.0, 1.57079632679, 1.2, 2.0, 0.942, 4.5, 5.8] # radians
+
+model:
+  depth_hidden: 1
+  b_std: 0.1
+
+train:
+  steps: 30000
+  lr: 1.0e-2
+  log_every: 5000
+
+sweep:
+  widths: [512, 1024, 2048, 4096, 8192, 16384]
+  seeds: 10
+
+analysis:
+  reg: 1.0e-6

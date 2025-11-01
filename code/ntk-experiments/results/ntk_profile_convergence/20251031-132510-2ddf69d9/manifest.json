@@ -1,0 +1,23 @@
+{
+  "probe_geometry": "probe_geometry.npz",
+  "training_task": "training_task.npz",
+  "analytic_profile": "analytic_profile.npz",
+  "profiles": {
+    "100": "profiles/width_100.npz",
+    "500": "profiles/width_500.npz",
+    "2000": "profiles/width_2000.npz"
+  },
+  "meta": {
+    "depth_hidden": 4,
+    "b_std": 0.1,
+    "train_steps": 200,
+    "lr": 1.0,
+    "seeds": 10,
+    "widths": [
+      100,
+      500,
+      2000
+    ]
+  },
+  "runtime_sec": 561.89
+}

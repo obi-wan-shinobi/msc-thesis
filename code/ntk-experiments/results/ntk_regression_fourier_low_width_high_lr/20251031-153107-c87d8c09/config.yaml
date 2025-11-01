@@ -1,0 +1,54 @@
+experiment:
+  name: ntk_regression_fourier_low_width_high_lr
+  task_type: fourier
+  save_dir: results
+  seed: 0
+data:
+  n_eval: 720
+  M_train: 256
+  noise_std: 0.02
+target:
+  Ks:
+  - 2
+  - 4
+  - 7
+  - 11
+  - 16
+  - 23
+  - 32
+  amps:
+  - 0.9
+  - 0.7
+  - 0.55
+  - 0.45
+  - 0.35
+  - 0.28
+  - 0.22
+  phases:
+  - 0.0
+  - 1.57079632679
+  - 1.2
+  - 2.0
+  - 0.942
+  - 4.5
+  - 5.8
+model:
+  depth_hidden: 1
+  b_std: 0.1
+train:
+  steps: 50000
+  lr: 1.0
+  log_every: 5000
+sweep:
+  widths:
+  - 2
+  - 4
+  - 6
+  - 8
+  - 10
+  - 100
+  - 1000
+  - 10000
+  seeds: 10
+analysis:
+  reg: 1.0e-06

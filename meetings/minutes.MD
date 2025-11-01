@@ -96,6 +96,14 @@
 - Discuss experiment for Hanin-Nica weak-learning regime.
 
 ### Discussions & Decisions
+- Discussions about behaviour of the kernel profile, why does it peak at small widths? 
+    - Possible reasons could be that the gradients form a wedge / cone-like slice on the unit sphere in the weight space.
+- The difference in the relative errors for complex regression task didn't seem significant in absolute values, despite the decreasing trend.
+- All the widths seem to be very similar, meaning 512 width network seems to perform just as well as 16,000 width network.
+- Discussed reducing the harmonics in the regression task to make it simpler. 
+- Try to understand this convergence in infinite vs finite before moving onto Hanin-Nica. 
 
 ### Action Items
+- [ ] Try to make the task simpler to see better convergence with increasing widths
+- [ ] Compare convergence in the lower frequncies vs high frequencies.
 

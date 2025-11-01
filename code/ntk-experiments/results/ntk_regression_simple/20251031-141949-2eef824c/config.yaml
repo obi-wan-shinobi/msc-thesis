@@ -1,0 +1,25 @@
+experiment:
+  name: ntk_regression_simple
+  task_type: simple
+  save_dir: results
+  seed: 0
+data:
+  n_eval: 720
+  M_train: 64
+model:
+  depth_hidden: 1
+  b_std: 0.1
+train:
+  steps: 30000
+  lr: 0.01
+  log_every: 5000
+sweep:
+  widths:
+  - 512
+  - 1024
+  - 2048
+  - 4096
+  - 8192
+  seeds: 10
+analysis:
+  reg: 1.0e-06

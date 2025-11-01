@@ -1,0 +1,34 @@
+{
+  "dataset": "data_fourier.npz",
+  "analytic_predictor": "analytic_predictor.npz",
+  "predictions": {
+    "2": "predictions/width_2.npz",
+    "4": "predictions/width_4.npz",
+    "6": "predictions/width_6.npz",
+    "8": "predictions/width_8.npz",
+    "10": "predictions/width_10.npz",
+    "100": "predictions/width_100.npz",
+    "1000": "predictions/width_1000.npz",
+    "10000": "predictions/width_10000.npz"
+  },
+  "meta": {
+    "task_type": "fourier",
+    "depth_hidden": 1,
+    "b_std": 0.1,
+    "train_steps": 50000,
+    "lr": 1.0,
+    "reg": 1e-06,
+    "seeds": 10,
+    "widths": [
+      2,
+      4,
+      6,
+      8,
+      10,
+      100,
+      1000,
+      10000
+    ]
+  },
+  "runtime_sec": 802.62
+}

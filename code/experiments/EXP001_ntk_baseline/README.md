@@ -8,21 +8,19 @@
 
 ## 1 Goal
 
-Finite-width MLPs converge to NTK limit
-
----
-
-### Subgoals:
-
 - Reproduce results from NTK paper for kernel profile showing low variance for kernel as width increases
 
-![](plots/ntk-paper-profile.png)
+![](plots/ntk-profile/ntk-paper-profile.png)
+
+- Test if finite-width MLPs converge to NTK limit
 
 ---
 
-## 2 Setup
+## 2 Experiments
 
 ### 2.1 Reproduction of NTK kernel profile:
+
+#### Setup:
 
 - **Probe manifold: unit circle (2D).**  
   Use angles $\gamma \in [-\pi, \pi]$ and define
@@ -43,7 +41,7 @@ Finite-width MLPs converge to NTK limit
 
   Train with mean-squared error on this Gaussian dataset. The circle is **only** for measuring/plotting the kernel.
 
-  ![](plots/gaussian_vs_circle.png)
+  ![](plots/ntk-profile/gaussian_vs_circle.png)
 
 - **Model (finite net).**  
   Fully-connected ReLU MLP in **NTK parameterization** with **depth \(L=4\)**
@@ -69,9 +67,22 @@ Finite-width MLPs converge to NTK limit
 - **Expected observations.**  
   Variance across seeds **shrinks** as width increases (kernel concentrates to a deterministic limit).
 
+#### Results
+
+![](plots/ntk-profile/ntk-profile.png)
+
+This serves as a sanity check for the code as well as the idea that as width starts increasing,
+the kernel shows less variance eventually becomes constant as $width \to \infty$.
+
+**Observations**  
+ The empirical NTK profile $\gamma \mapsto \Theta(x_0,x(\gamma))$ matches the paper's qualitative behavior:
+variance across random initializations **shrinks with width**, and the mild post-training "inflation" diminishes as width grows.
+
+_Takeaway:_ the kernel concentrates toward a deterministic limit and is nearly constant during training when wide.
+
 ---
 
-### 2.2 Setup for function-space convergence on the unit circle
+### 2.2 Function-space convergence on the unit circle
 
 - **Inputs on the unit circle (2D).**  
   For angles $\gamma \in [-\pi, \pi)$,
@@ -82,25 +93,12 @@ Finite-width MLPs converge to NTK limit
 
   Construct a dense grid $\Gamma = \{\gamma_i\}_{i=1}^N$ and the corresponding dataset $X_{\mathrm{eval}} = \{x(\gamma_i)\}_{i=1}^N$.
 
-- **Targets (two variants).**  
-  **(A) Simple baseline (paper-like):** $f^*(x)=x_1x_2$. On the circle this equals $\tfrac{1}{2}\sin(2\gamma)$ (a single low-frequency mode).  
-  ![](plots/simple-regression-task.png)
-
-  **(B) Harder mixture (to reveal convergence):**
-
-  $$
-    y(\gamma) = \sum_{k\in\mathcal K} a_k\,\sin\!\big(k\,\gamma+\phi_k\big) + \varepsilon,\quad
-    \varepsilon \sim \mathcal N(0,\sigma^2),
-  $$
-
-  with $\mathcal K$ including higher frequencies (e.g., $\{2,4,7,11,16,23,32\}$), mildly decaying amplitudes $a_k$, and random phases $\phi_k \sim \mathrm{Unif}[0,2\pi)$.
-
-  ![](plots/complex-regression-task.png)
-
-  _Idea was to (Use (A) for a sanity check; use (B) to better see finite-width $\to$ NTK convergence.)_
+- **Targets**  
+  **Simple baseline (paper-like):** $f^*(x)=x_1x_2$. On the circle this equals $\tfrac{1}{2}\sin(2\gamma)$ (a single low-frequency mode).  
+  ![](plots/simple-regression/simple-regression-task.png)
 
 - **Train/Test split on the circle.**  
-  Select a **small, random** training subset $X_T=\{x(\gamma_{i_j})\}_{j=1}^{M}$ from $X_{\mathrm{eval}}$ (e.g., $M \in \{32, 64, 128, 256\}$).  
+  Select a **small, random** training subset $X_T=\{x(\gamma_{i_j})\}_{j=1}^{M}$ from $X_{\mathrm{eval}}$ (e.g., $M \in \{64, 256\}$).  
   Targets are $y_T = \{y(\gamma_{i_j})\}$.  
   Evaluate on the full grid $X_{\mathrm{eval}}$.
 
@@ -124,18 +122,18 @@ Finite-width MLPs converge to NTK limit
   For each width, repeat training over multiple random initializations (e.g., 10 seeds); summarize by median and percentile bands.  
   _(Seeds affect finite nets; not the analytic NTK limit.)_
 
----
+### 2.3 Function-space convergence on a harder Fourier mixture.
 
-## 4 Results
+$$
+  y(\gamma) = \sum_{k\in\mathcal K} a_k\,\sin\!\big(k\,\gamma+\phi_k\big) + \varepsilon,\quad
+  \varepsilon \sim \mathcal N(0,\sigma^2),
+$$
 
-### 4.1 NTK profile reproduction
+with $\mathcal K$ including higher frequencies (e.g., $\{2,4,7,11,16,23,32\}$), mildly decaying amplitudes $a_k$, and phases $\phi_k \in \{0.0, 0.5\pi, 1.2, 2.0, 0.3\pi, 4.5, 5.8\}$(arbitrarily chosen).
 
-![](plots/ntk-profile.png)
+![](plots/complex-regression/complex-regression-task.png)
 
-This serves as a sanity check for the code as well as the idea that as width starts increasing,
-the kernel shows less variance eventually becomes constant as $width \to \infty$.
-
-### 4.2 Convergence in function space
+### Results
 
 **Comparison in function space:**
 
@@ -151,52 +149,87 @@ the kernel shows less variance eventually becomes constant as $width \to \infty$
 - **Task difficulty:** The simple baseline $x_1x_2=\sin(\gamma)\cos(\gamma)=\tfrac12\sin(2\gamma)$ is **low-frequency** and easy; many widths will already match the NTK closely. The **harder mixture** (with higher modes and fewer train points) should make differences visible at small widths and highlights convergence as $n\uparrow$.
 - **Optimization:** Full-batch GD best mirrors NTK gradient flow.
 
-#### 4.2.1 Simple regression task
+#### 2.2 Simple regression task
 
-![Relative Error on simple regression task](plots/rel-err-on-simple-regression-task.png)
+![Relative Error on simple regression task](plots/simple-regression/rel-err-on-simple-regression-task.png)
 _Fig: Relative Error on simple regression task_
 
-![Convergence on simple regression task](plots/convergence-on-simple-regression-task.png)
+![Convergence on simple regression task](plots/simple-regression/convergence-on-simple-regression-task.png)
 _Fig: Convergence on simple regression task_
 
-### 4.2.2 Complex regression task
+### 2.3 Complex regression task
 
-![Relative Error on complex regression task](plots/rel-err-on-complex-regression-task.png)
+![Relative Error on complex regression task](plots/complex-regression/rel-err-on-complex-regression-task.png)
 _Fig: Relative Error on complex regression task_
 
-![Convergence on complex regression task](plots/convergence-on-complex-regression-task.png)
+![Convergence on complex regression task](plots/complex-regression/convergence-on-complex-regression-task.png)
 _Fig: Convergence on complex regression task_
 
-## 5 Observations
+![Convergence on partial fourier mixture](plots/complex-regression/convergence-on-partial-complex-regression-task.png)
+_Fig: Convergence on complex regression task (partial Fourier mixture)_
 
-- **Kernel-profile reproduction.**  
-  The empirical NTK profile $\gamma \mapsto \Theta(x_0,x(\gamma))$ matches the paper's qualitative behavior:
-  variance across random initializations **shrinks with width**, and the mild post-training "inflation" diminishes as width grows.
+### Observations
 
-  _Takeaway:_ the kernel concentrates toward a deterministic limit and is nearly constant during training when wide.
-
-- **Simple regression task ( $f^{\*}(x)=x_1x_2 = \tfrac12\sin 2\gamma$ on $S^1$ ).**  
+- **Simple regression task ( $f^*(x)=x_1x_2 = \frac{1}{2} \sin 2\gamma$ on $S^1$).**  
   The **relative error (RelErr)** between finite nets and the analytic NTK predictor is **roughly flat** across widths (minor improvements only).  
   _Interpretation:_ this target is dominated by a **single low-frequency eigenmode** of the NTK on the circle, which small nets already capture well; finite-width corrections are tiny, so width yields little visible gain.
 
 - **Complex regression task (Fourier mixture with higher modes).**  
-  **RelErr decreases** monotonically (or near-monotonically) as width increases.  
-  _Interpretation:_ higher-frequency components rely on smaller NTK eigenvalues and are **more sensitive** to finite-width effects; increasing width reduces these errors, revealing convergence toward the NTK limit.
+  The **RelErr decreases** monotonically (or near-monotonically) as width increases, **but the absolute values remain extremely small** — e.g., from roughly 0.60 to 0.55 — which makes the improvement only marginal in absolute terms.  
+  _Interpretation:_ although there is a weak downward trend, the finite-width networks all appear to converge to **similar solutions that differ from the NTK predictor**, suggesting that they are not fully reaching the infinite-width limit but are only able to approximate the lower harmonics, as can be seen in the last two plots above.
 
 - **Overlay plots (function space).**  
-  For both tasks, the **finite-net predictions** look visually close for all widths; differences are subtle by eye.  
-  _Note:_ The quantitative RelErr is the more sensitive indicator of convergence than visual overlays.
+  For both tasks, the **finite-net predictions** look visually close for all widths; differences are subtle by eye.
 
 ### Possible reasons the simple task shows little RelErr improvement
 
 - The target is **too easy/low-rank** for the NTK on $S^1$; even narrow nets approximate the leading eigenfunction well.
+
+### 2.4 Same complex task with low widths
+
+The target is a controlled Fourier mixture with only 7 harmonics,
+
+$$
+y(\gamma) = \sum_{k\in\{2,4,7,11,16,23,32\}} a_k sin(k\gamma+\phi_k)
+$$
+
+Since the input features are $(\sin\gamma, \cos\gamma)$, a ReLU MLP can synthesize low-order trigonometric polynomials with few units; hence all widths look similar. To expose visible progression with width, we sweep very small widths (2-10, 100) and compare to the infinite-width NTK predictor.
+
+![Relative Error with low widths on complex regression task](plots/low-width-complex-regression/rel-err-low-widths-on-complex-regression-task.png)
+_Fig: Relative Error for lower widths on the complex regression task_
+
+![Convergence using lower widths on complex regression task](plots/low-width-complex-regression/convergence-low-widths-on-complex-regression-task.png)
+_Fig: Convergence using lower widths on complex regression task_
+
+![Convergence on partial fourier mixture](plots/low-width-complex-regression/convergence-low-widths-on-partial-complex-regression-task.png)
+_Fig: Convergence on complex regression task (partial Fourier mixture)_
+
+### 2.5 Same complex task with low widths + some high-widths but with higher learning rate and more gradient descent steps
+
+It seems that the finite width networks converge only for low frequency modes.
+According to the spectral bias paper (https://arxiv.org/abs/1806.08734) it might just be the case that high-frequency modes need more convergence time, so we need more gradient descent steps and higher learning rate (larger $\eta t$).
+
+Updated setup:
+
+- width $w \in \{2,4,6,8,10,100,1000,10000\}$
+- learning rate $\eta = 1$ (was 0.01 earlier)
+- timesteps $100,000$
+
+![Relative Error with higher LR and more GD steps on complex regression task](plots/low-width-high-lr-timesteps/rel-err-low-widths-more-steps-on-simpler-regression-task.png)
+_Fig: Relative Error for lower widths with high LR and more GD steps on the complex regression task_
+
+![Convergence with higher LR and more GD steps on complex regression task](plots/low-width-high-lr-timesteps/convergence-low-widths-more-steps-on-simpler-regression-task.png)
+_Fig: Convergence using lower widths with high LR and more GD steps on complex regression task_
+
+![Convergence for last large widths](plots/low-width-high-lr-timesteps/convergence-last-low-widths-more-steps-on-simpler-regression-task.png)
+_Fig: Cleaner picture of convergence for width 10, 100, 1000, 10000 on complex regression task_
 
 ---
 
 ## 6 Outcome
 
 - **Validated NTK regime qualitatively:** kernel profiles reproduce the **concentration** ($\downarrow$ variance with width) and **near constancy** during training reported in the NTK paper.
-- **Function-space convergence demonstrated:** on a **harder target** with higher Fourier content, the **RelErr** decreases with width, supporting convergence to the NTK predictor.
+- **Function-space convergence:** on a **harder target** with higher Fourier content, the **RelErr** decreases with width, supporting convergence to the NTK predictor but with high learning rate and more gradient descent steps, this doesn't seem to be faithful to the gradient flow dynamics since the step sizes are large, we need to understand this more.
 
 ## 7 Next Steps
 

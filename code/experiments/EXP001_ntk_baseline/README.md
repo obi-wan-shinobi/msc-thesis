@@ -129,7 +129,7 @@ $$
   \varepsilon \sim \mathcal N(0,\sigma^2),
 $$
 
-with $\mathcal K$ including higher frequencies (e.g., $\{2,4,7,11,16,23,32\}$), mildly decaying amplitudes $a_k$, and randomly chosen phases $\phi_k \in \{0.0, 0.5\pi, 1.2, 2.0, 0.3\pi, 4.5, 5.8\}$.
+with $\mathcal K$ including higher frequencies (e.g., $\{2,4,7,11,16,23,32\}$), mildly decaying amplitudes $a_k$, and phases $\phi_k \in \{0.0, 0.5\pi, 1.2, 2.0, 0.3\pi, 4.5, 5.8\}$(arbitrarily chosen).
 
 ![](plots/complex-regression/complex-regression-task.png)
 
@@ -175,12 +175,11 @@ _Fig: Convergence on complex regression task (partial Fourier mixture)_
   _Interpretation:_ this target is dominated by a **single low-frequency eigenmode** of the NTK on the circle, which small nets already capture well; finite-width corrections are tiny, so width yields little visible gain.
 
 - **Complex regression task (Fourier mixture with higher modes).**  
-  **RelErr decreases** monotonically (or near-monotonically) as width increases.  
-  _Interpretation:_ higher-frequency components rely on smaller NTK eigenvalues and are **more sensitive** to finite-width effects; increasing width reduces these errors, revealing convergence toward the NTK limit.
+  The **RelErr decreases** monotonically (or near-monotonically) as width increases, **but the absolute values remain extremely small** — e.g., from roughly 0.60 to 0.55 — which makes the improvement only marginal in absolute terms.  
+  _Interpretation:_ although there is a weak downward trend, the finite-width networks all appear to converge to **similar solutions that differ from the NTK predictor**, suggesting that they are not fully reaching the infinite-width limit but are only able to approximate the lower harmonics, as can be seen in the last two plots above.
 
 - **Overlay plots (function space).**  
-  For both tasks, the **finite-net predictions** look visually close for all widths; differences are subtle by eye.  
-  _Note:_ The quantitative RelErr is the more sensitive indicator of convergence than visual overlays.
+  For both tasks, the **finite-net predictions** look visually close for all widths; differences are subtle by eye.
 
 ### Possible reasons the simple task shows little RelErr improvement
 
@@ -194,8 +193,7 @@ $$
 y(\gamma) = \sum_{k\in\{2,4,7,11,16,23,32\}} a_k sin(k\gamma+\phi_k)
 $$
 
-Since the input features are $(\sin\gamma, \cos\gamma)$, a ReLU MLP can synthesize low-order trigonometric polynomials with few units; hence widths
-all look similar. To expose visible progression with width, we sweep very small widths (2-10, 100) and compare to the infinite-width NTK predictor.
+Since the input features are $(\sin\gamma, \cos\gamma)$, a ReLU MLP can synthesize low-order trigonometric polynomials with few units; hence all widths look similar. To expose visible progression with width, we sweep very small widths (2-10, 100) and compare to the infinite-width NTK predictor.
 
 ![Relative Error with low widths on complex regression task](plots/low-width-complex-regression/rel-err-low-widths-on-complex-regression-task.png)
 _Fig: Relative Error for lower widths on the complex regression task_
@@ -208,8 +206,8 @@ _Fig: Convergence on complex regression task (partial Fourier mixture)_
 
 ### 2.5 Same complex task with low widths + some high-widths but with higher learning rate and more gradient descent steps
 
-It seemed that the finite width networks were converging only for low frequency modes.
-According to the spectral bias paper (https://arxiv.org/abs/1806.08734) it might just be the case that high-frequency modes need more convergence time, so more gradient descent steps and higher learning rate (larger $\eta t$).
+It seems that the finite width networks converge only for low frequency modes.
+According to the spectral bias paper (https://arxiv.org/abs/1806.08734) it might just be the case that high-frequency modes need more convergence time, so we need more gradient descent steps and higher learning rate (larger $\eta t$).
 
 Updated setup:
 
@@ -231,7 +229,7 @@ _Fig: Cleaner picture of convergence for width 10, 100, 1000, 10000 on complex r
 ## 6 Outcome
 
 - **Validated NTK regime qualitatively:** kernel profiles reproduce the **concentration** ($\downarrow$ variance with width) and **near constancy** during training reported in the NTK paper.
-- **Function-space convergence demonstrated:** on a **harder target** with higher Fourier content, the **RelErr** decreases with width, supporting convergence to the NTK predictor.
+- **Function-space convergence:** on a **harder target** with higher Fourier content, the **RelErr** decreases with width, supporting convergence to the NTK predictor but with high learning rate and more gradient descent steps, this doesn't seem to be faithful to the gradient flow dynamics since the step sizes are large, we need to understand this more.
 
 ## 7 Next Steps
 

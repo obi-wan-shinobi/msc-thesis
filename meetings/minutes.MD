@@ -107,3 +107,17 @@
 - [ ] Try to make the task simpler to see better convergence with increasing widths
 - [ ] Compare convergence in the lower frequncies vs high frequencies.
 
+## 2025-11-11
+
+### Attendees
+- Shreyas
+- David
+- Francesca
+
+### Agenda
+- Discuss the possibility of a monthly sync with all supervisors together
+- Brief update of the experiments conducted and determine next steps
+
+### Discussions & Decisions
+
+### Action Items

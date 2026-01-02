@@ -1,0 +1,358 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{hyperref}
+\usepackage[round,sort&compress]{natbib}
+\hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue}
+
+% Figures stay in their sections
+\usepackage{float}
+\usepackage[section]{placeins}
+
+\title{\textbf{EXP002: Empirical NTK Drift and the Onset of the Lazy Regime}\\[2mm]
+\large Experiment Summary with Figures}
+\author{Shreyas Kalvankar}
+\date{November 2025}
+
+\begin{document}
+\maketitle
+
+\section*{Goal and Context}
+
+The goal of these experiments is to determine when a finite-width neural network
+enters the \emph{lazy regime}, a regime in which the empirical Neural Tangent Kernel (NTK)
+remains effectively constant throughout training, and the network dynamics match
+those of kernel regression with a fixed NTK.
+
+We investigate whether:
+\begin{enumerate}
+	\item the empirical NTK becomes approximately constant after some training time;
+	\item network predictions match kernel regression when using the frozen NTK;
+	\item the NTK freeze time corresponds to a plateau or slowdown in the training loss.
+\end{enumerate}
+
+Our regression target is a Fourier mixture on the unit circle:
+\[
+	f^*(\gamma) = \sum_k a_k \cos(k\gamma + \phi_k),
+\]
+evaluated on a dense uniform grid, with random subsampled training points.
+
+We sweep fully-connected ReLU MLPs of widths
+\[
+	W \in \{100,512,1024,2048,10000\}
+\]
+across multiple seeds.
+
+Snapshots at regular intervals include:
+\begin{itemize}
+	\item the training--training NTK, $K_{\text{train,train}}(t)$;
+	\item the eval--train NTK, $K_{\text{eval,train}}(t)$;
+	\item the evaluation-grid network predictions $f_{\text{net}}(\gamma,t)$;
+	\item the snapshot training loss $L(t)$;
+	\item metadata for seeds and training steps.
+\end{itemize}
+
+These allow reconstruction of drift curves, kernel regression predictions, loss evolution,
+and freeze-time detection.
+
+% =======================================================
+\section{Kernel Drift, Eigenvalue Drift, and Loss Plateau}
+
+\subsection{Kernel Drift Definition}
+
+At each snapshot step we compute the empirical NTK on the training set:
+\[
+	K(t) := K_{\text{train,train}}(t) \in \mathbb{R}^{M\times M}.
+\]
+
+To measure how the kernel evolves during training, we track the
+\emph{normalized NTK drift}:
+\[
+	\Delta_K(t) =
+	\frac{\|K(t) - K(0)\|_F}{\|K(0)\|_F}.
+\]
+
+This quantity measures the deviation of the kernel from its initialization.
+If the network enters the lazy regime, $\Delta_K(t)$ becomes (almost) constant over time.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/kernel_drift/kernel_drift_low_widths.png}
+	\caption{Kernel drift curves for low widths ($W = 100, 512$).}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/kernel_drift/kernel_drift_mid_widths.png}
+	\caption{Kernel drift for mid-range widths ($W = 1024, 2048$).}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/kernel_drift/kernel_drift_high_widths.png}
+	\caption{Kernel drift for very wide networks ($W = 10000$).}
+\end{figure}
+
+
+% -------------------------------------------------------
+\subsection{Slope-Based Freeze-Time Criterion}
+
+Even when the drift $\Delta_K(t)$ grows slowly, the kernel may have effectively
+stopped evolving.
+To detect this, we track its \emph{slope}:
+\[
+	s(t) =
+	\frac{\Delta_K(t) - \Delta_K(t - \Delta)}
+	{\text{step}(t) - \text{step}(t - \Delta)},
+\]
+with typical snapshot spacing $\Delta = 2$.
+
+We declare the kernel \emph{frozen} at the earliest time $t_{\text{freeze}}$
+for which the drift slope satisfies
+\[
+	|s(t)| < \varepsilon\,|s(0)|,
+\]
+for $k$ consecutive snapshot intervals (typically $k=3$ and $\varepsilon=0.01$).
+
+This identifies the point at which the NTK’s rate of change becomes negligible.
+
+% -------------------------------------------------------
+\subsection{Eigenvalue Drift Across Widths}
+
+Let $\lambda_j(t)$ denote the eigenvalues of the empirical NTK at time $t$
+(sorted in descending order).
+For each width we track the top five eigenvalues:
+\[
+	\lambda_1(t),\;\lambda_2(t),\;\dots,\;\lambda_5(t).
+\]
+
+Empirically, we observe that the \emph{asymptotic} values of the top eigenvalues
+are nearly identical across widths: regardless of the width, the leading eigenvalues
+of $K(t)$ saturate toward essentially the same plateau.
+What varies strongly with width is the \emph{timescale} on which this saturation occurs.
+
+\begin{itemize}
+	\item \textbf{Narrow networks} reach their asymptotic top eigenvalues quickly.
+	      The leading eigenvalues stabilize early in training.
+	\item \textbf{Wide networks} converge to the same eigenvalue plateau much more slowly,
+	      even though the learning rate is identical for all widths.
+\end{itemize}
+
+This suggests that the empirical NTK of wide networks is less sensitive to
+parameter updates for the same learning rate; the changes more gradually at large width.
+Narrow networks, being further from the infinite-width NTK limit, exhibit
+larger kernel changes per unit parameter movement, which leads to faster
+spectral evolution.
+
+Thus, the eigenvalue trajectories reveal a width-dependent \emph{spectral
+	stabilization timescale}: small networks rapidly reshape their NTK spectrum,
+while large networks evolve the spectrum slowly but eventually saturate at
+similar eigenvalues.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.7\textwidth]{plots/eigenvalues/eigenvalues_w100.png}
+	\caption{Top eigenvalues over training, width $W=100$.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.7\textwidth]{plots/eigenvalues/eigenvalues_w512.png}
+	\caption{Top eigenvalues over training, width $W=512$.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.7\textwidth]{plots/eigenvalues/eigenvalues_w1024.png}
+	\caption{Top eigenvalues over training, width $W=1024$.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.7\textwidth]{plots/eigenvalues/eigenvalues_w2048.png}
+	\caption{Top eigenvalues over training, width $W=2048$.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.7\textwidth]{plots/eigenvalues/eigenvalues_w10000.png}
+	\caption{Top eigenvalues over training, width $W=10000$.}
+\end{figure}
+
+% -------------------------------------------------------
+\subsection{Loss Plateau and Kernel Drift}
+
+We record the loss:
+\[
+	L(t) = \frac{1}{M}\sum_{i=1}^M
+	\bigl(f_{\text{net}}(x_i,t) - y_i\bigr)^2.
+\]
+
+To test whether loss stabilization corresponds to NTK freezing,
+we plot $L(t)$ alongside drift $\Delta_K(t)$ and slope $s(t)$.
+
+The loss curve seems to have plateaued earlier than the time
+$t_{\text{freeze}}$ at which the kernel drift slope becomes small, particularly for large widths.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/loss_curves/loss_low_widths.png}
+	\caption{Loss curves for low widths.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/loss_curves/loss_mid_widths.png}
+	\caption{Loss curves for mid-range widths.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/loss_curves/loss_high_widths.png}
+	\caption{Loss curves for high widths.}
+\end{figure}
+
+% =======================================================
+\section{Kernel Regression Behavior}
+
+\subsection{Kernel Regression Solution at Freeze Time}
+
+Once a freeze time $t^*$ is detected, we construct the kernel regression solution
+using the frozen empirical NTK:
+\[
+	\alpha(t^*) = \bigl(K_{\text{train,train}}(t^*) + \lambda I\bigr)^{-1}
+	y_{\text{train}},
+\]
+and the corresponding evaluation-grid predictions:
+\[
+	f_{\mathrm{KR}}(\gamma; t^*)
+	=
+	K_{\text{eval,train}}(t^*)\,\alpha(t^*).
+\]
+
+This yields the function predicted by exact kernel regression at the freeze-time NTK.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/kernel_regression/kernel_regression_w100_step.png}
+	\caption{Kernel regression prediction using frozen NTK (width 100).}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/kernel_regression/kernel_regression_w512_step.png}
+	\caption{Kernel regression prediction using frozen NTK (width 512).}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/kernel_regression/kernel_regression_w1024_step.png}
+	\caption{Kernel regression prediction using frozen NTK (width 1024).}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/kernel_regression/kernel_regression_w2048_step.png}
+	\caption{Kernel regression prediction using frozen NTK (width 2048).}
+\end{figure}
+
+% -------------------------------------------------------
+\subsection{Comparison to Gradient-Descent Predictions}
+
+In this section we examine how the network's predictions evolve \emph{after} the
+NTK has effectively frozen.
+
+For each width, we plot:
+\begin{enumerate}
+	\item the network prediction at the NTK freeze time $t^*$:
+	      \[
+		      f_{\text{net}}(\gamma, t^*),
+	      \]
+	\item the network prediction at the end of training:
+	      \[
+		      f_{\text{net}}(\gamma, t_{\text{final}}).
+	      \]
+\end{enumerate}
+
+This comparison shows whether the network continues to change significantly in
+function space after the NTK has stopped evolving.
+
+If the NTK has truly entered the lazy regime, we expect the function to move
+very little after $t^*$.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/freeze_vs_final_spread/predictions_w100_freeze.png}
+	\caption{Network predictions at freeze time vs.\ final time (width 100).}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/freeze_vs_final_spread/predictions_w512_freeze.png}
+	\caption{Network predictions at freeze time vs.\ final time (width 512).}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/freeze_vs_final_spread/predictions_w1024_freeze.png}
+	\caption{Network predictions at freeze time vs.\ final time (width 1024).}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/freeze_vs_final_spread/predictions_w2048_freeze.png}
+	\caption{Network predictions at freeze time vs.\ final time (width 2048).}
+\end{figure}
+
+% =======================================================
+\section{Summary}
+
+\begin{itemize}
+	\item \textbf{Freeze time vs.\ width:}
+	      Wider networks freeze \emph{later}.
+	      Narrow networks reach a small drift slope very early, while the widest
+	      networks ($W=10000$) do not satisfy the freeze criterion even after
+	      several million steps.
+
+	\item \textbf{Eigenvalue stabilization timescales:}
+	      All widths saturate to similar top eigenvalue values, but the rate of
+	      saturation differs strongly:
+	      narrow networks converge to their eigenvalue plateau quickly, whereas
+	      wide networks saturate far more slowly.
+
+	\item \textbf{Kernel regression vs.\ target accuracy:}
+	      Kernel regression behaves differently across widths:
+	      \begin{itemize}
+		      \item For \textbf{narrow networks}, the kernel-regression
+		            prediction computed at the freeze time is \emph{closer to
+			            the target function} than the final trained network.
+		            In this regime, the finite-width network drifts away from the
+		            KR solution as training progresses.
+		      \item For \textbf{wide networks}, the \emph{final trained network}
+		            is closer to the target than the kernel regression solution.
+		            Kernel regression underperforms relative to gradient descent
+		            at large width.
+	      \end{itemize}
+\end{itemize}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.85\textwidth]{plots/error_vs_width_combined.png}
+	\caption{
+		Kernel regression error and final network error versus width.
+		Narrow networks show lower kernel-regression error than final-network error,
+		while for wide networks the situation reverses.
+	}
+\end{figure}
+
+% =======================================================
+\bibliographystyle{apalike}
+\bibliography{references}
+
+\end{document}

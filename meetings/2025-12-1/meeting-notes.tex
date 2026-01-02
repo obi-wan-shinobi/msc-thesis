@@ -1,0 +1,157 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{geometry}
+\geometry{margin=1in}
+\usepackage{hyperref}
+\usepackage[round,sort&compress]{natbib}
+\hypersetup{colorlinks=true,linkcolor=black,citecolor=black,urlcolor=blue}
+
+\usepackage{float}
+\usepackage[section]{placeins}
+
+\title{\textbf{EXP003: Mode-wise Decay of Training Residuals}\\[2mm]
+\large NTK Eigenmodes and Fourier Mixture Components}
+\author{Shreyas Kalvankar}
+\date{December 2025}
+
+\begin{document}
+\maketitle
+
+\section*{Purpose of This Analysis}
+
+This brief note presents two diagnostics that track how learning progresses
+along different function-space directions:
+
+\begin{enumerate}
+	\item \textbf{NTK eigenmode decay:} projection of the training residual
+	      onto the top 5 eigenvectors of the empirical NTK at each training step.
+
+	\item \textbf{Fourier mixture component decay:}
+	      projection of the residual onto the seven components of the target
+	      Fourier mixture:
+	      \[
+		      f^*(\gamma) = \sum_{j=1}^7 a_j \sin(K_j\gamma + \phi_j),
+		      \qquad K_j \in \{2,4,7,11,16,23,32\}.
+	      \]
+\end{enumerate}
+
+These plots reveal:
+\begin{itemize}
+	\item which eigenmodes are reduced earliest during training;
+	\item which Fourier harmonics of the target are learned early vs.\ late;
+	\item how these behaviours depend on network width.
+\end{itemize}
+
+% =======================================================
+\section{Residual Projections onto NTK Eigenmodes}
+
+For each snapshot step $t$, the empirical NTK on the training set is decomposed
+as $K_{tt}(t) = U(t)\Lambda(t)U(t)^\top$.
+We track the magnitude of the projection of the residual $r_t$
+onto the top five eigenvectors.
+
+A dashed line indicates the NTK freeze time for each width.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/mode_decay/mode_decay_w100.png}
+	\caption{NTK eigenmode decay, width 100.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/mode_decay/mode_decay_w512.png}
+	\caption{NTK eigenmode decay, width 512.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/mode_decay/mode_decay_w1024.png}
+	\caption{NTK eigenmode decay, width 1024.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/mode_decay/mode_decay_w2048.png}
+	\caption{NTK eigenmode decay, width 2048.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/mode_decay/mode_decay_w10000.png}
+	\caption{NTK eigenmode decay, width 10000.}
+\end{figure}
+
+% =======================================================
+\section{Residual Projections onto Fourier Mixture Components}
+
+Let the seven basis vectors be:
+\[
+	b_j(\gamma) = \sin(K_j \gamma + \phi_j),
+	\qquad K_j \in \{2,4,7,11,16,23,32\}.
+\]
+
+For each step, we track the magnitude of the residual projected onto these
+components:
+\[
+	c_j(t)
+	= \frac{\langle r_t,\, b_j\rangle}{\langle b_j, b_j\rangle}.
+\]
+
+This shows how rapidly each harmonic of the target is learned.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/fourier_decay/fourier_decay_w100.png}
+	\caption{Fourier mixture component decay, width 100.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/fourier_decay/fourier_decay_w512.png}
+	\caption{Fourier mixture component decay, width 512.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/fourier_decay/fourier_decay_w1024.png}
+	\caption{Fourier mixture component decay, width 1024.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/fourier_decay/fourier_decay_w2048.png}
+	\caption{Fourier mixture component decay, width 2048.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\textwidth]{plots/fourier_decay/fourier_decay_w10000.png}
+	\caption{Fourier mixture component decay, width 10000.}
+\end{figure}
+
+% =======================================================
+\section{Key Observations}
+
+\begin{itemize}
+	\item \textbf{Eigenmodes:}
+	      Across all widths, the top-5 mode amplitudes show non-monotonic behaviour
+	      (dips, rebounds, long drifts), and do not collapse after the NTK freeze
+	      point. This indicates that feature-learning–type dynamics continue even
+	      when the empirical NTK appears nearly frozen in Frobenius norm.
+	\item Increasing width smooths the trajectories but does not eliminate this behaviour:
+	      wider networks show less noise and slower drift.
+	      This suggests that NTK freezing (as measured by drift) is not sufficient to imply lazy-training behaviour at
+	      finite width.
+
+	\item \textbf{Fourier harmonics:}
+	      Low frequencies ($k=2,4$) decay early, while higher frequencies
+	      ($k\ge 16$) decay much more slowly, confirming a strong spectral bias.
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,198 @@
+\documentclass[10pt,aspectratio=169]{beamer}
+
+% --- pdflatex-safe font & micro-typography ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% --- math & symbols ---
+\usepackage{amsmath,amssymb,mathtools,bm}
+
+% --- hyperlinks (Beamer already loads hyperref; this is safe) ---
+\hypersetup{hidelinks}
+
+% --- theme ---
+\usetheme[numbering=fraction]{metropolis}
+
+\usepackage{pgfpages} % for notes layouts
+
+% --- bibliography ---
+\usepackage[round,authoryear]{natbib}
+
+% --- Choose ONE of these toggles when compiling ---
+% \setbeameroption{hide notes}                        % audience version (default)
+% \setbeameroption{show notes}                        % notes printed under each slide
+% \setbeameroption{show only notes}                   % notes-only PDF (for printing)
+% \setbeameroption{show notes on second screen=right} % slide + notes side-by-side
+
+% --- shortcuts ---
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\btheta}{\boldsymbol{\theta}}
+\newcommand{\bx}{\boldsymbol{x}}
+
+% --- title info ---
+\title{Training and generalization in overparameterized neural networks}
+\subtitle{Stage 1 review meeting for literature organization}
+\author{Shreyas Kalvankar}
+\institute{TU Delft}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+% -----------------------------------------------------------
+% SECTION 1: GENERAL OVERVIEW
+% -----------------------------------------------------------
+\begin{frame}{1. General Overview of Draft}
+	\textbf{Introduction \& Difficulties for establishing theory}
+	\begin{itemize}
+		\item Neural network training involves high-dimensional, non-convex objectives.
+		\item Loss landscapes are characterized by saddle points and complex critical structures.
+		\item \textbf{Goal:} To bridge the gap between empirical success and theoretical understanding via simplified models and asymptotic limits.
+	\end{itemize}
+
+	\textbf{Linear Networks}
+	\begin{itemize}
+		\item \textit{One-layer:} Gradient descent is a linear dynamical system governed by the data covariance spectrum.
+		      $f_w(x)=x^\top w$, $\quad x,w \in \mathbb{R}^d$
+		\item Parameter dynamics known, can be characterized and analysed:
+		      \[
+			      w_t = \left( I - \left( I - \eta XX^\top \right)^t  \right) X^{+}y
+		      \]
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{1. General Overview of Draft}
+	\textbf{Linear Networks}
+	\begin{itemize}
+		\item \textit{Deep Linear:} Introducing depth creates complex
+		      dynamics (coupled ODEs of order three) with no known general analytic
+		      solutions.
+		      $f_{v,W}(x) := v^\top W x \qquad W \in \mathbb{R}^{m \times d}$, $v \in \mathbb{R}^{m}$, $m$ is width of network.
+
+		      \[
+			      \dot v_t = -\nabla_v \mathcal{L}(v_t,W_t)
+			      = W_t X \bigl(y - X^\top W_t^\top v_t\bigr),
+		      \]
+		      \[
+			      \dot W_t = -\nabla_W \mathcal{L}(v_t,W_t)
+			      = v_t \bigl(y - X^\top W_t^\top v_t\bigr)^\top X^\top .
+		      \]
+	\end{itemize}
+
+	\textbf{Non-Linear Networks}
+	\begin{itemize}
+		\item Activation functions mix matrix products with elementwise
+		      operations, we don't know how to handle these kinds of expressions.
+	\end{itemize}
+\end{frame}
+
+
+% -----------------------------------------------------------
+% SECTION 2: RELATED WORK
+% -----------------------------------------------------------
+\begin{frame}{2a. Related Work: The NTK Regime}
+	\textit{Linearization at Infinite Width}
+
+	\begin{itemize}
+		\item \textbf{Motivation:} To analyze training dynamics by linearizing the network around initialization.
+		\item \textbf{Formalization:}
+		      \begin{itemize}
+			      \item As width $m \to \infty$, the empirical kernel $\Theta_t$ converges to a deterministic, static limit $\bar\Theta$.
+			            \[
+				            \bar\Theta(x,x')
+				            =
+				            \mathbb{E}_{w}\!\big[\varphi(w^\top x)\,\varphi(w^\top x')\big]
+				            +
+				            \sigma_v^2\,x^\top x'\,
+				            \mathbb{E}_{w}\!\big[\varphi'(w^\top x)\,\varphi'(w^\top x')\big]
+			            \]
+			      \item The network function $f_t$ evolves linearly with respect to this frozen kernel.
+		      \end{itemize}
+		\item \textbf{Training Dynamics:}
+		      \begin{itemize}
+			      \item Equivalent to Kernel Ridge Regression with the NTK.
+			      \item Convergence is guaranteed if the limit kernel is positive definite.
+		      \end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{2b. Related Work: The Mean-Field View}
+	\textit{Feature Learning at Infinite Width}
+
+	\begin{itemize}
+		\item \textbf{Motivation:} To capture feature learning, which is absent in the "lazy" NTK regime.
+		\item \textbf{Formalization:}
+		      \begin{itemize}
+			      \item Weights are treated as particles drawn from a distribution $\mu$.
+			      \item Output is scaled by $1/n$ (vs $1/\sqrt{n}$ in NTK).
+			            \[
+				            f_{v,w}(x)
+				            = \frac{1}{m} \sum_{\alpha=1}^m v_\alpha \varphi(w_\alpha^\top x)
+				            =\int_\Omega v\,\varphi(w^\top x)\,d\mu(v,w)
+			            \]
+		      \end{itemize}
+		\item \textbf{Training Dynamics:}
+		      \begin{itemize}
+			      \item Modeled as a Wasserstein gradient flow of the probability measure $\mu_t$.
+			      \item Allows the kernel (and features) to evolve during training.
+		      \end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{2c. Related Work: Spectral Bias}
+	\textit{Frequency-Dependent Convergence}
+
+	\begin{itemize}
+		\item \textbf{Phenomenon:} Neural networks fit low-frequency components of the target function faster than high-frequency noise.
+		\item \textbf{Theoretical Basis:}
+		      \begin{itemize}
+			      \item Convergence along eigen-directions is determined by the eigenvalues $\lambda_k$ of the NTK integral operator.
+			      \item High frequencies correspond to small eigenvalues $\to$ slow convergence.
+		      \end{itemize}
+		\item \textbf{Implications:} Provides a theoretical basis for early stopping and generalization in overparameterized models.
+	\end{itemize}
+\end{frame}
+
+% -----------------------------------------------------------
+% SECTION 3: PRELIMINARY EXPERIMENTS
+% -----------------------------------------------------------
+\begin{frame}{3. Preliminary Experiments}
+	\vspace{0.5cm}
+
+	\begin{enumerate}
+		\item \textbf{Function Space Convergence}
+		      % Investigating width dependent effects and gradient step size stability.
+
+		      \vspace{0.4cm}
+
+		\item \textbf{Kernel Drift \& Regime Transitions}
+		      % Distinguishing between feature learning (Mean-Field) and linear (NTK) regimes.
+
+		      \vspace{0.4cm}
+
+		\item \textbf{Spectral Analysis of Empirical NTK}
+		      % Eigendecomposition to verify spectral bias on real data.
+	\end{enumerate}
+\end{frame}
+
+% -----------------------------------------------------------
+% CONCLUSION
+% -----------------------------------------------------------
+\begin{frame}{Summary \& Discussion}
+	\textbf{Structure of Introduction \& Literature Review:}
+	\begin{enumerate}
+		\item \textbf{Foundations:} From linear regression to deep linear dynamics.
+		\item \textbf{Infinite Limits:} NTK limit (static kernel), Mean-Field limit (changing kernel).
+		\item \textbf{Spectral Properties:} How eigenvalues dictate learnability (Spectral Bias).
+	\end{enumerate}
+
+	\vspace{0.5cm}
+	\textit{Question for Supervisors: Does this structure logically support the move to finite-width deviations in later chapters?}
+\end{frame}
+
+% -----------------------
+\end{document}

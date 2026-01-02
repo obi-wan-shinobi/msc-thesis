@@ -36,9 +36,10 @@ A first-order Taylor expansion of $f(x;\theta)$ around $\theta_0$ gives
 	\item $\phi(x) := \nabla_\theta f(x;\theta_0)$ is the feature vector induced at initialization.
 \end{itemize}
 Thus, locally, the network behaves as a linear model in $\theta$:
-\[
+\begin{equation}
 	f(x;\theta) \approx f(x;\theta_0) + \phi(x)^\top (\theta - \theta_0).
-\]
+	\label{eq:ntk}
+\end{equation}
 
 \subsection{Neural Tangent Kernel}
 

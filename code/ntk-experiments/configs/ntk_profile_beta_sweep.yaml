@@ -1,0 +1,25 @@
+experiment:
+  name: ntk_profile_beta_sweep
+  save_dir: results
+  seed: 0
+
+data:
+  n_profile: 360
+  M_train: 512
+  probe_m: 128
+
+model:
+  b_std: 0.1
+
+train:
+  steps: 200
+  lr: 1.0
+  log_every: 50
+
+sweep:
+  widths: [64, 128, 256, 512, 1024]
+  depths: [1, 2, 4, 8]
+  seeds: 5
+
+analysis:
+  n_update_samples: 64

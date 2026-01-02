@@ -188,3 +188,43 @@ def plot_regression_convergence(
         "gamma_eval": gamma_eval,
         "y_eval_true": y_eval_true,
     }
+
+def aggregate_over_seeds(property_meta, property_values,
+                         q_low=10, q_high=90):
+    """
+    Generic aggregator over seeds for any property recorded as:
+        property_meta   : (T_snap, 2)  -> (seed, step)
+        property_values : (T_snap, ...) values at each snapshot
+
+    Returns:
+        steps_unique : (T_steps,)
+        mean_vals    : (T_steps, ...)
+        lo_vals      : (T_steps, ...)
+        hi_vals      : (T_steps, ...)
+    """
+    meta = np.asarray(property_meta)
+    vals = np.asarray(property_values)
+
+    steps_unique = np.sort(np.unique(meta[:, 1]))
+
+    mean_list = []
+    lo_list   = []
+    hi_list   = []
+
+    for step in steps_unique:
+        mask = (meta[:, 1] == step)
+        batch_vals = vals[mask]             # shape: (n_seeds, ...)
+
+        mu = batch_vals.mean(axis=0)
+        lo, hi = np.percentile(batch_vals, [q_low, q_high], axis=0)
+
+        mean_list.append(mu)
+        lo_list.append(lo)
+        hi_list.append(hi)
+
+    return (
+        steps_unique,
+        np.array(mean_list),
+        np.array(lo_list),
+        np.array(hi_list),
+    )

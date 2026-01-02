@@ -1,0 +1,26 @@
+# configs/ntk_profile_beta_sweep_standard_parameterization.yaml
+experiment:
+  name: ntk_profile_beta_sweep_standard_parameterization
+  save_dir: results
+  seed: 0
+
+data:
+  n_profile: 360 # kernel profile points on circle
+  M_train: 512 # Gaussian regression task size for the profile-after-training
+  probe_m: 128 # small probe set for diag(K) stats
+
+model:
+  b_std: 0.0
+
+train:
+  steps: 200
+  lr: 1.0
+  log_every: 50
+
+sweep:
+  widths: [256, 512, 1024]
+  depths: [1, 4, 16, 64, 128, 256]
+  seeds: 20 # bump to 20 if you want tighter dispersion estimates
+
+analysis:
+  n_update_samples: 32 # single-step ΔK take 32 random (x,y)

@@ -1,0 +1,31 @@
+experiment:
+  name: ntk_kernel_drift_large_widths
+  save_dir: results
+  seed: 0
+
+data:
+  n_eval: 720 # number of γ-grid evaluation points on the circle
+  M_train: 256 # number of training samples drawn from the circle
+  noise_std: 0.02 # optional label noise for training set
+
+target:
+  Ks: [2, 4, 7, 11, 16, 23, 32]
+  amps: [0.9, 0.7, 0.55, 0.45, 0.35, 0.28, 0.22]
+  phases: [0.0, 1.57079632679, 1.2, 2.0, 0.942, 4.5, 5.8] # radians
+
+model:
+  depth_hidden: 1
+  b_std: 0.1
+
+train:
+  steps: 1000000 # total SGD steps
+  lr: 1.0 # learning rate
+  log_every: 5000 # print training loss every this many steps
+  eval_every: 5000 # take spectrum & prediction snapshots
+
+sweep:
+  widths: [1024, 2048, 10000]
+  seeds: 5
+
+analysis:
+  reg: 1.0e-6 # regularization default for NTK solves (not used here but kept consistent)

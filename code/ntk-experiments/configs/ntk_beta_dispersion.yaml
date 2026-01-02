@@ -1,0 +1,20 @@
+experiment:
+  name: ntk_beta_dispersion
+  save_dir: results
+  seed: 0
+
+model:
+  b_std: 0.0
+  parameterization: standard
+
+data:
+  n_profile: 128
+  probe_m: 64
+
+sweep:
+  widths: [256, 512, 1024]
+  depths: [4, 8, 16, 32, 64]
+  seeds: 20
+
+analysis:
+  compute_profiles: true

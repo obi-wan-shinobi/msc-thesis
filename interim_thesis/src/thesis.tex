@@ -1,0 +1,126 @@
+\documentclass[twoside,a4paper,11pt]{memoir}
+\usepackage{preamble/a4}
+\usepackage{times}
+\usepackage{pslatex}
+\usepackage{url}
+\usepackage{preamble/mscthesis}
+\usepackage{preamble/lipsum} % standard filler text, only needed for demo
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\newtheorem{definition}{Definition}
+
+% %% The package 'algorithm' is useful, but incompatible with memoir.
+% %% Cor-Paul Bezemer / http://homes.esat.kuleuven.be/~dvherten/esatthesis.html
+% %% suggest the following fix:
+\let\newfloat\undefined \usepackage{algorithmic} 
+\usepackage{algorithm}
+
+% Include right (LaTeX/PDFLaTeX) graphics package
+% (doesn't work under cygwin apperently)
+%\ifx\pdftexversion\undefined
+\usepackage[dvips]{graphicx}
+
+\usepackage[dvips]{color}
+%\else
+%\usepackage[pdftex]{graphicx}
+%\usepackage[pdftex]{color}
+%\fi
+
+\usepackage{hyperref}
+
+% Used in the bibliography to enable \citeauthor{citation}
+\usepackage[round]{natbib}
+
+% Ensure that urls longer than the page width are broken up
+% Based on the answer of StackOverflow user "xamde":
+% https://tex.stackexchange.com/a/10401/155506
+\expandafter\def\expandafter\UrlBreaks\expandafter{\UrlBreaks%  save the current one
+  \do\a\do\b\do\c\do\d\do\e\do\f\do\g\do\h\do\i\do\j%
+  \do\k\do\l\do\m\do\n\do\o\do\p\do\q\do\r\do\s\do\t%
+  \do\u\do\v\do\w\do\x\do\y\do\z\do\A\do\B\do\C\do\D%
+  \do\E\do\F\do\G\do\H\do\I\do\J\do\K\do\L\do\M\do\N%
+  \do\O\do\P\do\Q\do\R\do\S\do\T\do\U\do\V\do\W\do\X%
+  \do\Y\do\Z}
+
+%---------------------------------------------------------------------%
+%                     Options                                         %    
+%---------------------------------------------------------------------%
+
+\title{Training and Generalization in Overparameterized Neural Networks}
+\subtitle{Version of \today}
+% The final version of your thesis should typically use a different
+% subtitle without the current date, for example
+%\subtitle{Master's Thesis} 
+% or remove the subtitle by uncommenting the following line: 
+%\subtitle{}
+
+\author{Shreyas Kalvankar}                               % CHANGE TO YOUR NAME
+\authoremail{\url{skalvankar@tudelft.nl}}       % CHANGE TO YOUR EMAIL ADDRESS
+\birthplace{Nashik, India}                % CHANGE TO YOUR BIRTH PLACE
+\studentid{6255191}                              % CHANGE TO YOUR STUDENT ID
+
+% Optional for work done at a company, put this in comments if you did
+% not do your thesis work at a company
+% \company{
+% \includegraphics[height=2cm]{img/hilbert.ps}\\
+% Some Company\\
+% With it's address\\
+% ThePlace, the Netherlands\\
+% \url{www.url.nl}
+% }
+
+% Optional (postscript) cover picture. Put this in comments when not needed.
+\coverpicture{\includegraphics[width=13cm]{../img/maze.ps}}
+
+
+% A copyright notice and maybe something about the cover picture
+% Put in comments to get the default copyright notice
+\colophon{\noindent
+  \copyright{} \the\year \: \theauthor. \emph{Note that this notice is for demonstration
+  purposes and that the \LaTeX{} style and document source are free to
+  use as basis for your MSc thesis.} \\[1em] 
+  Cover picture: A ``random'' maze generated in postscript.
+}
+
+% thesis committee:
+\chair{Dr. D. M. J. Tax, Faculty EEMCS, TU Delft}
+\supervisor{Dr. F. Bartolucci, Faculty EEMCS, TU Delft}
+\dailysupervisor{Dr. A. Heinlein, Faculty EEMCS, TU Delft}
+% The following two are optional for LaTeX (current university
+% regulations state that at least one of them should be assigned)
+% \externalsupervisor{Drs. E.X. Ternal, Some Company}
+\committeemember{Dr. S.T.A.F.F. Member, Faculty EEMCS, TU Delft}
+
+
+\setcounter{tocdepth}{1}
+\setsecnumdepth{subsection}
+\maxsecnumdepth{subsection}
+
+\begin{document}
+\frontmatter
+\thispagestyle{empty}
+\maketitle                                      % for the cover page
+\makeformaltitlepages{\input{frontmatter/abstract}}         % for formal title pages with all info
+
+\include{frontmatter/preface}
+
+\cleardoublepage\tableofcontents
+\cleardoublepage\listoffigures
+\cleardoublepage\mainmatter
+
+\include{chapters/introduction}
+% \include{chapters/chapter}
+\include{chapters/related_work}
+\include{chapters/conclusions_and_future_work}
+
+\bibliographystyle{apalike}
+\bibliography{../bibliography/thesis}
+
+\appendix
+\def\chaptername{Appendix}
+\include{appendix/appendix}
+\include{requirements}
+
+
+\end{document}

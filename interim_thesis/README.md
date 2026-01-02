@@ -1,28 +1,34 @@
-# Interim Thesis
+# Official SERG-Delft template master thesis
 
-- Add your interim thesis (in PDF format) to this directory.
-- If available, include the source files (e.g., LaTeX or Word documents) to allow for future revisions or reference.
-- Ensure the file is clearly named (e.g., `interim_thesis.pdf`) for easy identification.
+This repository hosts the source code for the official LateX template for a master thesis at SERG-Delft.
 
-## Writing the Interim Thesis
+We reccomend you read and follow suggestions from the [LaTeX advice guide](https://github.com/dspinellis/latex-advice).
 
-The interim thesis is a critical milestone in your project. It serves as an intermediate step towards the final thesis and provides an opportunity for valuable formative feedback. Below are detailed instructions and recommendations:
+## Import for ShareLatex
 
-### Structure
-Include the following sections in your interim thesis:
+If you would like to import this template into ShareLatex, perform the following steps:
 
-- **Introduction/Motivation**: Provide a clear introduction to the topic and explain the motivation behind your research.
-- **Literature Review**: Offer a high-level context for your work, referencing relevant studies and explaining their relation to your thesis.
-- **Methodology**: Describe the methods you are using or plan to use in your research. Focus on describing what you use in your thesis; related works should go in the literature overview.
-- **Preliminary Results**: Present any initial findings or results from your work so far.
-- **Research Questions**: Clearly formulate the research questions that guide your work. Include one overall research question and approximately four subquestions.
+1. Click the green "Clone or download"-button in the top-right corner of https://github.com/SERG-Delft/thesis-template
+1. Click "Download ZIP"
+1. Log in on https://www.sharelatex.com
+1. Click "New Project" in the top-left corner of https://www.sharelatex.com/project
+1. Click "Upload Project"
+1. Click "Select a .zip file"
+1. Select the ZIP you just downloaded
 
-### Recommendations
-- **Focus on Reusability**: Ensure that all content in the interim thesis can be reused in the final thesis.
-- **Seek Feedback**: Use the interim thesis as a tool to receive constructive feedback from supervisors and committee members.
-- **Balance Detail and Progress**: Reflect your progress in the methodology and preliminary results sections without overextending.
-- **Motivate Research Questions**: Use state-of-the-art literature and preliminary results to justify and motivate your research questions.
-- **Be Focused and Concise**: Write a focused and concise manuscript, concentrating on the core aspects of your thesis.
-- **Review Previous Theses**: For inspiration and guidance, review previous interim theses, such as:
-  - [Examples from Kees Vuik](https://diamhomes.ewi.tudelft.nl/~kvuik/afstudeer_eng.html)
-  - [Examples from Alexander Heinlein](https://searhein.github.io/master_thesis_projects/)
+**:warning: Important! :warning:**
+
+ShareLatex does not parse the `*.ps` files in `img/`.
+These files should therefore be manually uploaded to the ShareLatex project to have a non-erroring build.
+
+## Build instructions
+
+If you would like to build this project on your local machine, ensure that `texlive-full` is installed.
+You can follow the instructions on https://www.tug.org/texlive/quickinstall.html but the TLDR for Debian-based systems is:
+
+```bash
+sudo apt-get install texlive-full
+sudo apt-get install latexmk
+```
+
+Then run `make` and the project should build.

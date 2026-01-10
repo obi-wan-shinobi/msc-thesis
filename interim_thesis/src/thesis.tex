@@ -16,16 +16,25 @@
 \let\newfloat\undefined \usepackage{algorithmic} 
 \usepackage{algorithm}
 
-% Include right (LaTeX/PDFLaTeX) graphics package
-% (doesn't work under cygwin apperently)
-%\ifx\pdftexversion\undefined
-\usepackage[dvips]{graphicx}
+% % Include right (LaTeX/PDFLaTeX) graphics package
+% % (doesn't work under cygwin apperently)
+% %\ifx\pdftexversion\undefined
+% \usepackage[dvips]{graphicx}
+%
+% \usepackage[dvips]{color}
+% %\else
+% %\usepackage[pdftex]{graphicx}
+% %\usepackage[pdftex]{color}
+% %\fi
+\usepackage{ifpdf}
 
-\usepackage[dvips]{color}
-%\else
-%\usepackage[pdftex]{graphicx}
-%\usepackage[pdftex]{color}
-%\fi
+\ifpdf
+  \usepackage{graphicx}
+  \usepackage{xcolor}
+\else
+  \usepackage[dvips]{graphicx}
+  \usepackage[dvips]{xcolor}
+\fi
 
 \usepackage{hyperref}
 
@@ -71,7 +80,7 @@
 % }
 
 % Optional (postscript) cover picture. Put this in comments when not needed.
-\coverpicture{\includegraphics[width=13cm]{../img/maze.ps}}
+\coverpicture{\includegraphics[width=13cm]{../img/maze.pdf}}
 
 
 % A copyright notice and maybe something about the cover picture
@@ -112,15 +121,16 @@
 \include{chapters/introduction}
 % \include{chapters/chapter}
 \include{chapters/related_work}
-\include{chapters/conclusions_and_future_work}
+\include{chapters/preliminary_experiments}
+% \include{chapters/conclusions_and_future_work}
 
 \bibliographystyle{apalike}
 \bibliography{../bibliography/thesis}
 
-\appendix
-\def\chaptername{Appendix}
-\include{appendix/appendix}
-\include{requirements}
+% \appendix
+% \def\chaptername{Appendix}
+% \include{appendix/appendix}
+% \include{requirements}
 
 
 \end{document}

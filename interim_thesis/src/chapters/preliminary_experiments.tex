@@ -1,0 +1,477 @@
+\chapter{\label{cha:prelim}Preliminary Experiments}
+
+\paragraph{Purpose.}
+This chapter summarizes exploratory experiments conducted during the early phase of this thesis.
+They are \emph{not} the final experimental results, but they served two roles:
+(i) to sanity-check the NTK baseline (infinite-width predictor and kernel-profile behavior), and
+(ii) to identify diagnostics and regimes where finite-width effects (kernel drift, mode-wise decay,
+and spectral bias) become visible and measurable.
+Unless stated otherwise, models are fully-connected ReLU MLPs trained with full-batch gradient descent
+over multiple random seeds.
+
+\section{Experimental setting and diagnostics}\label{sec:prelim-diagnostics}
+
+\paragraph{Probe manifold and Fourier regression targets.}
+Several experiments use the unit circle $S^1$ parameterized by $\gamma\in[0,2\pi)$ and embedded as
+$x(\gamma)=(\cos\gamma,\sin\gamma)$.
+This choice is convenient because (i) it yields an interpretable Fourier basis for the target and residual,
+and (ii) in symmetric kernel regimes the relevant integral operator diagonalizes in Fourier modes
+(Section~\ref{sec:spectral-bias}).
+
+\paragraph{Function-space comparison to the NTK predictor.}
+When an analytic (infinite-width) NTK predictor is available for the same architecture/initialization,
+we compare the finite-width network prediction $f_{\text{net}}(\gamma,t)$ to the NTK prediction
+$f_{\text{NTK}}(\gamma,t)$ on a dense evaluation grid. We report overlays and a relative error
+metric (as implemented in the experimental codebase).
+
+\paragraph{Empirical NTK snapshots, drift, and spectra.}
+Let $X_{\text{train}}$ denote the training inputs and define the empirical NTK Gram matrix on the training set
+\[
+	K(t)\;:=\;\Theta_t(X_{\text{train}},X_{\text{train}})\in\mathbb{R}^{M\times M}.
+\]
+We track the normalized kernel drift
+\[
+	\Delta_K(t)\;=\;\frac{\|K(t)-K(0)\|_F}{\|K(0)\|_F},
+\]
+and eigenvalue trajectories of $K(t)$, focusing on the leading eigenvalues which govern the fastest directions
+in kernelized dynamics (Section~\ref{sec:ntk}).
+
+\paragraph{Kernel-regression baseline at a frozen kernel.}
+Given a snapshot time $t^\star$, we form the (ridge) kernel regression solution with kernel
+$K_{\text{train,train}}(t^\star)$ and cross-kernel $K_{\text{eval,train}}(t^\star)$:
+\[
+	\alpha(t^\star)=\bigl(K_{\text{train,train}}(t^\star)+\lambda I\bigr)^{-1}y_{\text{train}},
+	\qquad
+	f_{\text{KR}}(\cdot;t^\star)=K_{\text{eval,train}}(t^\star)\,\alpha(t^\star),
+\]
+where $\lambda\ge 0$ is a numerical stabilizer (set small in practice).
+
+\paragraph{Mode-wise residual projections.}
+To probe spectral bias and its interaction with kernel evolution, we study residual projections
+onto (i) the top eigenvectors of $K(t)$, and (ii) the known Fourier components of the target when the target
+is a Fourier mixture on $S^1$.
+
+\section{EXP001: Finite-width networks and convergence to the NTK predictor}\label{sec:exp001}
+
+This block of experiments tests whether increasing width drives finite-width MLP predictions toward the
+infinite-width NTK predictor, and isolates when discrepancies are due to (a) representational limitations
+at small width versus (b) slow convergence of small-eigenvalue modes (spectral bias / finite effective time).
+
+\subsection{Kernel-profile reproduction on a probe manifold}\label{subsec:exp001-profile}
+
+We first reproduce a standard qualitative diagnostic from the NTK literature:
+the kernel profile $\gamma\mapsto \Theta_{\theta_t}(x_0,x(\gamma))$ on the unit circle,
+with anchor $x_0=(1,0)$ and probe points $x(\gamma)=(\cos\gamma,\sin\gamma)$.
+Training itself is performed on Gaussian inputs with target $f^\star(x)=x_1x_2$; the circle is used only for probing.
+We use a ReLU MLP with depth $L=4$ in the NTK parameterization, widths $m\in\{100,500,2000\}$,
+trained for $200$ steps with $\eta=1.0$ across $10$ seeds.
+
+\begin{figure}[H]
+	\centering
+
+	\begin{minipage}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{plots/ntk-profile/ntk-paper-profile}
+		\\[-2mm]\small (a) Reference profile (NTK paper).
+	\end{minipage}\hfill
+	\begin{minipage}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{plots/ntk-profile/ntk-profile}
+		\\[-2mm]\small (b) Empirical profile ($t=0$ solid, $t=200$ dotted).
+	\end{minipage}
+
+	\vspace{2mm}
+	\begin{minipage}[t]{0.70\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{plots/ntk-profile/gaussian_vs_circle}
+		\\[-2mm]\small (c) Gaussian training inputs vs circle probe manifold.
+	\end{minipage}
+
+	\caption{Kernel-profile diagnostic used in EXP001.}
+	\label{fig:exp001-profile-group}
+\end{figure}
+
+\paragraph{Observation.}
+The empirical kernel profile concentrates as width increases, with markedly reduced variance across seeds.
+The peak near $\gamma=0$ reflects self-similarity ($x_0^\top x(\gamma)\approx 1$).
+This reproduces the expected ``concentration toward a deterministic NTK'' picture at initialization and suggests
+that, in this setting, kernel evolution during short training is small at large width.
+
+\subsection{Function-space convergence on $S^1$ for a simple target}\label{subsec:exp001-simple}
+
+We next test function-space convergence directly on the circle with the low-frequency target
+$f^\star(x)=x_1x_2=\tfrac12\sin(2\gamma)$.
+We use depth $L=1$ and sweep widths
+$m\in\{64,128,256,512,1024,2048,4096,8192\}$, training for $30{,}000$ steps with $\eta=10^{-2}$.
+We compare to an analytic NTK predictor built using the same activation and initialization.
+
+\begin{figure}[H]
+	\centering
+
+	\begin{minipage}[t]{0.47\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{plots/simple-regression/simple-regression-task}
+		\\[-1.5mm]\small (a) Target: $\tfrac12\sin(2\gamma)$.
+	\end{minipage}\hfill
+	\begin{minipage}[t]{0.51\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{plots/simple-regression/rel-err-on-simple-regression-task}
+		\\[-1.5mm]\small (b) RelErr (finite vs NTK).
+	\end{minipage}
+
+	\vspace{2mm}
+	\includegraphics[width=.92\textwidth]{plots/simple-regression/convergence-on-simple-regression-task}
+	\\[-1.5mm]\small (c) Prediction overlays (finite vs analytic NTK).
+
+	\caption{Function-space convergence on $S^1$ for a simple low-frequency target (EXP001).}
+	\label{fig:exp001-simple-group}
+\end{figure}
+
+\paragraph{Result.}
+Finite-width networks match the analytic NTK predictor almost exactly on this task; the relative error is flat across widths.
+This is consistent with the target aligning strongly with a single low-frequency eigendirection, which is learned rapidly
+under kernel dynamics.
+
+\subsection{Fourier-mixture target: apparent low-frequency trapping}\label{subsec:exp001-mixture}
+
+We then move to a Fourier mixture target
+\[
+	y(\gamma)=\sum_{k\in\{2,4,7,11,16,23,32\}} a_k\sin(k\gamma+\phi_k),
+\]
+trained for $30{,}000$ steps with $\eta=0.01$.
+
+\begin{figure}[H]
+	\centering
+
+	\begin{minipage}[t]{0.47\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{plots/complex-regression/complex-regression-task}
+		\\[-1.5mm]\small (a) Fourier-mixture target.
+	\end{minipage}\hfill
+	\begin{minipage}[t]{0.51\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{plots/complex-regression/rel-err-on-complex-regression-task}
+		\\[-1.5mm]\small (b) RelErr vs width.
+	\end{minipage}
+
+	\vspace{2mm}
+	\includegraphics[width=.96\textwidth]{plots/complex-regression/convergence-on-complex-regression-task}
+	\\[-1.5mm]\small (c) Prediction overlays (finite vs analytic NTK).
+
+	\caption{Fourier-mixture task highlights slow convergence of high-frequency structure under a fixed horizon (EXP001).}
+	\label{fig:exp001-mixture-group}
+\end{figure}
+
+\paragraph{Observation.}
+Across the moderate-to-large widths shown, the learned functions appear qualitatively similar and dominated by low harmonics.
+Relative error decreases only slightly with width under this fixed training horizon, suggesting that width alone is not the
+main bottleneck at these scales.
+
+\subsection{Very small widths reveal progressive convergence}\label{subsec:exp001-lowwidth}
+
+To make convergence differences visible, we sweep down to extremely small widths.
+At widths as small as $m=2$, representing seven harmonics is difficult, and function-space differences become clear.
+
+\begin{figure}[H]
+	\centering
+
+	\begin{minipage}[t]{0.4\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{plots/low-width-complex-regression/rel-err-low-widths-on-complex-regression-task}
+		\\[-1.5mm]\small (a) RelErr at very small widths.
+	\end{minipage}\hfill
+	\begin{minipage}[t]{0.6\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{plots/low-width-complex-regression/convergence-low-widths-on-complex-regression-task}
+		\\[-1.5mm]\small (b) Function-space progression.
+	\end{minipage}
+
+	\caption{Very small widths reveal visible progression toward the NTK predictor (EXP001).}
+	\label{fig:exp001-lowwidth-group}
+\end{figure}
+
+\paragraph{Observation.}
+Narrow networks capture only coarse structure (low-order harmonics). Increasing width improves representation and moves
+predictions closer to the NTK predictor, consistent with the expectation that finite-width predictors approach the NTK limit.
+
+\subsection{Longer effective training reveals slow high-frequency convergence}\label{subsec:exp001-effective-time}
+
+Motivated by spectral-bias considerations (Section~\ref{sec:spectral-bias}), we test whether larger effective training
+($\eta t$) enables higher-frequency components to emerge. We train for $100{,}000$ steps with $\eta=1.0$ for widths
+$m\in\{2,4,6,8,10,100,1000,10000\}$.
+
+\begin{figure}[H]
+	\centering
+
+	\begin{minipage}[t]{0.4\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{plots/low-width-high-lr-timesteps/rel-err-low-widths-more-steps-on-simpler-regression-task}
+		\\[-1.5mm]\small (a) RelErr vs width (longer training, higher LR).
+	\end{minipage}\hfill
+	\begin{minipage}[t]{0.6\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{plots/low-width-high-lr-timesteps/convergence-low-widths-more-steps-on-simpler-regression-task}
+		\\[-1.5mm]\small (b) Overlays across widths (longer effective time).
+	\end{minipage}
+
+	\vspace{2mm}
+	\includegraphics[width=.86\textwidth]{plots/low-width-high-lr-timesteps/convergence-last-low-widths-more-steps-on-simpler-regression-task}
+	\\[-1.5mm]\small (c) High-width overlays approach the NTK predictor.
+
+	\caption{Increasing effective training $\eta t$ reveals late-learning of high-frequency structure (EXP001).}
+	\label{fig:exp001-effective-time-group}
+\end{figure}
+
+\paragraph{Interpretation.}
+These results suggest that the earlier ``low-frequency trapping'' was largely a horizon/step-size effect:
+high-frequency components correspond to smaller eigenvalues of the relevant kernel operator and therefore converge much more slowly.
+Wider networks can approximate these components, but doing so may require substantially larger effective training time $\eta t$.
+
+\subsection{Discrete-time kernel dynamics as an explanation}\label{subsec:exp001-discrete}
+
+The preceding observations are consistent with the discrete-time kernel dynamics reviewed in Section~\ref{sec:ntk}.
+Under the approximation that the empirical kernel is effectively constant ($K_t\approx K$),
+the residual $r_t=f_t-y$ approximately follows
+\[
+	r_{t+1}\approx (I-\eta K)\,r_t,
+	\qquad\text{hence}\qquad
+	r_t\approx (I-\eta K)^t r_0.
+\]
+Decomposing in the eigenbasis of $K$ shows that each mode contracts as $(1-\eta\lambda_j)^t$.
+Modes with small $\lambda_j$ therefore require much larger effective time $\eta t$ to decay, providing a direct mechanism
+for the delayed emergence of higher-frequency structure (spectral bias) observed in
+Figures~\ref{fig:exp001-mixture-group} and \ref{fig:exp001-effective-time-group}.
+
+\section{EXP002: Empirical NTK drift and the onset of a lazy regime}\label{sec:exp002}
+
+This experiment suite investigates when (and whether) finite-width networks enter a regime where the empirical NTK is effectively frozen,
+and whether that freezing coincides with (i) a plateau in the loss and (ii) kernel-regression behavior using the frozen NTK.
+
+\subsection{Kernel drift and a slope-based freeze-time criterion}\label{subsec:exp002-drift}
+
+We compute the training-set NTK $K(t)=K_{\text{train,train}}(t)$ at snapshot steps and track
+\[
+	\Delta_K(t)=\frac{\|K(t)-K(0)\|_F}{\|K(0)\|_F}.
+\]
+To detect when the kernel has effectively stopped evolving, we monitor the finite-difference slope
+\[
+	s(t)\;=\;\frac{\Delta_K(t)-\Delta_K(t-\Delta)}{\text{step}(t)-\text{step}(t-\Delta)},
+\]
+and define a freeze time $t_{\text{freeze}}$ as the earliest $t$ such that $|s(t)|<\varepsilon |s(0)|$
+for $k$ consecutive snapshot intervals (with fixed $\varepsilon,k$ in the implementation).
+
+\begin{figure}[H]
+	\centering
+
+	\begin{minipage}[t]{0.49\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{plots/kernel_drift/kernel_drift_low_widths}
+		\\[-1.5mm]\small (a) Low widths.
+	\end{minipage}\hfill
+	\begin{minipage}[t]{0.49\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{plots/kernel_drift/kernel_drift_mid_widths}
+		\\[-1.5mm]\small (b) Mid widths.
+	\end{minipage}
+
+	\vspace{2mm}
+	\includegraphics[width=.49\textwidth]{plots/kernel_drift/kernel_drift_high_widths}
+	\\[-1.5mm]\small (c) High width ($W=10000$).
+
+	\caption{Normalized NTK drift curves across widths with a slope-based freeze-time criterion (EXP002).}
+	\label{fig:exp002-drift-group}
+\end{figure}
+
+\paragraph{Observation.}
+Wider networks freeze later under this criterion: narrow networks reach a negligible drift slope quickly, while the widest model
+does not satisfy the freeze criterion within the available training horizon. This is compatible with the empirical observation that
+kernel evolution per optimization step becomes smaller as width increases (in NTK-like scalings), hence longer training is needed
+to observe comparable drift.
+
+\subsection{Eigenvalue drift and width-dependent stabilization timescales}\label{subsec:exp002-eigs}
+
+Let $K(t)=U(t)\Lambda(t)U(t)^\top$ be the eigendecomposition at snapshot time $t$.
+We track the top eigenvalues $\lambda_1(t),\dots,\lambda_5(t)$.
+
+\begin{figure}[H]
+	\centering
+	\begin{tabular}{ccc}
+		\includegraphics[width=.32\textwidth]{plots/eigenvalues/eigenvalues_w100}   &
+		\includegraphics[width=.32\textwidth]{plots/eigenvalues/eigenvalues_w512}   &
+		\includegraphics[width=.32\textwidth]{plots/eigenvalues/eigenvalues_w1024}                                                   \\
+		\small (a) $W{=}100$                                                        & \small (b) $W{=}512$   & \small (c) $W{=}1024$ \\
+		\includegraphics[width=.32\textwidth]{plots/eigenvalues/eigenvalues_w2048}  &
+		\includegraphics[width=.32\textwidth]{plots/eigenvalues/eigenvalues_w10000} &                                                \\
+		\small (d) $W{=}2048$                                                       & \small (e) $W{=}10000$ &
+	\end{tabular}
+	\caption{Top eigenvalue trajectories of the empirical NTK across widths (EXP002).}
+	\label{fig:exp002-eigs-group}
+\end{figure}
+
+\paragraph{Observation.}
+Across widths, the leading eigenvalues appear to saturate toward similar plateau values, but the timescale of this stabilization
+is strongly width-dependent: narrow networks stabilize quickly, while wide networks evolve more slowly.
+This suggests that width changes the \emph{rate} at which the spectrum evolves, even when the eventual top-eigenvalue scale is comparable.
+
+\subsection{Loss evolution versus kernel drift}\label{subsec:exp002-loss}
+
+We record the training loss and compare it to the drift and drift-slope signals.
+
+\begin{figure}[H]
+	\centering
+
+	\begin{minipage}[t]{0.49\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{plots/loss_curves/loss_low_widths}
+		\\[-1.5mm]\small (a) Low widths.
+	\end{minipage}\hfill
+	\begin{minipage}[t]{0.49\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{plots/loss_curves/loss_mid_widths}
+		\\[-1.5mm]\small (b) Mid widths.
+	\end{minipage}
+
+	\vspace{2mm}
+	\includegraphics[width=.49\textwidth]{plots/loss_curves/loss_high_widths}
+	\\[-1.5mm]\small (c) High width.
+
+	\caption{Training loss evolution across widths (EXP002).}
+	\label{fig:exp002-loss-group}
+\end{figure}
+
+\paragraph{Observation.}
+In these runs, the loss can plateau earlier than the time at which the drift-slope criterion declares the kernel frozen,
+especially for large widths. This motivates treating ``kernel freezing'' and ``optimization slowing'' as related but distinct signals.
+
+\subsection{Kernel regression at freeze time and comparison to network predictions}\label{subsec:exp002-kr}
+
+After estimating a freeze time $t^\star$, we compute the kernel-regression predictor $f_{\text{KR}}(\cdot;t^\star)$
+using the frozen NTK at $t^\star$ and compare it to (i) the network prediction at $t^\star$ and (ii) the final network prediction.
+
+\begin{figure}[H]
+	\centering
+	\begin{tabular}{cc}
+		\includegraphics[width=.48\textwidth]{plots/kernel_regression/kernel_regression_w100_step}  &
+		\includegraphics[width=.48\textwidth]{plots/kernel_regression/kernel_regression_w512_step}                          \\
+		\small (a) $W{=}100$                                                                        & \small (b) $W{=}512$  \\
+		\includegraphics[width=.48\textwidth]{plots/kernel_regression/kernel_regression_w1024_step} &
+		\includegraphics[width=.48\textwidth]{plots/kernel_regression/kernel_regression_w2048_step}                         \\
+		\small (c) $W{=}1024$                                                                       & \small (d) $W{=}2048$
+	\end{tabular}
+	\caption{Kernel-regression predictions using the frozen NTK at the detected freeze time (EXP002).}
+	\label{fig:exp002-kr-group}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\begin{tabular}{cc}
+		\includegraphics[width=.48\textwidth]{plots/freeze_vs_final_spread/predictions_w100_freeze}  &
+		\includegraphics[width=.48\textwidth]{plots/freeze_vs_final_spread/predictions_w512_freeze}                          \\
+		\small (a) $W{=}100$                                                                         & \small (b) $W{=}512$  \\
+		\includegraphics[width=.48\textwidth]{plots/freeze_vs_final_spread/predictions_w1024_freeze} &
+		\includegraphics[width=.48\textwidth]{plots/freeze_vs_final_spread/predictions_w2048_freeze}                         \\
+		\small (c) $W{=}1024$                                                                        & \small (d) $W{=}2048$
+	\end{tabular}
+	\caption{Network predictions at freeze time vs final time across widths (EXP002).}
+	\label{fig:exp002-freeze-vs-final-group}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.85\textwidth]{plots/error_vs_width_combined.png}
+	\caption{
+		Kernel-regression error and final network error versus width.
+		Narrow networks show lower kernel-regression error than final-network error, while for wide networks the final network is closer to the target than kernel regression at the detected freeze time.
+	}
+	\label{fig:exp002-error-vs-width}
+\end{figure}
+
+\paragraph{Observation.}
+The relationship between ``frozen-kernel regression'' and the trained network depends on width:
+for narrow networks, the kernel-regression predictor at $t^\star$ can be closer to the target than the final network,
+whereas for wide networks the final trained network can outperform the kernel-regression predictor computed at $t^\star$.
+At a minimum, this indicates that (i) a drift-based freeze criterion may be too conservative or too late/early depending on width,
+and (ii) small kernel drift in Frobenius norm does not necessarily guarantee that subsequent function-space evolution is negligible.
+
+\section{EXP003: Mode-wise decay of residuals (NTK eigenmodes and Fourier components)}\label{sec:exp003}
+
+This note introduces two complementary mode-wise diagnostics: projections onto (i) leading empirical NTK eigenmodes and
+(ii) the known Fourier components of the target mixture.
+
+\subsection{Residual projections onto NTK eigenmodes}\label{subsec:exp003-eigmodes}
+
+At each snapshot time $t$ we compute $K(t)=U(t)\Lambda(t)U(t)^\top$ and project the training residual $r_t=f_t-y$
+onto the top eigenvectors. A dashed line indicates the freeze time estimated from EXP002.
+
+\begin{figure}[H]
+	\centering
+	\begin{tabular}{ccc}
+		\includegraphics[width=.32\textwidth]{plots/mode_decay/mode_decay_w100}   &
+		\includegraphics[width=.32\textwidth]{plots/mode_decay/mode_decay_w512}   &
+		\includegraphics[width=.32\textwidth]{plots/mode_decay/mode_decay_w1024}                                                   \\
+		\small (a) $W{=}100$                                                      & \small (b) $W{=}512$   & \small (c) $W{=}1024$ \\
+		\includegraphics[width=.32\textwidth]{plots/mode_decay/mode_decay_w2048}  &
+		\includegraphics[width=.32\textwidth]{plots/mode_decay/mode_decay_w10000} &                                                \\
+		\small (d) $W{=}2048$                                                     & \small (e) $W{=}10000$ &
+	\end{tabular}
+	\caption{Residual projections onto the top empirical NTK eigenmodes across widths (EXP003).}
+	\label{fig:exp003-mode-group}
+\end{figure}
+
+\paragraph{Observation.}
+Across widths, the leading mode amplitudes can exhibit non-monotone behavior (dips, rebounds, and long drifts),
+and do not ``collapse'' immediately after the freeze time. This suggests that a small drift in $\|K(t)-K(0)\|_F$
+may coexist with meaningful changes in how the residual aligns with the instantaneous eigenspaces of $K(t)$
+(e.g.\ through slow rotations of eigenvectors or subtle spectrum changes).
+
+\subsection{Residual projections onto Fourier-mixture components}\label{subsec:exp003-fourier}
+
+Let the Fourier-mixture components be
+\[
+	b_j(\gamma)=\sin(K_j\gamma+\phi_j),
+	\qquad K_j\in\{2,4,7,11,16,23,32\}.
+\]
+We track the residual projection coefficients
+\[
+	c_j(t)=\frac{\langle r_t,b_j\rangle}{\langle b_j,b_j\rangle}.
+\]
+
+\begin{figure}[H]
+	\centering
+	\begin{tabular}{ccc}
+		\includegraphics[width=.32\textwidth]{plots/fourier_decay/fourier_decay_w100}   &
+		\includegraphics[width=.32\textwidth]{plots/fourier_decay/fourier_decay_w512}   &
+		\includegraphics[width=.32\textwidth]{plots/fourier_decay/fourier_decay_w1024}                                                   \\
+		\small (a) $W{=}100$                                                            & \small (b) $W{=}512$   & \small (c) $W{=}1024$ \\
+		\includegraphics[width=.32\textwidth]{plots/fourier_decay/fourier_decay_w2048}  &
+		\includegraphics[width=.32\textwidth]{plots/fourier_decay/fourier_decay_w10000} &                                                \\
+		\small (d) $W{=}2048$                                                           & \small (e) $W{=}10000$ &
+	\end{tabular}
+	\caption{Residual projections onto Fourier-mixture components across widths (EXP003).}
+	\label{fig:exp003-fourier-group}
+\end{figure}
+
+\paragraph{Observation.}
+Low-frequency components ($k=2,4$) decay early, whereas high-frequency components (e.g.\ $k\ge 16$) decay much more slowly.
+This provides a direct empirical signature of spectral bias and supports the ``small-eigenvalue modes converge late'' mechanism
+predicted by kernel dynamics (Section~\ref{sec:spectral-bias}).
+
+\section{Takeaways for the main experimental study}\label{sec:prelim-takeaways}
+
+\begin{itemize}
+	\item \textbf{Width versus effective training:}
+	      on multi-frequency targets, increasing width alone may not visibly improve agreement with the NTK predictor
+	      under a fixed horizon; larger effective training $\eta t$ is critical for reducing slow (small-eigenvalue) modes.
+	\item \textbf{Kernel drift is informative but not definitive:}
+	      a small drift in $\|K(t)-K(0)\|_F$ does not necessarily imply that function-space evolution has essentially stopped.
+	      Mode-wise diagnostics can reveal continued dynamics even when drift appears to plateau.
+	\item \textbf{Mode-wise views are essential:}
+	      tracking residual projections onto NTK eigenmodes and/or known Fourier components cleanly exposes spectral bias and helps
+	      separate ``capacity'' effects (very small width) from ``slow convergence'' effects (small eigenvalues / limited $\eta t$).
+\end{itemize}
+
+% Optional forward pointer (use if your next chapter is the final experiment chapter):
+% \paragraph{Next.}
+% The main experimental chapter builds on these diagnostics and studies (i) how drift and mode-wise decay scale jointly with width,
+% depth, and step size, and (ii) whether a data-dependent ``transition'' to an approximately linearized regime can be detected
+% through stabilized spectra and predictable kernelized dynamics.

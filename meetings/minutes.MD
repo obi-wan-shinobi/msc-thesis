@@ -279,3 +279,26 @@ training points is causing the kernel regression solution to behave very badly o
 - Briefly explained the storyline; explain problems with deep learning theory.
 - Introduce the limiting viewpoints that can be used by analysts: NTK, mean-field viewpoint, spectral bias
 - Alexander: What is the fundamental difference between mean field view and NTK? And the assumptions?
+
+## 2026-01-13
+
+### Attendees
+- Shreyas
+- Alexander 
+
+### Agenda
+- Discussion on research question direction and some discussions about experiment 3.
+
+### Discussions & Decisions
+- Alexander: Check residual projections when eigen values stop changing, not before that.
+- Suggestions on research question:
+
+    - come up with one major question
+    - explicitly formulate the question and put it in the document
+    - Start your question and in the end in your thesis try to answer the questions
+
+Discussion about convolution operator of NTK:
+At finite width, it could be a discrete convolution?
+
+Thesis committee form: 
+- Antonis Papapantoleon

@@ -856,4 +856,45 @@ interaction motivates empirical analyses that track mode-wise error decay
 alongside kernel evolution and provides a natural link between kernel-based and
 mean-field viewpoints.
 
+\section{Research questions}\label{sec:rq}
 
+On symmetric domains such as $S^1$ under uniform sampling, the infinite-width NTK
+induces a convolution operator whose eigenfunctions are Fourier modes. This
+provides a natural \emph{reference model} for spectral bias: mode-wise residual
+components decay approximately independently at rates determined by the kernel
+spectrum. The preliminary experiments in Chapter~\ref{cha:prelim} confirm the
+expected frequency ordering, but also reveal systematic deviations at finite
+width, including non-monotone evolution of projections onto empirical NTK
+eigendirections and slow drifts that persist even when global kernel drift
+appears small. These observations motivate the following research question and
+subquestions.
+
+\paragraph{Main research question.}
+How does spectral bias in finite-width ReLU networks trained on uniformly sampled
+inputs on $S^1$ deviate from the convolutional NTK prediction, and can these
+deviations be explained as finite-width and finite-sample perturbations of the
+underlying kernel operator?
+
+\paragraph{Subquestions.}
+\begin{enumerate}
+	\item[(Q1)] \textbf{Finite-width perturbation (population level):}
+	      In a population setting (uniform measure on $S^1$), how does finite width
+	      perturb the convolutional operator in spectrum and eigenspaces, and can we
+	      quantify the resulting mode coupling and deviations from ideal mode-wise
+	      decay?
+
+	\item[(Q2)] \textbf{Finite-sample perturbation (infinite width):}
+	      At infinite width but with finitely many uniformly sampled points on $S^1$, how
+	      does discretization of the integral operator perturb the Fourier eigenstructure,
+	      and can we bound the induced mixing between Fourier components as a function of
+	      sample size and frequency?
+\end{enumerate}
+
+\paragraph{Approach and scope.}
+We combine controlled Fourier-mixture regression experiments on $S^1$ with a
+perturbative analysis of kernel-driven training dynamics. Empirically, we track
+mode-wise residual decay through projections onto Fourier components and onto
+empirical NTK eigenmodes. Theoretically, we treat deviations from the
+convolutional NTK prediction by separating (i) finite-width effects at the
+population level and (ii) finite-sample effects at infinite width, before
+considering their interaction in the finite-width, finite-sample setting.

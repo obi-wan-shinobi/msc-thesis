@@ -858,43 +858,74 @@ mean-field viewpoints.
 
 \section{Research questions}\label{sec:rq}
 
-On symmetric domains such as $S^1$ under uniform sampling, the infinite-width NTK
-induces a convolution operator whose eigenfunctions are Fourier modes. This
-provides a natural \emph{reference model} for spectral bias: mode-wise residual
-components decay approximately independently at rates determined by the kernel
-spectrum. The preliminary experiments in Chapter~\ref{cha:prelim} confirm the
-expected frequency ordering, but also reveal systematic deviations at finite
-width, including non-monotone evolution of projections onto empirical NTK
-eigendirections and slow drifts that persist even when global kernel drift
-appears small. These observations motivate the following research question and
-subquestions.
+On symmetric domains such as $S^1$ under uniform sampling, the infinite-width
+neural tangent kernel (NTK) induces a convolution operator whose eigenfunctions
+are the Fourier modes. In this idealized setting, gradient-based training
+dynamics admit a closed-form spectral description: residual components along
+distinct Fourier modes evolve independently at rates determined by the kernel
+spectrum. The preliminary experiments in Chapter~\ref{cha:prelim} reproduce this
+frequency ordering, but also exhibit systematic deviations at finite width and
+finite sample size, including non-monotone mode amplitudes and slow transients
+that persist even when global kernel drift appears small. These observations
+suggest that spectral bias in practice cannot be fully explained by the ideal
+convolutional NTK model and motivate a perturbative analysis beyond this limit.
 
 \paragraph{Main research question.}
 How does spectral bias in finite-width ReLU networks trained on uniformly sampled
-inputs on $S^1$ deviate from the convolutional NTK prediction, and can these
-deviations be explained as finite-width and finite-sample perturbations of the
-underlying kernel operator?
+inputs on $S^1$ deviate from the convolutional NTK prediction, and how can these
+deviations be characterized through finite-sample and finite-width perturbations
+of the kernel operator governing training dynamics?
 
 \paragraph{Subquestions.}
 \begin{enumerate}
-	\item[(Q1)] \textbf{Finite-width perturbation (population limit):}
-	      In the infinite-population setting (uniform measure on $S^1$), how does finite width
-	      perturb the convolutional operator in spectrum and eigenspaces, and can we
-	      quantify the resulting mode coupling and deviations from ideal mode-wise
-	      decay?
+	\item[(Q1)] \textbf{Empirical separation of finite-width and finite-sample effects.}
+	      How do mode-wise residual dynamics change when network width and sample size are
+	      varied independently in Fourier-mixture regression on $S^1$?
 
-	\item[(Q2)] \textbf{Finite-sample perturbation (infinite width):}
-	      At infinite width but with finitely many uniformly sampled points on $S^1$, how
-	      does discretization of the integral operator perturb the Fourier eigenstructure,
-	      and can we bound the induced mixing between Fourier components as a function of
-	      sample size and frequency?
+	      This question aims to identify which deviations from ideal Fourier-mode decay
+	      persist as width increases at fixed sample size and which vanish as the number
+	      of uniformly sampled training points increases at fixed large width.
+
+	\item[(Q2)] \textbf{Finite-sample perturbation of the convolutional NTK.}
+	      At infinite width, how does replacing the population convolution operator on
+	      $S^1$ by its empirical discretization based on $n$ uniformly sampled points
+	      perturb its Fourier eigenvalues and eigenfunctions?
+
+	      More precisely, this question targets bounds or asymptotic estimates for the
+	      deviation between the population NTK integral operator $T$ and its empirical
+	      counterpart $T_n$, and an analysis of how these perturbations induce coupling
+	      between Fourier modes as a function of sample size and frequency.
+
+	\item[(Q3)] \textbf{Finite-width perturbation of the NTK operator.}
+	      In the infinite-population setting (uniform measure on $S^1$), how does finite
+	      width perturb the spectrum and eigenspaces of the NTK operator at initialization
+	      and during early training?
+
+	      This question focuses on treating the finite-width NTK as a random perturbation
+	      of the deterministic convolutional operator and on characterizing eigenspace
+	      rotation or instability as potential mechanisms behind non-monotone residual
+	      dynamics and slow transients observed in practice.
 \end{enumerate}
 
-\paragraph{Approach and scope.}
-We combine controlled Fourier-mixture regression experiments on $S^1$ with a
-perturbative analysis of kernel-driven training dynamics. Empirically, we track
-mode-wise residual decay through projections onto Fourier components and onto
-empirical NTK eigenmodes. Theoretically, we treat deviations from the
-convolutional NTK prediction by separating (i) finite-width effects at the
-population level and (ii) finite-sample effects at infinite width, before
-considering their interaction in the finite-width, finite-sample setting.
+\paragraph{Planned schedule (12--15 weeks).}
+The project is structured to ensure that empirical results are obtained early
+and used to guide the theoretical analysis.
+
+\begin{itemize}
+	\item \textbf{Weeks 1--3: Empirical analysis (Q1).}
+	      Extend the existing experimental setup to independently vary network width and
+	      sample size (e.g. sample size $n \in \{250, 500, 1000, 5000,\ldots\}$). Produce mode-wise residual decay
+	      plots and kernel eigenspace diagnostics to isolate finite-width and finite-sample
+	      effects.
+
+	\item \textbf{Weeks 4--8: Finite-sample theory (Q2).}
+	      Formalize the convolutional NTK integral operator on $S^1$ and its empirical
+	      discretization. Derive bounds or asymptotic estimates for eigenvalue and
+	      eigenfunction perturbations and relate them to observed Fourier-mode mixing.
+
+	\item \textbf{Weeks 9--12: Finite-width analysis (Q3).}
+	      Study finite-width fluctuations of the NTK under uniform population measure.
+	      Analyze random perturbations of the convolutional operator and develop a
+	      perturbative explanation for eigenspace rotation and non-monotone residual
+	      dynamics.
+\end{itemize}

@@ -1,0 +1,45 @@
+# ================================
+# Manim / manim-slides outputs
+# ================================
+media/
+slides/
+
+# Manim partial movie files (sometimes nested oddly)
+**/partial_movie_files/
+
+# ================================
+# LaTeX / MathTex cache
+# ================================
+media/Tex/
+*.aux
+*.log
+*.out
+*.toc
+
+# ================================
+# Python cache
+# ================================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ================================
+# Virtual environments
+# ================================
+.venv/
+venv/
+env/
+
+# ================================
+# OS / Editor junk
+# ================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# ================================
+# Manim config overrides (optional)
+# ================================
+manim.cfg

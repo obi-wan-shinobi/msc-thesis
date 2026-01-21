@@ -1,6 +1,6 @@
 from manim import *
 
-BG_COLOR = WHITE
+BG_COLOR = BLACK
 TEXT_COLOR = BLACK if BG_COLOR == WHITE else WHITE
 LOGO_PATH = (
     "assets/TUDelft_logo_black.png"

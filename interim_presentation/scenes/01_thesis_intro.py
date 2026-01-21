@@ -7,12 +7,14 @@ from theme import BG_COLOR, BODY_FS, SUBTITLE_FS, TEXT_COLOR, TITLE_FS, add_logo
 class ThesisIntro(Slide):
     def construct(self):
         self.camera.background_color = BG_COLOR
+        Text.set_default(color=TEXT_COLOR)
+        MathTex.set_default(color=TEXT_COLOR)
+
         title = Paragraph(
             "Training and Generalization in",
             "overparameterized neural networks",
             alignment="center",
             font_size=TITLE_FS,
-            color=TEXT_COLOR,
             weight=BOLD,
         ).to_edge(UP, buff=1.2)
 
@@ -22,7 +24,7 @@ class ThesisIntro(Slide):
             color=BLUE,
         ).next_to(title, DOWN, buff=0.4)
 
-        author = Text("Shreyas Kalvankar", font_size=BODY_FS, color=TEXT_COLOR)
+        author = Text("Shreyas Kalvankar", font_size=BODY_FS)
 
         affiliation = Text(
             "MSc Computer Science",

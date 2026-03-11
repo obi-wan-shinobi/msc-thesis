@@ -1,36 +1,34 @@
-# Final Thesis
+# Official SERG-Delft template master thesis
 
-- Add the final version of your thesis (in PDF format) to this directory.
-- If available, include the source files (e.g., LaTeX or Word documents) to allow for future revisions or reference.
-- Ensure the file is clearly named (e.g., `final_thesis.pdf`) for easy identification.
+This repository hosts the source code for the official LateX template for a master thesis at SERG-Delft.
 
-## Writing the Final Thesis
-- **Incorporate Feedback Early**: Make sure to incorporate the feedback from the interim thesis as soon as possible after you receive it.
-- **Build on the Interim Thesis**: Use the interim thesis as a starting point for writing the final thesis.
-- **Review Previous Theses**: It is advisable to review previous final theses for structure, style, and content. See, for instance:
-  - [Examples from Kees Vuik](https://diamhomes.ewi.tudelft.nl/~kvuik/afstudeer_eng.html)
-  - [Examples from Alexander Heinlein](https://searhein.github.io/master_thesis_projects/)
-- For general help on writing, you may also check out the [TU Delft Writing Centre](www.tudelft.nl/writingcentre)
-## Structure of the Final Thesis
+We reccomend you read and follow suggestions from the [LaTeX advice guide](https://github.com/dspinellis/latex-advice).
 
-The **final thesis** builds upon the **interim thesis** and includes the following chapters:
+## Import for ShareLatex
 
-1. **Introduction/Motivation**: Provide a clear introduction to the topic and explain the motivation behind your research.
-2. **Literature Review**: Offer a high-level context for your work, referencing relevant studies and explaining their relation to your thesis.
-3. **Methodology**: Describe the methods you are using or plan to use in your research. Focus on describing what you use in your thesis; related works should go in the literature overview.
-4. **Research Questions**: Clearly formulate the research questions that guide your work. Include one overall research question and approximately four subquestions.
+If you would like to import this template into ShareLatex, perform the following steps:
 
-In addition to these chapters from the interim thesis, the **final thesis** will include the following expanded or new sections:
+1. Click the green "Clone or download"-button in the top-right corner of https://github.com/SERG-Delft/thesis-template
+1. Click "Download ZIP"
+1. Log in on https://www.sharelatex.com
+1. Click "New Project" in the top-left corner of https://www.sharelatex.com/project
+1. Click "Upload Project"
+1. Click "Select a .zip file"
+1. Select the ZIP you just downloaded
 
-5. **(Expanded) Methodology**: Provide more details on the methodology, including any refinements or adjustments made since the interim thesis.
-6. **Implementation Details**: Include detailed descriptions of the implementation, where applicable.
-7. **Numerical Results and Discussion**: Present detailed numerical results and ensure a thorough discussion of the results. The discussion is as important as the results themselves.
-8. **Conclusion**: Summarize the key findings, their implications, and potential future work.
+**:warning: Important! :warning:**
 
-## Thesis Storyline
+ShareLatex does not parse the `*.ps` files in `img/`.
+These files should therefore be manually uploaded to the ShareLatex project to have a non-erroring build.
 
-Follow a clear storyline throughout your thesis:
+## Build instructions
 
-1. **Motivate the Research Questions**: Explain the context and significance of your research. Provide a compelling reason why the research questions are important.
-2. **State the Research Questions**: Clearly formulate the research questions that guide your work.
-3. **Answer the Research Questions**: Provide clear and well-supported answers in the discussion and conclusion sections, ensuring that the answers are backed by your results and analysis.
+If you would like to build this project on your local machine, ensure that `texlive-full` is installed.
+You can follow the instructions on https://www.tug.org/texlive/quickinstall.html but the TLDR for Debian-based systems is:
+
+```bash
+sudo apt-get install texlive-full
+sudo apt-get install latexmk
+```
+
+Then run `make` and the project should build.

@@ -1,0 +1,216 @@
+\chapter{\label{cha:intro}Introduction}
+
+Deep neural networks have achieved remarkable empirical success across a wide
+range of application domains, most notably in computer vision and natural
+language processing. In vision, deep convolutional and residual architectures
+have led to dramatic improvements on large-scale benchmarks, establishing deep
+learning as the dominant paradigm for visual recognition tasks
+\citep{krizhevsky2012imagenet, he2016deep}. Similarly, in natural language
+processing, attention-based architectures introduces by
+\citet{vaswani2023attentionneed} such as Transformers have enabled substantial
+advances in sequence modeling and representation learning, and now form the
+foundation of modern large-scale language models. Over the past decade, this
+empirical progress has been accompanied by a steady increase in model size,
+depth, and computational scale, often resulting in highly overparameterized
+models that generalize well despite their capacity to fit random labels
+\citep{zhang2017understandingdeeplearningrequires, Belkin_2019}. Much of this
+progress has been driven by empirical experimentation and architectural
+intuition rather than by a complete theoretical understanding of the mechanisms
+underlying training and generalization in deep neural networks.
+
+Despite their practical success, the mechanisms governing the training dynamics
+and convergence behavior of neural networks remain only partially understood,
+even in highly simplified settings. From an optimization perspective, neural
+network training involves high-dimensional, non-convex objectives whose
+geometry depends intricately on architectural choices, initialization, and
+optimization dynamics. Early analyses of neural network loss landscapes have
+highlighted the prevalence of saddle points and complex critical structures,
+underscoring the difficulty of directly characterizing training dynamics in
+parameter space \cite{choromanska2015losssurfacesmultilayernetworks}. While
+more recent theoretical work has made progress in analyzing overparameterized
+models under restrictive assumptions such as two-layer networks or specific
+scaling regimes these results do not yet provide a unified explanation of
+neural network training in general settings
+\cite{arora2019finegrainedanalysisoptimizationgeneralization}. More broadly,
+this gap between empirical performance and theoretical understanding has
+motivated the study of neural networks through simplified models and asymptotic
+limits, where training dynamics can be analyzed more precisely.
+
+\section{Problem setup}
+
+\paragraph{Empirical risk minimization.}
+A standard way to formalize supervised learning is through the principle of
+empirical risk minimization (ERM). Given a training dataset $\{(x_i,
+	y_i)\}_{i=1}^n$, a parametric model $f_\theta$, and a loss function
+$\ell(\cdot,\cdot)$, ERM seeks parameters \begin{equation} \theta^\star \in
+	\arg\min_{\theta} \; \frac{1}{n} \sum_{i=1}^n \ell\!\left(f_\theta(x_i),\,
+	y_i\right). \end{equation} This formulation isolates the key ingredients that
+determine the behavior of learning algorithms: the function class induced by
+the parameterization $\theta \mapsto f_\theta$, the geometry of the loss
+landscape, and the optimization procedure used to minimize the empirical risk.
+In modern neural network training, the empirical risk is typically minimized
+using gradient-based methods, which induce a dynamical system in parameter
+space whose properties depend intricately on both the model architecture and
+the chosen loss function.
+
+\paragraph{Linear models and gradient descent.}
+To build intuition, consider the least-squares empirical risk minimization
+problem with a one layer linear model $f_w(x)=x^\top w$, $w \in \mathbb{R}^d$. Given a dataset
+$\{(x_i,y_i)\}_{i=1}^n$, let $X\in\mathbb{R}^{d\times n}$ denote the data
+matrix whose columns are $x_i$, and let $y\in\mathbb{R}^n$ denote the vector
+of labels. The empirical risk is
+\begin{equation}
+	\mathcal{L}(w)=\frac{1}{2}\,\|X^\top w-y\|_2^2.
+\end{equation}
+This objective is convex and differentiable, with gradient
+\begin{equation}
+	\nabla_w \mathcal{L}(w)=X(X^\top w-y)=XX^\top w - Xy.
+\end{equation}
+At a stationary point $w^\star$, the gradient vanishes, yielding the equations
+\begin{equation}
+	XX^\top w^\star = Xy,
+\end{equation}
+which characterize the set of global minimizers of $\mathcal{L}$.\\
+The structure of the minimizers depends on the rank of the empirical covariance
+operator $A := XX^\top$. If $A$ is positive definite (equivalently, if $X$ has
+full row rank), then the minimizer is unique and given by $w^\star = A^{-1}Xy$.
+In contrast, in the overparameterized regime where $\operatorname{rank}(X)<d$,
+the matrix $A$ is singular and the least-squares objective admits infinitely
+many global minimizers. In this case, the Moore--Penrose pseudoinverse can be
+used to approximate a solution. Since $A$ is symmetric, its pseudoinverse
+$A^{+}$ acts as the inverse on $\mathrm{range}(A)$ and annihilates $\ker(A)$,
+yielding the minimum-norm least-squares solution $w^\star = A^{+}Xy$.\\
+Gradient descent with step size $\eta>0$ takes the explicit form
+\begin{equation}
+	w_{t+1}=w_t-\eta \nabla_w \mathcal{L}(w_t)
+	=\left(I-\eta XX^\top\right)w_t+\eta Xy.
+\end{equation}
+Assuming $w_0=0$, we can write a closed form solution
+\begin{equation}
+	w_t
+	=\eta \sum_{s=0}^{t-1}\left(I-\eta XX^\top\right)^s Xy.
+\end{equation}
+Let $\lambda_{\max}(A)$ denote the largest eigenvalue of $A$.
+If the step size satisfies $\eta \in (0,\,2/\lambda_{\max}(A))$, then for any
+least-squares minimizer $w^\star$ the error $e_t := w_t - w^\star$ evolves as
+\begin{equation}
+	e_{t+1} = (I - \eta A) e_t .
+\end{equation}
+Since $A$ is symmetric, it admits an eigendecomposition
+\[
+	A = Q\Lambda Q^\top,
+\]
+where $Q\in\mathbb{R}^{d\times d}$ is orthogonal ($Q^\top Q = I$) and
+$\Lambda=\mathrm{diag}(\lambda_1,\dots,\lambda_d)$ contains the (real) eigenvalues
+of $A$. Moreover, $A$ is positive semidefinite because
+$v^\top A v = \|X^\top v\|_2^2 \ge 0$ for all $v$, hence $\lambda_i \ge 0$ and in
+particular $\lambda_i \in [0,\lambda_{\max}(A)]$.
+
+Starting from the error recursion
+\[
+	e_{t+1} = (I-\eta A)e_t,
+\]
+we express the error in the eigenbasis of $A$ by defining $\tilde e_t := Q^\top e_t$.
+Left-multiplying by $Q^\top$ and using $e_t = Q\tilde e_t$ gives
+\[
+	\tilde e_{t+1}
+	= Q^\top (I-\eta A) Q \,\tilde e_t
+	= \bigl(I - \eta Q^\top A Q\bigr)\tilde e_t
+	= \bigl(I - \eta \Lambda\bigr)\tilde e_t.
+\]
+Since $\Lambda$ is diagonal, this yields the component-wise dynamics
+\begin{equation}\label{eq:componentwise-dynamics}
+	\tilde e_{t+1,i} = (1-\eta \lambda_i)\tilde e_{t,i}, \qquad i=1,\dots,d.
+\end{equation}
+If $\eta \in (0,\,2/\lambda_{\max}(A))$, then for any $\lambda_i>0$ we have
+$0<\eta\lambda_i \le \eta\lambda_{\max}(A) < 2$, hence
+$-1 < 1-\eta\lambda_i < 1$, i.e.\ $|1-\eta\lambda_i|<1$.
+Under the stated condition on $\eta$, we have $|1 - \eta \lambda_i| < 1$ for all
+$\lambda_i > 0$, implying geometric decay of all components of $e_t$ in
+$\mathrm{range}(A)$. In particular, if $A$ is positive definite, then
+$w_t \to w^\star$ as $t \to \infty$. More generally, if $w_0 \in \mathrm{range}(A)$
+(for example, $w_0 = 0$), then $w_t$ converges to the minimum-norm least-squares
+solution $w^\star = A^{+}Xy$.
+
+The eigen-decomposition above shows that gradient descent acts as a linear
+dynamical system whose behavior is governed by the spectrum of the empirical
+covariance operator $XX^\top$. Directions corresponding to larger eigenvalues
+converge more rapidly, while components in the null space of $XX^\top$ remain
+unchanged. In the overparameterized regime, where multiple \emph{interpolating
+	solutions} exist, i.e., solutions satisfying $X^\top w = y$, gradient descent from
+standard initializations converges to a particular interpolating solution,
+namely the minimum-norm solution. This illustrates how the optimization algorithm
+induces an implicit bias even in this simplest linear setting.
+
+\paragraph{Deep linear network.}
+Even in the absence of nonlinear activation functions, introducing an additional
+layer already leads to substantially more intricate training dynamics. Consider
+a two-layer linear network with scalar output,
+\begin{equation}
+	f_{v,W}(x) := v^\top W x,
+\end{equation}
+where $W \in \mathbb{R}^{m \times d}$, $v \in \mathbb{R}^{m}$, and $m$ denotes the
+width of the hidden layer. The least-squares empirical risk is
+\begin{equation}
+	\mathcal{L}(v,W)
+	:= \frac{1}{2}\,\bigl\|X^\top W^\top v - y\bigr\|_2^2 .
+\end{equation}
+Although the resulting function is linear in the input, the loss is no longer
+convex in the parameters $(v,W)$ due to their multiplicative coupling.
+
+Let
+\begin{equation}
+	r := X^\top W^\top v - y \in \mathbb{R}^n
+\end{equation}
+denote the residual vector. The gradients of $\mathcal{L}$ are given by
+\begin{equation}
+	\nabla_v \mathcal{L} = W X\, r,
+	\qquad
+	\nabla_W \mathcal{L} = v (X r)^\top .
+\end{equation}
+Under continuous-time gradient flow, the parameters therefore evolve according to
+\begin{equation}
+	\dot v_t = -\nabla_v \mathcal{L}(v_t,W_t)
+	= W_t X \bigl(y - X^\top W_t^\top v_t\bigr),
+	\qquad
+	\dot W_t = -\nabla_W \mathcal{L}(v_t,W_t)
+	= v_t \bigl(y - X^\top W_t^\top v_t\bigr)^\top X^\top .
+\end{equation}
+This coupled system consists of a vector-valued and a matrix-valued ordinary
+differential equation and is nonlinear in the parameters, despite the underlying
+predictor being linear in the input. As a result, the training dynamics no longer
+admit a simple spectral characterization as in the one-layer case.
+
+Nevertheless, recent work has shown that deep linear networks admit a more
+structured description in suitable asymptotic regimes. In particular, \citet{chizat2022infinitewidthlimitdeeplinear} study gradient flow for deep
+linear networks in an infinite-width limit, where the dynamics are described at
+the level of a measure-valued evolution. While no closed-form solution of the
+finite-dimensional ODE system is obtained, this framework establishes global
+well-posedness, convergence to global minimizers, and the emergence of implicit
+regularization effects induced by depth.
+
+\paragraph{Nonlinear networks.}
+The analysis of training dynamics becomes more involved once nonlinear
+activation functions are introduced. Consider again a two-layer network of the form
+\[
+	f_{v,W}(x) = v^\top \phi(Wx),
+\]
+where $\phi:\mathbb{R}\to\mathbb{R}$ is a continuously differentiable activation
+function applied elementwise. For the least-squares objective, the
+corresponding gradient flow equations involve both the activations $\phi(Wx)$
+and their derivatives $\phi'(Wx)$. In particular, the evolution of the
+parameters mixes standard matrix products with elementwise nonlinear
+operations. As a consequence, the training dynamics of nonlinear networks do not admit a
+simple closed-form or spectral description in general. This motivates the study
+of simplified regimes in which the dynamics become tractable, either by
+linearizing the network around its initialization or by considering suitable
+large-width limits. Two prominent examples of such approaches are the neural
+tangent kernel and mean-field formulations, which provide complementary
+perspectives on the behavior of wide neural networks during training.
+
+% \section{Research Question(s)}
+%
+% The research question investigated in this thesis is \ldots
+
+% \lipsum{10} % add some pseudo content
+

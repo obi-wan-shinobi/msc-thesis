@@ -1,0 +1,117 @@
+\section{Research questions}\label{sec:rq}
+
+\subsection{Finite-sample perturbations of convolution operators and frequency learning}
+
+\paragraph{Motivation.}
+A central question in understanding \emph{spectral bias} is:
+\emph{why and how do neural networks learn low-frequency components of a target function before high-frequency ones?}
+In the Neural Tangent Kernel (NTK) regime, training dynamics reduce to kernel gradient flow with a fixed kernel.
+As a consequence, learning proceeds along the eigendirections of the \emph{empirical kernel operator}, with
+each component decaying at a rate proportional to the corresponding eigenvalue.
+
+On structured domains such as the circle \(S^1\), convolutional kernels admit a particularly transparent
+spectral structure: at the population level, Fourier modes are exact eigenfunctions.
+However, in practice one only observes a finite set of training points, which replaces the population
+integral operator by an empirical discretization.
+This finite-sample approximation breaks exact translation invariance and induces coupling between Fourier modes.
+
+The goal of this section is to formalize this phenomenon and to show that:
+\begin{enumerate}
+	\item at the population level, learning dynamics decouple perfectly across frequencies;
+	\item finite sampling introduces random mode coupling whose magnitude decays as \(n^{-1/2}\);
+	\item this provides a precise mechanism explaining frequency-dependent learning rates and observed
+	      Fourier-mode mixing in finite-width neural networks.
+\end{enumerate}
+
+\paragraph{Definitions.}
+We identify the circle \(S^1\) with \([0,2\pi)\) equipped with the uniform probability measure
+\[
+	d\mu(\theta) := \frac{1}{2\pi}\, d\theta .
+\]
+The complex exponentials
+\[
+	\phi_k(\theta) := e^{ik\theta}, \qquad k \in \mathbb{Z},
+\]
+form an orthonormal basis of \(L^2(S^1,\mu)\).
+
+Let \(K(\theta,\theta') = \kappa(\theta-\theta')\) be a translation-invariant (convolution) kernel on \(S^1\),
+with \(\kappa\) a \(2\pi\)-periodic function.
+Define the population integral operator \(T : L^2(S^1,\mu) \to L^2(S^1,\mu)\) by
+\[
+	(Tf)(\theta) := \int_{S^1} K(\theta,\theta') f(\theta') \, d\mu(\theta') .
+\]
+Its eigenvalues are the Fourier coefficients of \(\kappa\),
+\[
+	\lambda_k := \int_{0}^{2\pi} \kappa(\varphi)\, e^{-ik\varphi}\, d\mu(\varphi),
+\]
+and satisfy \(T\phi_k = \lambda_k \phi_k\).
+
+Given i.i.d.\ samples \(\theta_1,\dots,\theta_n \sim \mu\), we define the empirical operator
+\[
+	(T_n f)(\theta) := \frac{1}{n} \sum_{j=1}^n K(\theta,\theta_j) f(\theta_j),
+\]
+as well as the empirical Fourier coefficients of the sampling measure
+\[
+	S_m := \frac{1}{n} \sum_{j=1}^n e^{im\theta_j}, \qquad m \in \mathbb{Z}.
+\]
+
+\paragraph{Lemma (Fourier-mode mixing under empirical discretization).}
+For every \(k \in \mathbb{Z}\),
+\[
+	T_n \phi_k \;=\; \sum_{\ell \in \mathbb{Z}} \lambda_\ell\, S_{k-\ell}\, \phi_\ell .
+\]
+
+\emph{Proof.}
+Expanding \(\kappa(\varphi) = \sum_{\ell \in \mathbb{Z}} \lambda_\ell e^{i\ell \varphi}\) and substituting into
+\((T_n \phi_k)(\theta) = \frac{1}{n} \sum_j \kappa(\theta-\theta_j) e^{ik\theta_j}\),
+one obtains the stated identity after regrouping terms.
+\hfill\(\square\)
+
+\paragraph{Interpretation.}
+The population action \(T\phi_k = \lambda_k \phi_k\) is recovered from the diagonal term \(\ell=k\),
+since \(S_0=1\).
+All other terms \(\ell \neq k\) represent \emph{finite-sample induced coupling} between Fourier modes,
+with amplitudes controlled by \(\lambda_\ell S_{k-\ell}\).
+Thus, empirical discretization breaks exact frequency decoupling.
+
+\paragraph{Corollary 1 (typical size of mode coupling).}
+If the samples \(\theta_j\) are i.i.d.\ uniform on \(S^1\), then for all \(m \neq 0\),
+\[
+	\mathbb{E}[S_m] = 0,
+	\qquad
+	\mathbb{E}[|S_m|^2] = \frac{1}{n}.
+\]
+Consequently,
+\[
+	|S_m| = O_{\mathbb{P}}(n^{-1/2}),
+	\qquad
+	|\lambda_\ell S_{k-\ell}| = O_{\mathbb{P}}\!\left(\frac{|\lambda_\ell|}{\sqrt{n}}\right).
+\]
+
+\paragraph{Corollary 2 (implications for learning dynamics).}
+In kernel gradient flow with empirical kernel matrix \(K_n\),
+the residual evolves as \(r(t)=e^{-tK_n} r(0)\).
+If the empirical operator were diagonal in the Fourier basis, each frequency would decay at rate
+\(\lambda_k\).
+Finite sampling perturbs both eigenvalues and eigenfunctions, leading to:
+\begin{itemize}
+	\item faster learning of low frequencies (large \(\lambda_k\));
+	\item slower and noisier learning of high frequencies (small \(\lambda_k\));
+	\item transient mixing between nearby frequencies due to empirical mode coupling.
+\end{itemize}
+
+\paragraph{Empirical verification.}
+The above analysis suggests several concrete experimental tests:
+\begin{enumerate}
+	\item \textbf{Direct coupling measurement:}
+	      Apply \(T_n\) to individual Fourier modes \(\phi_k\) and estimate the coefficients
+	      \(\langle T_n\phi_k,\phi_\ell\rangle\), verifying the structure \(\lambda_\ell S_{k-\ell}\).
+	\item \textbf{Scaling with sample size:}
+	      Measure \(\max_{|m|\le M} |S_m|\) as a function of \(n\), expecting \(n^{-1/2}\) decay.
+	\item \textbf{Kernel eigenvector analysis:}
+	      Compare eigenvectors of the empirical kernel matrix to discrete Fourier vectors,
+	      quantifying frequency mixing and its reduction as \(n\) increases.
+	\item \textbf{Training-time Fourier dynamics:}
+	      Track Fourier coefficients of the learned predictor during NTK training, confirming
+	      frequency-dependent convergence rates and diminishing mode leakage.
+\end{enumerate}

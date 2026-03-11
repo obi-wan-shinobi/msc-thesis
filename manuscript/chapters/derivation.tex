@@ -1,0 +1,296 @@
+\section{Population ReLU Kernel on the Circle}
+
+Throughout, $(\cdot|\cdot)$ denotes the Euclidean inner product on $\mathbb R^d$.
+
+\subsection{Population ReLU Feature Kernel}
+
+Let $\sigma(t)=\max\{0,t\}$ denote the ReLU activation and let
+$w\sim\mathcal N(0,I_d)$.
+We define the \emph{population ReLU feature kernel} by
+\begin{equation}
+	\label{eq:population-kernel-def}
+	K(x,y)
+	\;:=\;
+	\mathbb E_w\big[\sigma((w|x))\sigma((w|y))\big],
+	\qquad x,y\in\mathbb R^d.
+\end{equation}
+This kernel is the covariance of the random feature map
+$\phi_w(x)=\sigma((w|x))$ and is therefore positive semidefinite.
+
+Let $\gamma_d$ denote the standard Gaussian measure on $\mathbb R^d$,
+\[
+	d\gamma_d(w)
+	=
+	(2\pi)^{-d/2}\exp\!\Big(-\frac{\|w\|^2}{2}\Big)\,dw.
+\]
+Then \eqref{eq:population-kernel-def} can be written as the Gaussian integral
+\begin{equation}
+	\label{eq:population-kernel-integral}
+	K(x,y)
+	=
+	\int_{\mathbb R^d}
+	\sigma((w|x))\sigma((w|y))\,
+	d\gamma_d(w).
+\end{equation}
+
+Using $\sigma(t)=t\,\mathbf 1_{\{t>0\}}$, this becomes
+\begin{equation}
+	\label{eq:relu-indicator-integral}
+	K(x,y)
+	=
+	\int_{\mathbb R^d}
+	(w|x)(w|y)\,
+	\mathbf 1_{\{(w|x)>0\}}\,
+	\mathbf 1_{\{(w|y)>0\}}\,
+	d\gamma_d(w).
+\end{equation}
+
+\subsection{Reduction to a Two-Dimensional Gaussian}
+
+Let $V=\mathrm{span}\{x,y\}\subset\mathbb R^d$.
+
+\begin{lemma}[Orthogonal decomposition]
+	\label{lem:orth-decomp}
+	For every $w\in\mathbb R^d$ there exist unique vectors
+	$w_0\in V$ and $w_\perp\in V^\perp$ such that
+	\[
+		w = w_0 + w_\perp,
+		\qquad
+		(w_0|w_\perp)=0.
+	\]
+\end{lemma}
+
+\begin{proof}
+	Choose an orthonormal basis $\{e_1,\dots,e_k\}$ of $V$ and extend it to an
+	orthonormal basis $\{e_1,\dots,e_d\}$ of $\mathbb R^d$.
+	Writing $w=\sum_{i=1}^d (w|e_i)e_i$, define
+	\[
+		w_0 := \sum_{i=1}^k (w|e_i)e_i,
+		\qquad
+		w_\perp := \sum_{i=k+1}^d (w|e_i)e_i.
+	\]
+	Then $w=w_0+w_\perp$, $(w_0|w_\perp)=0$, and uniqueness follows from the
+	uniqueness of the orthonormal expansion.
+\end{proof}
+
+Since $x,y\in V$, we have $(w_\perp|x)=(w_\perp|y)=0$, hence
+\[
+	(w|x)=(w_0|x),
+	\qquad
+	(w|y)=(w_0|y).
+\]
+Thus the integrand in \eqref{eq:relu-indicator-integral} depends only on $w_0$.
+
+\begin{lemma}[Gaussian factorization]
+	\label{lem:gaussian-factor}
+	If $w\sim\mathcal N(0,I_d)$, then $w_0$ and $w_\perp$ are independent Gaussian
+	vectors with
+	\[
+		w_0\sim\mathcal N(0,I_V),
+		\qquad
+		w_\perp\sim\mathcal N(0,I_{V^\perp}).
+	\]
+\end{lemma}
+
+\begin{proof}
+	In an orthonormal basis adapted to $V\oplus V^\perp$, the coordinates of $w$
+	are independent standard Gaussians. Grouping coordinates yields the claim.
+\end{proof}
+
+Hence integration over $V^\perp$ contributes a factor of one, and the kernel
+reduces to a Gaussian integral over $V$.
+
+\subsection{Choice of Coordinates and Angle Representation}
+
+Assume $x\neq 0$ and define
+\[
+	u := \frac{x}{\|x\|}.
+\]
+If $y$ is not collinear with $x$, define
+\[
+	v := \frac{y-(y|u)u}{\|y-(y|u)u\|}.
+\]
+Then $\{u,v\}$ is an orthonormal basis of $V$.
+
+Define the angle $\theta\in[0,\pi]$ by
+\[
+	\cos\theta := \frac{(x|y)}{\|x\|\|y\|}.
+\]
+
+\begin{lemma}[Angle decomposition]
+	\label{lem:angle-decomp}
+	With $u,v$ as above,
+	\[
+		x=\|x\|u,
+		\qquad
+		y=\|y\|(\cos\theta\,u+\sin\theta\,v).
+	\]
+\end{lemma}
+
+\begin{proof}
+	Since $y\in V$,
+	\[
+		y=(y|u)u+(y|v)v.
+	\]
+	Now $(y|u)=\|y\|\cos\theta$. By Pythagoras,
+	\[
+		(y|v)^2=\|y\|^2-(y|u)^2=\|y\|^2\sin^2\theta,
+	\]
+	and by construction $(y|v)\ge 0$, hence $(y|v)=\|y\|\sin\theta$.
+\end{proof}
+
+\subsection{Gaussian Coordinates in the Plane}
+
+\begin{lemma}[Coordinates of $w_0$]
+	\label{lem:w0-coords}
+	There exist unique scalars $Z_1,Z_2$ such that
+	\[
+		w_0=Z_1u+Z_2v,
+		\qquad
+		Z_1=(w|u),\; Z_2=(w|v).
+	\]
+\end{lemma}
+
+\begin{proof}
+	Since $\{u,v\}$ is an orthonormal basis of $V$, write $w_0=Z_1u+Z_2v$.
+	Taking inner products with $u$ and $v$ gives $Z_1=(w_0|u)$ and $Z_2=(w_0|v)$.
+	Because $w=w_0+w_\perp$ and $u,v\perp w_\perp$, these equal $(w|u)$ and $(w|v)$.
+\end{proof}
+
+\begin{lemma}[Distribution of $(Z_1,Z_2)$]
+	\label{lem:z-gaussian}
+	Let $w\sim\mathcal N(0,I_d)$. Then
+	\[
+		(Z_1,Z_2)\sim\mathcal N(0,I_2),
+	\]
+	and in particular $Z_1,Z_2$ are independent standard normal random variables.
+\end{lemma}
+
+\begin{proof}
+	For any $a\in\mathbb R^d$, $(a|w)\sim\mathcal N(0,\|a\|^2)$.
+	Thus $Z_1,Z_2\sim\mathcal N(0,1)$.
+	Moreover,
+	\[
+		\mathrm{Cov}(Z_1,Z_2)=\mathbb E[(w|u)(w|v)]=(u|v)=0.
+	\]
+	Since any linear combination $aZ_1+bZ_2=(w|au+bv)$ is Gaussian, the vector
+	$(Z_1,Z_2)$ is jointly Gaussian. Zero covariance implies independence.
+\end{proof}
+
+Combining the above,
+\[
+	(w|x)=\|x\|Z_1,
+	\qquad
+	(w|y)=\|y\|(\cos\theta\,Z_1+\sin\theta\,Z_2).
+\]
+
+\subsection{Evaluation of the Gaussian Integral}
+
+Substituting into \eqref{eq:relu-indicator-integral} yields
+\begin{equation}
+	\label{eq:kernel-2d}
+	K(x,y)
+	=
+	\|x\|\|y\|\,
+	\mathbb E\Big[
+		Z_1(\cos\theta\,Z_1+\sin\theta\,Z_2)
+		\mathbf 1_{\{Z_1>0\}}
+		\mathbf 1_{\{\cos\theta Z_1+\sin\theta Z_2>0\}}
+		\Big],
+\end{equation}
+where $(Z_1,Z_2)\sim\mathcal N(0,I_2)$.
+
+The joint density of $(Z_1,Z_2)$ is
+\[
+	\frac{1}{2\pi}\exp\!\Big(-\frac{Z_1^2+Z_2^2}{2}\Big).
+\]
+Introduce polar coordinates $(Z_1,Z_2)=(R\cos\varphi,R\sin\varphi)$ with
+$R\ge 0$ and $\varphi\in[0,2\pi)$. Then the Gaussian measure becomes
+\[
+	\frac{1}{2\pi}e^{-R^2/2}R\,dR\,d\varphi,
+\]
+and
+\[
+	\cos\theta\,Z_1+\sin\theta\,Z_2 = R\cos(\varphi-\theta).
+\]
+
+The indicator constraints are equivalent to
+\[
+	\cos\varphi>0,
+	\qquad
+	\cos(\varphi-\theta)>0,
+\]
+which define the angular interval
+\[
+	\varphi\in(0,\pi)\cap(\theta,\theta+\pi),
+\]
+of length $\pi-\theta$.
+
+Separating radial and angular variables gives
+\[
+	\mathbb E[\cdots]
+	=
+	\frac{1}{2\pi}
+	\int_0^\infty R^3 e^{-R^2/2}\,dR
+	\int_{\mathcal I_\theta}
+	\cos\varphi\cos(\varphi-\theta)\,d\varphi,
+\]
+where $\mathcal I_\theta$ denotes the above interval.
+The radial integral evaluates to
+\[
+	\int_0^\infty R^3 e^{-R^2/2}\,dR = 2,
+\]
+and the angular integral yields
+\[
+	\int_{\mathcal I_\theta}\cos\varphi\cos(\varphi-\theta)\,d\varphi
+	=
+	\frac{1}{2}\big(\sin\theta+(\pi-\theta)\cos\theta\big).
+\]
+
+\begin{theorem}[Arc-cosine kernel]
+	\label{thm:arc-cosine}
+	For all $x,y\in\mathbb R^d$,
+	\[
+		K(x,y)
+		=
+		\frac{\|x\|\|y\|}{2\pi}
+		\big(\sin\theta+(\pi-\theta)\cos\theta\big),
+		\qquad
+		\theta=\arccos\!\Big(\frac{(x|y)}{\|x\|\|y\|}\Big).
+	\]
+\end{theorem}
+
+\subsection{Restriction to the Unit Circle}
+
+Let $x(\phi)=(\cos\phi,\sin\phi)\in S^1$.
+Then $(x(\phi)|x(\psi))=\cos(\phi-\psi)$ and
+\[
+	K(x(\phi),x(\psi))=k(\theta(\phi-\psi)),
+	\qquad
+	k(\theta)=\frac{1}{2\pi}\big(\sin\theta+(\pi-\theta)\cos\theta\big).
+\]
+
+\subsection{Population Integral Operator}
+
+Let $\mu$ be the uniform probability measure on $[0,2\pi)$.
+Define
+\[
+	(Tf)(\phi)
+	=
+	\int_0^{2\pi}K(x(\phi),x(\psi))f(\psi)\,d\mu(\psi).
+\]
+Then $T$ is a circular convolution operator.
+
+\subsection{Discretization of the Population}
+
+Let $\phi_1,\dots,\phi_n\stackrel{iid}{\sim}\mathrm{Unif}[0,2\pi)$ and define
+\[
+	(K_n)_{ij}=K(x(\phi_i),x(\phi_j)).
+\]
+Equivalently,
+\[
+	(T_nf)_i=\frac1n\sum_{j=1}^nK(x(\phi_i),x(\phi_j))f(\phi_j).
+\]
+This is a Monte Carlo discretization of the population operator $T$,
+isolating finite-sample effects while remaining in the infinite-population
+(kernel) regime.

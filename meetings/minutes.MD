@@ -302,3 +302,88 @@ At finite width, it could be a discrete convolution?
 
 Thesis committee form: 
 - Antonis Papapantoleon
+
+## 2026-01-19
+
+### Attendees
+- Shreyas
+- David
+
+### Agenda
+- Discussion about research questions
+
+### Discussions & Decisions
+- Let's say what is happening at finite width settings: Abstract sentence, is
+there anything more specific. Write down the actionable part "find if there can
+be a bound".
+- Question of decoupling the effects of width and population sampling is an interesting. 
+- Think about future work. 
+- Think of a timeline, scheduling the questions is important.
+- Move the mean-field view to the appendix. Write that it might be a less promising direction.
+- Make the questions a bit more extensive and schedule it a bit.
+
+
+## 2026-01-28 & 2026-01-29
+
+### Attendees
+- Shreyas
+- David
+- Alexander
+
+### Discussions & Decisions
+#### Key Decisions & Project Scope
+* **Clarify limitations:** Be honest and explicit about constraints in the report; push "real-world effects" to future work.
+* **Standardize terminology:** Use the term "sample size" instead of "population size" moving forward.
+* **Network architecture:** Ensure the choice of a 1-hidden layer network is consistent throughout the experiments.
+* **Problem definition:** Phrase the core problem clearly and explicitly early in the report.
+
+---
+
+#### Research Questions & Experiment Design
+* **Define sub-experiments explicitly:** For every experiment, clearly state the research question, dataset used, metrics tracked, expected output, prior assumptions, and variables being altered.
+* **Rewrite Q1:** The current formulation is not a valid research question and needs to be completely rewritten.
+* **Design Q2:** Establish a solid empirical setup for this question.
+* **Design Q3:** Use the empirical results from Q2 to determine a suitable sample size for Q3.
+
+---
+
+#### Theoretical & Analytical Tasks
+* **Perform analytical derivations:** Use these derivations specifically to tackle Neural Tangent Kernel (NTK) finite sample effects.
+* **Simplify the network:** Reduce the ReLU network to 1D and compute the integral directly to prove it is simple enough to integrate.
+* **Analyze outside training data bias:** Make this bias explicit in the write-up. Address Alex's concern that if sampling cannot resolve certain frequencies, it is unlikely the bias is simply inherited.
+
+---
+
+#### Experimental Setup & Variables
+* **Control variables:** Fix the number of iterations and the learning rate. Provide a strong, reasonable justification for the chosen learning rate, as practical rates often differ from theoretical reality.
+* **Tracked variables:** Monitor the number of samples, number of neurons, training steps, frequency content, and learning rate.
+* **Data progression:** Start by observing behavior on simple 1D data before moving to 2D datasets.
+* **Sensitivity checks:** Analyze how the output plots change when the underlying dataset is swapped.
+
+---
+
+#### Frequency & Noise Analysis
+* **Investigate multiple frequencies:** Return to testing 2 frequency components and explore how the model extends to $S^2$.
+* **Analyze frequency interactions:** Test if frequencies are independent or if they act as harmonics. Ensure chosen frequencies are **not** integer multiples of each other.
+* **Add noise:** Introduce random noise to the output to observe behavior, treating the noise essentially as a high-frequency signal.
+
+
+## 2026-03-09
+
+### Attendees 
+- Shreyas
+- David
+- Alexander
+
+### Discussions & Decisions
+
+Alexander:
+What happens to the lemmas if we use SGD?
+
+David:
+- Can we link the epsilon to something tangible?
+- Learning rates are also interesting 
+
+Alexander, David: 
+- Run numerical experiments 
+- Read literature on numerical linear algebra

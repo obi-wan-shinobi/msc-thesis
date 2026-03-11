@@ -1,0 +1,669 @@
+\documentclass[10pt,aspectratio=169]{beamer}
+
+% --- pdflatex-safe font & micro-typography ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% --- math & symbols ---
+\usepackage{amsmath,amssymb,mathtools,bm}
+
+% --- hyperlinks (Beamer already loads hyperref; this is safe) ---
+\hypersetup{hidelinks}
+
+% --- theme ---
+\usetheme[numbering=fraction]{metropolis}
+
+\usepackage{pgfpages} % for notes layouts
+
+% --- bibliography ---
+\usepackage[round,authoryear]{natbib}
+
+% --- Choose ONE of these toggles when compiling ---
+% \setbeameroption{hide notes}                        % audience version (default)
+% \setbeameroption{show notes}                        % notes printed under each slide
+% \setbeameroption{show only notes}                   % notes-only PDF (for printing)
+% \setbeameroption{show notes on second screen=right} % slide + notes side-by-side
+
+% --- shortcuts ---
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\btheta}{\boldsymbol{\theta}}
+\newcommand{\bx}{\boldsymbol{x}}
+
+% --- title info ---
+\title{Progress meeting}
+\subtitle{Closed-form NTK on $S^1$ (recap + next steps)}
+\author{Shreyas Kalvankar}
+\institute{TU Delft}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+% -----------------------
+\begin{frame}{Recap (last meeting)}
+	\small
+	\begin{columns}[T,onlytextwidth]
+		\begin{column}{0.52\textwidth}
+			\begin{block}{What we derived (continuum kernel on $S^1$)}
+				\begin{itemize}
+					\item \textbf{ReLU arc-cosine kernel (closed form):}
+					      \[
+						      K(x,y)=\frac{\|x\|\|y\|}{2\pi}\Big(\sin\theta+(\pi-\theta)\cos\theta\Big).
+					      \]
+					\item Restrict to $S^1$: $K(\phi,\psi)=g(\phi-\psi)$ \;\;$\Rightarrow$ \;\;\textbf{convolution operator}.
+					\item \textbf{Fourier diagonalization:} $\cos(k\phi),\sin(k\phi)$ are eigenfunctions.
+				\end{itemize}
+			\end{block}
+
+			\begin{block}{Key spectrum fact (no bias)}
+				\[
+					\lambda_k =
+					\begin{cases}
+						\frac{1}{8},              & k = 1                    \\
+						\frac{2}{\pi^2(k^2-1)^2}, & k \text{ is even}        \\
+						0,                        & k \text{ is odd, } k > 1
+					\end{cases}
+				\]
+			\end{block}
+		\end{column}
+
+		\begin{column}{0.48\textwidth}
+			\begin{block}{Why this matters (training dynamics)}
+				\begin{itemize}
+					\item odd modes ($k=3,5,\dots$) are \alert{not learned} for the no-bias kernel.
+					\item Clean “spectral bias” story in closed form on $S^1$.
+				\end{itemize}
+			\end{block}
+
+		\end{column}
+	\end{columns}
+
+	\note{
+		Keep this as a “memory refresh”: (i) closed-form kernel, (ii) convolution on $S^1$, (iii) explicit parity in eigenvalues,
+		(iv) mode-wise decay, (v) bias term is the missing ingredient to revisit.
+	}
+\end{frame}
+% -----------------------
+
+% -----------------------
+\begin{frame}{Plan for today}
+	\begin{enumerate}
+		\item \textbf{Full NTK with learnable bias:} closed form on $S^1$.
+		\item \textbf{Fourier eigenvalues:} all frequencies become learnable + rates.
+		\item \textbf{Residual dynamics:} continuum ODE $\Rightarrow$ mode-wise decay.
+		\item \textbf{Discretization (finite $n$):} kernel matrix dynamics + simple concentration/error controls.
+	\end{enumerate}
+	\note{Goal: move from the continuum operator picture to what we can justify for finite samples (and later finite width).}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Model and NTK block decomposition (bias included)}
+	\small
+	\[
+		f(x)=\frac{1}{\sqrt m}\sum_{i=1}^m a_i\,\sigma(w_i^\top x+b_i),
+		\qquad a_i\sim\mathcal N(0,1),\ w_i\sim\mathcal N(0,I_2),\ b_i(0)=0\ \text{(learnable)}.
+	\]
+	Let $u=w^\top x+b$, $v=w^\top y+b$, $\sigma(t)=t_+$, $\sigma'(t)=\mathbf 1_{\{t>0\}}$.
+	\begin{block}{Three parameter blocks}
+		\[
+			\Theta(x,y)=
+			\underbrace{\E[\sigma(u)\sigma(v)]}_{=:K_0(x,y)}
+			+\underbrace{(x^\top y)\E[\sigma'(u)\sigma'(v)]}_{\text{hidden weights}}
+			+\underbrace{\E[\sigma'(u)\sigma'(v)]}_{\text{bias gradients}}.
+		\]
+		Equivalently,
+		\[
+			\boxed{\ \Theta(x,y)=K_0(x,y)+(x^\top y+1)\,K_1(x,y),\qquad K_1(x,y):=\E[\sigma'(u)\sigma'(v)]\ }.
+		\]
+	\end{block}
+	\note{The +1 is the mechanism that removes the odd-mode obstruction on the circle.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Restrict to $S^1$: closed forms for $K_0$, $K_1$, and $\Theta$}
+	\small
+	Parametrize $x(\phi)=(\cos\phi,\sin\phi)$, $y(\psi)=(\cos\psi,\sin\psi)$.
+	Let $\delta\in[0,\pi]$ be the angle: $x(\phi)^\top y(\psi)=\cos\delta$.
+
+	\begin{block}{$K_1$ (a quadrant probability)}
+		\[
+			K_1(\delta)=\E[\mathbf 1_{\{u>0\}}\mathbf 1_{\{v>0\}}]=\mathbb P(u>0,v>0)=\frac{\pi-\delta}{2\pi}.
+		\]
+	\end{block}
+
+	\begin{block}{$K_0$ (arc-cosine kernel)}
+		\[
+			K_0(\delta)=\E[\sigma(u)\sigma(v)]=\frac{1}{2\pi}\Big(\sin\delta+(\pi-\delta)\cos\delta\Big).
+		\]
+	\end{block}
+
+	\begin{block}{Full NTK on $S^1$}
+		\[
+			\boxed{
+				\Theta(\delta)=K_0(\delta)+(1+\cos\delta)K_1(\delta)
+				=\frac{1}{2\pi}\Big(\sin\delta+2(\pi-\delta)\cos\delta+(\pi-\delta)\Big).
+			}
+		\]
+	\end{block}
+
+	\note{From here it’s a convolution operator on the circle, so Fourier diagonalizes it.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Convolution operator on $S^1$ and Fourier eigen-decomposition}
+	\small
+	Let $\mu$ be uniform on $S^1$ and define the continuum operator
+	\[
+		(Tf)(\phi)=\int_0^{2\pi}\Theta(\phi-\psi)\,f(\psi)\,\frac{d\psi}{2\pi}.
+	\]
+	Because $\Theta$ depends only on $\phi-\psi$, $T$ is convolution $\Rightarrow$ Fourier modes are eigenfunctions:
+	\[
+		T\cos(k\phi)=\lambda_k\cos(k\phi),\qquad T\sin(k\phi)=\lambda_k\sin(k\phi),\qquad k\ge 1.
+	\]
+	Eigenvalues can be computed:
+	\[
+		\boxed{
+			\lambda_k=\frac{1}{\pi}\int_0^\pi \Theta(\delta)\cos(k\delta)\,d\delta,\qquad k\ge 0.
+		}
+	\]
+	\note{Everything reduces to scalar integrals; we now have closed forms for all k.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Closed-form eigenvalues (bias included): all modes learnable}
+	\small
+	\begin{block}{Exact spectrum}
+		\[
+			\boxed{
+				\lambda_0=\frac14+\frac{3}{\pi^2},\qquad
+				\lambda_1=\frac14+\frac{1}{\pi^2},
+			}
+		\]
+		and for higher frequencies:
+		\[
+			\boxed{
+				\lambda_k=
+				\begin{cases}
+					\displaystyle \frac{1}{\pi^2 k^2},           & k\ge 3\ \text{odd},  \\[8pt]
+					\displaystyle \frac{k^2+3}{\pi^2 (k^2-1)^2}, & k\ge 2\ \text{even}.
+				\end{cases}
+			}
+		\]
+	\end{block}
+
+	\begin{block}{Main takeaway (vs. no-bias kernel)}
+		\begin{itemize}
+			\item \textbf{No annihilation:} $\lambda_k>0$ for every $k$ once the bias-gradient block is present.
+			      % \item \textbf{High-frequency scaling:} $\lambda_k \asymp 1/k^2$ (vs. the $1/k^4$ even-mode decay in the no-bias story).
+		\end{itemize}
+	\end{block}
+
+	\note{Punchline: bias fixes parity obstruction and changes the asymptotic rate.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Continuum residual dynamics: mode-wise decay}
+	\small
+	For squared loss under kernel gradient flow in the continuum operator picture:
+	\[
+		\partial_t r_t = -T r_t,\qquad r_t := f_t - f^\star.
+	\]
+	Expanding in Fourier:
+	\[
+		r_t(\phi)=\sum_{k\ge 0}\big(\hat r_{c,k}(t)\cos(k\phi)+\hat r_{s,k}(t)\sin(k\phi)\big),
+	\]
+	each coefficient evolves independently:
+	\[
+		\boxed{
+		\partial_t \hat r_k(t) = -\lambda_k\,\hat r_k(t)
+		\quad\Rightarrow\quad
+		\hat r_k(t)=e^{-\lambda_k t}\hat r_k(0).
+		}
+	\]
+	% \begin{block}{Interpretation}
+	% 	\begin{itemize}
+	% 		\item Time scale for mode $k$: $\tau_k \sim 1/\lambda_k$.
+	% 		      % \item Since $\lambda_k\sim 1/k^2$, higher frequencies decay slower $\Rightarrow$ explicit spectral bias.
+	% 	\end{itemize}
+	% \end{block}
+	\note{Up to here everything is exact in the continuum (infinite-sample) setting.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Consider only the first $K$ modes}
+	\small
+	\begin{block}{Low-frequency subspace on the circle}
+		\[
+			V_K := \mathrm{span}\{1,\cos(\phi),\sin(\phi),\dots,\cos(K\phi),\sin(K\phi)\}\subset L^2(S^1,\mu).
+		\]
+		\begin{itemize}
+			\item Think of $V_K$ as ``all signals with bandwidth $\le K$''.
+			\item Let $P_K$ be the orthogonal projection (in $L^2(\mu)$) onto $V_K$.
+		\end{itemize}
+	\end{block}
+
+	\begin{block}{Key continuum fact}
+		Because $T$ is convolution, it \textbf{preserves} Fourier modes:
+		\[
+			T(V_K)\subseteq V_K
+			\qquad\Longleftrightarrow\qquad
+			\boxed{\,P_K T = T P_K\,}.
+		\]
+	\end{block}
+
+	\note{Set up the mental model: we will track only the low-frequency ``coordinates'' of the residual. In continuum this is exact because convolution commutes with projection.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Continuum: projected dynamics are \emph{closed}}
+	\small
+	Define the low-frequency residual:
+	\[
+		r_t^{(\le K)} := P_K r_t \in V_K.
+	\]
+	Starting from the continuum dynamics $\partial_t r_t = -T r_t$, we project:
+	\[
+		\partial_t r_t^{(\le K)}
+		= P_K \partial_t r_t
+		= -P_K T r_t
+		= -T P_K r_t
+		= -T r_t^{(\le K)}.
+	\]
+	\begin{block}{Interpretation}
+		\begin{itemize}
+			\item In the continuum, the first $K$ modes evolve \textbf{as if higher modes don't exist}.
+			\item Each coefficient still decays as $e^{-\lambda_k t}$ for $k\le K$.
+		\end{itemize}
+	\end{block}
+
+	\note{This slide is the bridge: the continuum ``mode-wise decay'' picture remains true even after restricting to $V_K$. Next: finite samples break the commutation.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Finite samples: the operator becomes a random matrix}
+	\small
+	Draw training angles $\phi_1,\dots,\phi_n \overset{iid}{\sim}\mathrm{Unif}[0,2\pi)$ and define
+	\[
+		K_{ij} := \Theta(\phi_i-\phi_j)\in\R^{n\times n}.
+	\]
+	Residual vector on the sample:
+	\[
+		r(t)\in\R^n,\qquad r_i(t)=f_t(\phi_i)-y(\phi_i).
+	\]
+	Under kernel gradient flow:
+	\[
+		\boxed{\ \dot r(t) = -K\,r(t)\ }.
+	\]
+
+	Define $A:=\frac{1}{n}K$ (empirical operator form). Then
+	\[
+		\boxed{\ \dot r(t)=-nA\,r(t)\ }.
+	\]
+
+	\note{Emphasize: finite $n$ replaces the integral operator by a random matrix. The clean Fourier diagonalization is no longer exact.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Why finite samples break ``convolution''}
+	\small
+	\begin{columns}[T,onlytextwidth]
+		\begin{column}{0.52\textwidth}
+			\begin{block}{Continuum (uniform data on the circle)}
+				\[
+					(Tr)(\phi)=\int \Theta(\phi-\psi)\,r(\psi)\,d\mu(\psi),
+					\qquad d\mu(\psi)=\frac{d\psi}{2\pi}.
+				\]
+				\begin{itemize}
+					\item \textbf{Uniform measure:} shifting $\psi\mapsto\psi+\alpha$ does not change $\mu$.
+					\item \textbf{Kernel depends on differences:} $\Theta(\phi-\psi)$.
+					\item \textbf{So:} $T$ is a \alert{convolution} operator $\Rightarrow$ Fourier modes diagonalize it.
+				\end{itemize}
+			\end{block}
+		\end{column}
+
+		\begin{column}{0.48\textwidth}
+			\begin{block}{Finite $n$ (point cloud on the circle)}
+				\[
+					(Ar)_i=\frac1n\sum_{j=1}^n \Theta(\phi_i-\phi_j)\,r_j
+					\qquad\Big(A=\tfrac1n K\Big).
+				\]
+				\begin{itemize}
+					\item The data distribution becomes \textbf{spikes}:
+					      \[
+						      \mu_n=\frac1n\sum_{j=1}^n \delta_{\phi_j}.
+					      \]
+					\item \textbf{Not shift-invariant:} rotating the circle moves the spikes.
+					\item \textbf{So:} $A$ is \alert{not exactly convolution} $\Rightarrow$ Fourier vectors are not exact eigenvectors.
+				\end{itemize}
+			\end{block}
+		\end{column}
+	\end{columns}
+
+	\note{Talk track: “In the continuum, uniform measure + difference-kernel gives shift invariance, i.e. true convolution, so Fourier diagonalizes. With finite samples, the measure is a set of spikes, not shift-invariant, so convolution symmetry is broken and Fourier vectors are only approximately eigenvectors.”}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Reintroducing Fourier structure: sampled Fourier features}
+	\small
+	Even though $A$ is not convolution, we can still evaluate Fourier modes on the sample.
+
+	\begin{block}{Feature matrix for the first $K$ modes}
+		Let $d=2K+1$ and define
+		\[
+			\Phi \in \R^{n\times d},\qquad
+			\Phi = \big[\,\mathbf{1},\ c_1,\ s_1,\ \dots,\ c_K,\ s_K\,\big],
+		\]
+		where $(c_k)_i=\cos(k\phi_i)$ and $(s_k)_i=\sin(k\phi_i)$.
+	\end{block}
+
+	\begin{block}{Low-frequency subspace on the sample}
+		\[
+			\mathcal S_K := \mathrm{col}(\Phi)\subseteq\R^n.
+		\]
+		We will track the \textbf{projection} of $r(t)$ onto $\mathcal S_K$.
+	\end{block}
+
+	\note{This is the finite-sample analogue of $V_K$. In continuum $V_K$ is invariant under $T$; here $\mathcal S_K$ is only approximately invariant under $A$.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Finite-$n$ projected dynamics: within-subspace + leakage}
+	\small
+	Define the least-squares projection coordinates:
+	\[
+		\alpha(t):=\arg\min_{a\in\R^d}\|r(t)-\Phi a\|_2^2
+		\quad\Rightarrow\quad
+		\alpha(t)=(\Phi^\top\Phi)^{-1}\Phi^\top r(t),
+	\]
+	so that $r_\parallel(t):=\Phi\alpha(t)$ is the component of $r(t)$ in $\mathcal S_K$.
+
+	Using $\dot r=-nA r$ and $r=\Phi\alpha+r_\perp$:
+	\[
+		\boxed{
+			\dot\alpha(t)
+			= -n(\Phi^\top\Phi)^{-1}\Phi^\top A\Phi\;\alpha(t)
+			\;-\;n(\Phi^\top\Phi)^{-1}\Phi^\top A r_\perp(t).
+		}
+	\]
+
+	\begin{block}{Interpretation}
+		\begin{itemize}
+			\item \textbf{Within-subspace matrix:} $(\Phi^\top\Phi)^{-1}\Phi^\top A\Phi$ (a $d\times d$ object).
+			\item \textbf{Leakage term:} high-frequency components can feed into low-frequency coordinates because $A$ is not convolution.
+		\end{itemize}
+	\end{block}
+
+	\note{This slide is the finite-$n$ analogue of the continuum closure $P_KT=TP_K$. The first term should look like $\Lambda$; the second term is what we need to control.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Define the empirical matrices}
+	Let $d=2K+1$ and define the population matrices:
+	\[
+		\Lambda:=\mathrm{diag}(\lambda_0,\lambda_1,\lambda_1,\dots,\lambda_K,\lambda_K),
+		\qquad
+		\Sigma:=\mathrm{diag}\!\Big(1,\tfrac12,\tfrac12,\dots,\tfrac12\Big).
+	\]
+	\textbf{Finite-$n$ diagonal correction (self-term):}
+	\[
+		\lambda_k^{(n)}:=\Big(1-\frac1n\Big)\lambda_k+\frac1n\Theta(0),
+		\qquad
+		\Lambda^{(n)}:=\mathrm{diag}(\lambda_0^{(n)},\lambda_1^{(n)},\lambda_1^{(n)},\dots,\lambda_K^{(n)},\lambda_K^{(n)}).
+	\]
+	Define
+	\[
+		\boxed{
+			G:=\frac{1}{n}\Phi^\top\Phi\in\R^{d\times d},
+			\qquad
+			H:=\frac{1}{n}\Phi^\top A\Phi\in\R^{d\times d}.
+		}
+	\]
+
+	The within-subspace dynamics matrix is
+	\[
+		(\Phi^\top\Phi)^{-1}\Phi^\top A\Phi
+		=(nG)^{-1}(nH)=\boxed{\,G^{-1}H\,}.
+	\]
+	So if $G^{-1}H \approx \Lambda$, then low-mode coefficients decay at (approximately) the population rates.
+
+	\note{Emphasize: “Everything reduces to controlling two d-by-d matrices: geometry (G) and restricted operator action (H).”}
+\end{frame}
+
+% -----------------------
+\begin{frame}{What we need to show}
+	\small
+
+	\begin{block}{1) Sampled Fourier features are (almost) orthogonal}
+		\[
+			G:=\frac1n\Phi^\top\Phi \approx \Sigma
+			\quad\text{(entrywise; union bound over $d^2$ entries).}
+		\]
+		\vspace{-2em}
+		\begin{itemize}
+			\item Ensures $\Phi^\top\Phi$ is invertible and well-conditioned.
+		\end{itemize}
+	\end{block}
+
+	\begin{block}{2) Restricted operator is (almost) diagonal with the same eigenvalues}
+		\[
+			H:=\frac1n\Phi^\top A\Phi \approx \Sigma\Lambda^{(n)}
+			\quad\text{(entrywise; union bound over $d^2$ entries).}
+		\]
+		\vspace{-2em}
+		\begin{itemize}
+			\item Then $G^{-1}H \approx \Sigma^{-1}(\Sigma\Lambda^{(n)})=\Lambda^{(n)}\approx \Lambda$.
+		\end{itemize}
+	\end{block}
+	\vspace{-1em}
+	\begin{block}{3) Approximate eigen-action / invariance (controls leakage)}
+		\[
+			A\Phi \approx \Phi\Lambda^{(n)}
+			\quad\text{(entrywise; union bound over $nd$ entries).}
+		\]
+	\end{block}
+
+	\note{Key punchline: two d-by-d concentration statements + one n-by-d eigen-action statement. Using unscaled features means Sigma appears. Lambda^(n) is just the self-term correction (j=i).}
+\end{frame}
+
+% -----------------------
+\begin{frame}{What is $\Lambda^{(n)}$ (finite-$n$ diagonal correction)?}
+	\small
+	In the empirical operator
+	\[
+		(Au)_i=\frac{1}{n}\sum_{j=1}^n \Theta(\phi_i-\phi_j)\,u_j,
+	\]
+	the sum includes the \textbf{self-term} $j=i$, contributing $\frac{1}{n}\Theta(0)\,u_i$.
+
+	\begin{itemize}
+		\item In the continuum integral, a single point has measure $0$ (no ``self-mass'').
+		\item 		In the discrete sum, the self-term has weight $1/n$ $\Rightarrow$ an $O(1/n)$ shift in the
+		      \emph{effective eigenvalue} in expectation.
+
+	\end{itemize}
+
+	\begin{block}{Define corrected eigenvalues (for modes $k=0,1,\dots,K$)}
+		\[
+			\boxed{
+				\lambda_k^{(n)} := \Big(1-\frac{1}{n}\Big)\lambda_k+\frac{1}{n}\Theta(0)
+			}
+			\qquad\Rightarrow\qquad
+			\boxed{
+				\Lambda^{(n)} := \mathrm{diag}\!\big(\lambda_0^{(n)},\lambda_1^{(n)},\lambda_1^{(n)},\dots,\lambda_K^{(n)},\lambda_K^{(n)}\big).
+			}
+		\]
+		As $n\to\infty$, $\Lambda^{(n)}\to \Lambda$.
+	\end{block}
+
+	\note{Talk track: “Discrete operator averages over n points; one of them is the point itself. That adds a small self-interaction term of size 1/n.”}
+\end{frame}
+
+
+% -----------------------
+\begin{frame}{Lemma A: Gram matrix concentration around $\Sigma$}
+	\small
+	Let $\Sigma:=\mathrm{diag}(1,\tfrac12,\tfrac12,\dots,\tfrac12)\in\R^{d\times d}$.
+
+	\begin{block}{(A1) Exact expectation}
+		\[
+			\boxed{\E[G]=\Sigma.}
+		\]
+	\end{block}
+
+	\begin{block}{(A2) Entrywise Hoeffding bound}
+		\vspace{1em}
+		Each entry $G_{pq}=\frac{1}{n}\sum_{i=1}^n Z_i$ with $Z_i=\Phi_{ip}\Phi_{iq}$ and $|Z_i|\le 1$.
+		So for any $\varepsilon>0$,
+		\[
+			\boxed{
+				\mathbb{P}\big(|G_{pq}-\Sigma_{pq}|\ge \varepsilon\big)\le 2\exp(-2n\varepsilon^2).
+			}
+		\]
+	\end{block}
+
+	\begin{block}{(A3) Union bound over all $d^2$ entries}
+		\[
+			\boxed{
+				\mathbb{P}\big(\|G-\Sigma\|_{\max}\ge \varepsilon\big)\le 2d^2\exp(-2n\varepsilon^2).
+			}
+		\]
+	\end{block}
+
+	\textit{Interpretation:} sampled Fourier vectors are close to their population orthogonality relations.
+
+	\note{You can say: “This guarantees invertibility/conditioning of Phi^T Phi for large enough n.”}
+\end{frame}
+
+% -----------------------
+\begin{frame}{(WIP) Lemma B: compressed operator $H$ concentrates around $\Sigma\Lambda^{(n)}$}
+	\small
+	Recall $H=\frac1n\Phi^\top A\Phi$ and $\kappa:=\|\Theta\|_\infty$.
+
+	\begin{block}{(B1) Exact expectation}
+		\[
+			\boxed{\E[H]=\Sigma\Lambda^{(n)}.}
+		\]
+	\end{block}
+
+	\begin{block}{(B2) Entrywise McDiarmid bound (bounded differences)}
+		For any $\varepsilon>0$,
+		\[
+			\boxed{
+			\mathbb{P}\big(|H_{pq}-(\Sigma\Lambda^{(n)})_{pq}|\ge \varepsilon\big)
+			\le 2\exp\!\left(-\frac{n\varepsilon^2}{8\kappa^2}\right).
+			}
+		\]
+	\end{block}
+
+	\begin{block}{(B3) Union bound over all $d^2$ entries}
+		\[
+			\boxed{
+				\mathbb{P}\big(\|H-\Sigma\Lambda^{(n)}\|_{\max}\ge \varepsilon\big)
+				\le 2d^2\exp\!\left(-\frac{n\varepsilon^2}{8\kappa^2}\right).
+			}
+		\]
+	\end{block}
+
+	\textit{Interpretation:} inside the low-mode span, the empirical operator is close to diagonal
+	with diagonal entries $\approx \lambda_k$ (up to $\Sigma$ and the tiny $\Lambda^{(n)}$ correction).
+
+	\note{Talk track: “This is the finite-n analogue of ‘Fourier diagonalizes the convolution operator’.”}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Lemma C: approximate eigen-action $A\Phi \approx \Phi\Lambda^{(n)}$}
+	\begin{block}{Hoeffding + union bound}
+		For each entry $(i,p)$,
+		\[
+			(A\Phi-\Phi\Lambda^{(n)})_{i,p}
+			=\frac1n\sum_{j=1}^n\underbrace{\Big(\Theta(\phi_i-\phi_j)\varphi_p(\phi_j)-\E[\Theta(\phi_i-\phi_j)\varphi_p(\phi_j)\mid\phi_i]\Big)}_{=:X_j,\ \E[X_j\mid\phi_i]=0,\ |X_j|\le 2\kappa}
+		\]
+		For any $\varepsilon>0$ and $n\ge 2$,
+		\[
+			\boxed{
+				\mathbb{P}\big(\|A\Phi-\Phi\Lambda^{(n)}\|_{\max}\ge \varepsilon\big)
+				\le 2nd\,\exp\!\left(-\frac{n\varepsilon^2}{4\kappa^2}\right).
+			}
+		\]
+	\end{block}
+	\begin{block}{Interpretation}
+		Each sampled cosine/sine vector is \emph{almost} an eigenvector of $A$:
+		\[
+			A\,c_k \approx \lambda_k^{(n)}\,c_k,\qquad
+			A\,s_k \approx \lambda_k^{(n)}\,s_k.
+		\]
+		% So $\mathcal S_K=\mathrm{col}(\Phi)$ is approximately invariant under $A$, which helps control leakage.
+	\end{block}
+
+	\note{Talk track: “If A maps low modes back to low modes, then r_perp can’t inject too much into the low-mode coordinates.”}
+\end{frame}
+
+\begin{frame}{Conclusion}
+	\small
+
+	\begin{block}{Continuum (ideal)}
+		Convolution operator $\Rightarrow$ Fourier modes are \textbf{exact eigenfunctions}:
+		\[
+			\hat r_k(t)=e^{-\lambda_k t}\,\hat r_k(0).
+		\]
+	\end{block}
+
+	\begin{block}{Finite $n$ (practical)}
+		We project residuals onto the first $K$ sampled Fourier features $\mathcal S_K=\mathrm{col}(\Phi)$ and track coefficients $\alpha(t)$.
+		The projected dynamics are governed by the \textbf{restricted operator} $G^{-1}H$:
+		\[
+			\dot\alpha(t) \;=\; -n\,(G^{-1}H)\,\alpha(t)\;+\;\text{(small leakage)}.
+		\]
+	\end{block}
+
+	\begin{block}{Main message}
+		With enough samples, the low-mode geometry and restricted operator \textbf{concentrate}:
+		\[
+			G^{-1}H \approx \Lambda
+			\qquad\Longrightarrow\qquad
+			\boxed{\ \dot\alpha_k(t)\approx -n\lambda_k\,\alpha_k(t)\ } \quad (k\le K).
+		\]
+		So the first $K$ Fourier modes still decay at (approximately) the \textbf{population rates} dictated by $\lambda_k$.
+	\end{block}
+
+	\note{Say: “We don’t diagonalize the full random matrix. We only need the action on the low-frequency subspace. Concentration lets us recover the continuum eigenvalue story for the first K modes.”}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Next steps}
+	\small
+	\begin{block}{1) Finish the finite-$n$ story (turn lemmas into a theorem)}
+		\begin{itemize}
+			\item Combine Lemma A/B/C into a single \textbf{high-probability} statement:
+			      \[
+				      G^{-1}H \approx \Lambda
+				      \quad\Rightarrow\quad
+				      \dot\alpha_k(t)\approx -n\lambda_k\,\alpha_k(t)\ (k\le K),
+			      \]
+			      with an explicit sample-size requirement $n=n(K,\varepsilon,\delta)$.
+			\item Clarify what assumptions are needed to make the \textbf{leakage} term small (e.g.\ low-frequency target / initialization).
+		\end{itemize}
+	\end{block}
+
+	\begin{block}{2) Empirical validation}
+		\begin{itemize}
+			\item Simulate finite-$n$ kernel GD on $S^1$:
+			      compare $r(t)$ projected onto first $K$ modes vs.\ the prediction $e^{-n\lambda_k t}$.
+			\item Sweep $n$ and $K$ to see when mode-wise decay becomes stable.
+		\end{itemize}
+	\end{block}
+
+	\begin{block}{3) Move onto finite-width}
+		\begin{itemize}
+			\item \textbf{Finite width:} quantify deviation of $\Theta_m$ from $\Theta$ (kernel concentration / drift).
+			\item \textbf{Non-uniform sampling:} connect to density-induced frequency bias and loss of invariance.
+		\end{itemize}
+	\end{block}
+
+	\note{Keep this concrete: (i) theorem statement, (ii) plots that confirm it, (iii) how it connects to the bigger thesis (finite-width + sampling density).}
+\end{frame}
+
+\end{document}

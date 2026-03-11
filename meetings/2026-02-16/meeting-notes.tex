@@ -1,0 +1,194 @@
+\documentclass[10pt,aspectratio=169]{beamer}
+
+% --- pdflatex-safe font & micro-typography ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% --- math & symbols ---
+\usepackage{amsmath,amssymb,mathtools,bm}
+
+% --- hyperlinks (Beamer already loads hyperref; this is safe) ---
+\hypersetup{hidelinks}
+
+% --- theme ---
+\usetheme[numbering=fraction]{metropolis}
+
+\usepackage{pgfpages} % for notes layouts
+
+% --- bibliography ---
+\usepackage[round,authoryear]{natbib}
+
+% --- Choose ONE of these toggles when compiling ---
+% \setbeameroption{hide notes}                        % audience version (default)
+% \setbeameroption{show notes}                        % notes printed under each slide
+% \setbeameroption{show only notes}                   % notes-only PDF (for printing)
+% \setbeameroption{show notes on second screen=right} % slide + notes side-by-side
+
+% --- shortcuts ---
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\btheta}{\boldsymbol{\theta}}
+\newcommand{\bx}{\boldsymbol{x}}
+
+% --- title info ---
+\title{Progress meeting}
+\subtitle{Closed form solutions of the NTK for 1-hidden layer ReLU networks}
+\author{Shreyas Kalvankar}
+\institute{TU Delft}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+% -----------------------
+\begin{frame}{ReLU arc-cosine kernel (covariance form)}
+	Let $x,y\in\R^d$, $w\sim\mathcal N(0,I_d)$, $\sigma(t)=\max\{0,t\}$.
+	\[
+		K(x,y)\;:=\;\E\big[\sigma(w^\top x)\sigma(w^\top y)\big].
+	\]
+	Let $\theta\in[0,\pi]$ be the angle between $x$ and $y$:
+	\[
+		\cos\theta=\frac{\langle x,y\rangle}{\|x\|\|y\|}.
+	\]
+	Then the closed form is
+	\[
+		\boxed{
+			K(x,y)=\frac{\|x\|\|y\|}{2\pi}\Big(\sin\theta+(\pi-\theta)\cos\theta\Big).
+		}
+	\]
+	\note{I’m using the standard 2D reduction to span\{x,y\} and polar integration. I’ll keep the derivation on paper if needed.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Restriction to the circle and convolution operator}
+	Restrict inputs to $S^1$: $x(\phi)=(\cos\phi,\sin\phi)$, $\phi\in[0,2\pi)$.
+	Then
+	\[
+		\langle x(\phi),x(\psi)\rangle=\cos(\phi-\psi),\qquad \delta:=\phi-\psi.
+	\]
+	Hence $K(\phi,\psi)=g(\delta)$ is \emph{shift-invariant} (convolution kernel).
+	Define the operator
+	\[
+		(Tf)(\phi)=\int_0^{2\pi}K(\phi,\psi)f(\psi)\frac{d\psi}{2\pi}
+		= (g*f)(\phi).
+	\]
+	\note{This makes the Fourier basis the right eigenbasis automatically.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Fourier diagonalization}
+	Because $T$ is convolution on $S^1$:
+	\[
+		T\cos(k\phi)=\lambda_k\cos(k\phi),\qquad
+		T\sin(k\phi)=\lambda_k\sin(k\phi),
+	\]
+	with eigenvalues given by Fourier coefficients
+	\[
+		\lambda_k=\int_{0}^{2\pi} g(\delta)\cos(k\delta)\frac{d\delta}{2\pi},\qquad k\ge 0.
+	\]
+	\note{So the entire spectral story reduces to computing these scalar integrals.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Closed-form eigenvalues: $k=1$, $k=2$, and parity}
+	For the ReLU arc-cosine kernel restricted to $S^1$ (above),
+	the eigenvalues admit closed forms:
+
+	\[
+		\boxed{\lambda_1=\frac18.}
+	\]
+
+	For $k>1$:
+	\[
+		\boxed{
+			\lambda_k=
+			\frac{1+(-1)^k}{\pi^2\,(k^2-1)^2}
+			=
+			\begin{cases}
+				\displaystyle \frac{2}{\pi^2\,(k^2-1)^2}, & k \text{ even}, \\[6pt]
+				0,                                        & k \text{ odd}.
+			\end{cases}}
+	\]
+
+	In particular
+	\[
+		\lambda_2=\frac{2}{9\pi^2},\qquad
+		\lambda_3=0.
+	\]
+	\note{Key takeaway: after $k=1$, only even modes have nonzero eigenvalues; odd modes are annihilated.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Consequence: no-bias kernel cannot learn odd modes}
+	Consider gradient flow for squared loss under the operator:
+	\[
+		\partial_t r_t = -Tr_t,\qquad r_t := f_t - f^\star.
+	\]
+	In Fourier:
+	\[
+		\partial_t \hat r_k(t)=-\lambda_k \hat r_k(t)
+		\quad\Rightarrow\quad
+		\hat r_k(t)=e^{-\lambda_k t}\hat r_k(0).
+	\]
+
+	Thus any component in a zero-eigenvalue eigenspace is \emph{not learned}:
+	\[
+		\lambda_k=0\;\Rightarrow\; \hat r_k(t)\equiv \hat r_k(0).
+	\]
+
+	For this kernel: all odd $k>1$ satisfy $\lambda_k=0$ $\;\Rightarrow\;$
+	odd modes ($k=3,5,\dots$) do not decay.
+	\note{This gives a clean, explicit “spectral obstruction” story without invoking finite width yet.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Full NTK with learnable bias (weights + output layer + bias)}
+	Use the standard 1-hidden-layer model
+	\[
+		f(x)=\frac{1}{\sqrt m}\sum_{i=1}^m a_i\,\sigma(w_i^\top x+b_i),
+		\qquad
+		a_i\sim\mathcal N(0,1),\; w_i\sim\mathcal N(0,I),\; b_i(0)=0.
+	\]
+	(Initialize $b_i=0$, but keep $b_i$ learnable.)
+
+	The limiting NTK decomposes by parameter blocks:
+	\[
+		\Theta(x,x')=
+		\E[\sigma(u)\sigma(u')]
+		+\E[a^2\sigma'(u)\sigma'(u')]\,(x^\top x')
+		+\E[a^2\sigma'(u)\sigma'(u')],
+	\]
+	where $u=w^\top x+b$, $u'=w^\top x'+b$ and $\sigma'(t)=\mathbf 1_{\{t>0\}}$.
+
+	Since $\E[a^2]=1$:
+	\[
+		\boxed{\Theta(x,x')=K_0(x,x') + (x^\top x' + 1)\,K_1(x,x')}
+	\]
+	with
+	\[
+		K_0(x,x')=\E[\sigma(u)\sigma(u')],\qquad
+		K_1(x,x')=\E[\mathbf 1_{\{u>0\}}\mathbf 1_{\{u'>0\}}].
+	\]
+	\note{The extra “$+1$” factor is exactly the bias-gradient contribution; this is the term missing in the no-bias story.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Next steps}
+	\begin{itemize}
+		\item Restrict the \emph{full} NTK $\Theta$ to $S^1$ and compute its Fourier eigenvalues in closed form.
+		\item Use those eigenvalues to obtain explicit mode-wise decay rates:
+		      \[
+			      \hat r_k(t)=e^{-\Lambda_k t}\hat r_k(0).
+		      \]
+		\item Compare parity behavior (do odd modes become learnable once bias term is included?).
+	\end{itemize}
+	\note{This is the key bridge to the “closed form NTK dynamics” statement and later finite-sample perturbations.}
+\end{frame}
+% -----------------------
+
+
+% -----------------------
+\end{document}

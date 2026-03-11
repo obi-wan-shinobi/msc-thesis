@@ -1,0 +1,273 @@
+\documentclass[10pt,aspectratio=169]{beamer}
+
+% --- pdflatex-safe font & micro-typography ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% --- math & symbols ---
+\usepackage{amsmath,amssymb,mathtools,bm}
+
+% --- hyperlinks (Beamer already loads hyperref; this is safe) ---
+\hypersetup{hidelinks}
+
+% --- theme ---
+\usetheme[numbering=fraction]{metropolis}
+
+\usepackage{pgfpages} % for notes layouts
+
+% --- bibliography ---
+\usepackage[round,authoryear]{natbib}
+
+% --- Choose ONE of these toggles when compiling ---
+% \setbeameroption{hide notes}                        % audience version (default)
+% \setbeameroption{show notes}                        % notes printed under each slide
+% \setbeameroption{show only notes}                   % notes-only PDF (for printing)
+% \setbeameroption{show notes on second screen=right} % slide + notes side-by-side
+
+% --- shortcuts ---
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\btheta}{\boldsymbol{\theta}}
+\newcommand{\bx}{\boldsymbol{x}}
+
+% --- title info ---
+\title{Progress meeting}
+\subtitle{Concentration inequalities}
+\author{Shreyas Kalvankar}
+\institute{TU Delft}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+% -----------------------
+\begin{frame}{Recap}
+	\small
+	We have three concentration lemmas for the first \(K\) Fourier modes:
+	\begin{itemize}
+		\item \textbf{Lemma A:} sampled Fourier features are almost orthogonal,
+		\item \textbf{Lemma B:} the compressed operator is close to its expectation,
+		\item \textbf{Lemma C:} the empirical operator acts approximately like the population eigen-operator on these modes.
+	\end{itemize}
+
+	\begin{block}{Question}
+		If we fix a target accuracy \(\varepsilon\), confidence \(1-\delta\), and mode cutoff \(K\), what sample size \(n\) do the bounds actually require?
+	\end{block}
+
+	\note{This section is not about sharp constants; it is about honestly checking what the current concentration proofs imply numerically.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Numerical choices for the back-of-the-envelope calculation}
+	\small
+	We plug in one concrete set of values:
+	\[
+		\varepsilon = 0.05,\qquad \delta = 0.05,\qquad K=4,\qquad d=2K+1=9.
+	\]
+
+	For the kernel bound we use
+	\[
+		\kappa=\|\Theta\|_\infty=\Theta(0)=\frac{3}{2},
+	\]
+	which is the worst-case bound coming from the closed-form NTK on \(S^1\).
+
+	\begin{block}{Interpretation}
+		\begin{itemize}
+			\item \(\varepsilon=0.05\): target entrywise error level,
+			\item \(\delta=0.05\): \(95\%\) confidence,
+			\item \(K=4\): first 4 Fourier modes only.
+		\end{itemize}
+	\end{block}
+
+	\note{We are deliberately using the exact constants from the lemmas, with no optimization.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Lemma A: Gram concentration}
+	\small
+	The bound was
+	\[
+		\mathbb P\!\left(\left\|\frac1n\Phi^\top\Phi-I_d\right\|_{\max}\ge \varepsilon\right)
+		\le 2d^2\exp\!\left(-\frac{n\varepsilon^2}{8}\right).
+	\]
+
+	To make the failure probability at most \(\delta\), it is enough that
+	\[
+		2d^2\exp\!\left(-\frac{n\varepsilon^2}{8}\right)\le \delta,
+	\]
+	which gives
+	\[
+		\boxed{
+			n \ge \frac{8}{\varepsilon^2}\log\!\left(\frac{2d^2}{\delta}\right).
+		}
+	\]
+
+	Plugging in \(\varepsilon=0.05\), \(d=9\), \(\delta=0.05\):
+	\[
+		n \ge \frac{8}{0.05^2}\log\!\left(\frac{2\cdot 9^2}{0.05}\right)
+		\approx 25{,}867.
+	\]
+
+	\begin{block}{Numerical requirement}
+		\[
+			\boxed{n_{\text{Lemma A}} \approx 2.6\times 10^4}
+		\]
+	\end{block}
+
+	\note{This is already quite large, but still the mildest of the three requirements.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Lemma B: compressed operator concentration}
+	\small
+	The bound was
+	\[
+		\mathbb P\!\left(\|H-\mathbb EH\|_{\max}\ge \varepsilon\right)
+		\le 2d^2\exp\!\left(-\frac{n\varepsilon^2}{32\kappa^2}\right).
+	\]
+
+	To make this at most \(\delta\), it is enough that
+	\[
+		2d^2\exp\!\left(-\frac{n\varepsilon^2}{32\kappa^2}\right)\le \delta,
+	\]
+	so
+	\[
+		\boxed{
+			n \ge \frac{32\kappa^2}{\varepsilon^2}\log\!\left(\frac{2d^2}{\delta}\right).
+		}
+	\]
+
+	Plugging in \(\kappa=\frac32\), \(\varepsilon=0.05\), \(d=9\), \(\delta=0.05\):
+	\[
+		n \ge \frac{32(3/2)^2}{0.05^2}\log\!\left(\frac{2\cdot 9^2}{0.05}\right)
+		\approx 232{,}800.
+	\]
+
+	\begin{block}{Numerical requirement}
+		\[
+			\boxed{n_{\text{Lemma B}} \approx 2.3\times 10^5}
+		\]
+	\end{block}
+
+	\note{This is the most expensive bound because McDiarmid uses only bounded differences and we are controlling all entries uniformly.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Lemma C: approximate eigen-action}
+	\small
+	The bound was
+	\[
+		\mathbb P\!\left(\|A\Phi-\Phi\Lambda^{(n)}\|_{\max}\ge \varepsilon\right)
+		\le 2nd\exp\!\left(-\frac{n\varepsilon^2}{8\kappa^2}\right).
+	\]
+
+	To make this at most \(\delta\), we need
+	\[
+		2nd\exp\!\left(-\frac{n\varepsilon^2}{8\kappa^2}\right)\le \delta.
+	\]
+
+	This is implicit because \(n\) appears inside the logarithm. Rearranging:
+	\[
+		\boxed{
+			n \ge \frac{8\kappa^2}{\varepsilon^2}\log\!\left(\frac{2nd}{\delta}\right).
+		}
+	\]
+
+	For \(\kappa=\frac32\), \(\varepsilon=0.05\), \(d=9\), \(\delta=0.05\), solving this fixed-point inequality gives
+	\[
+		n \approx 126{,}994.
+	\]
+
+	\begin{block}{Numerical requirement}
+		\[
+			\boxed{n_{\text{Lemma C}} \approx 1.3\times 10^5}
+		\]
+	\end{block}
+
+	\note{The prefactor \(nd\) comes from a union bound over all rows and low-mode columns, which makes the estimate noticeably looser.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{Numerical values}
+	\small
+	\begin{table}
+		\centering
+		\begin{tabular}{l c}
+			\hline
+			\textbf{Lemma}                             & \textbf{Required \(n\) for \(\varepsilon=0.05,\ \delta=0.05,\ K=4\)} \\
+			\hline
+			Lemma A: Gram concentration                & \( \approx 25{,}867\)                                                \\
+			Lemma B: compressed operator concentration & \( \approx 232{,}800\)                                               \\
+			Lemma C: approximate eigen-action          & \( \approx 126{,}994\)                                               \\
+			\hline
+		\end{tabular}
+	\end{table}
+
+	\begin{block}{Takeaway}
+		Even for the first \(K=4\) modes and a modest target \(\varepsilon=0.05\), the current worst-case concentration bounds ask for
+		\[
+			n \sim 10^4 \text{ to } 10^5.
+		\]
+	\end{block}
+
+	\note{This is the slide to discuss with the advisor: rigorous, but numerically pessimistic.}
+\end{frame}
+
+% -----------------------
+\begin{frame}{What this means}
+	\small
+	\begin{block}{Interpretation}
+		\begin{itemize}
+			\item The constants are \textbf{very conservative}.
+			\item They are good for:
+			      \begin{itemize}
+				      \item consistency as \(n\to\infty\),
+				      \item showing the right qualitative dependence on \(\varepsilon,\delta,K\),
+				      \item justifying the continuum-to-finite-sample picture.
+			      \end{itemize}
+			\item They might \alert{not} be sharp enough to predict realistic sample sizes.
+		\end{itemize}
+	\end{block}
+
+	\begin{block}{Improvements}
+		To get meaningful finite-\(n\) rates, we probably need sharper tools:
+		\begin{itemize}
+			% \item control the compressed \(d\times d\) operator directly,
+			\item use variance-aware bounds (Bernstein / matrix concentration),
+			\item avoid raw union bounds over all rows.
+		\end{itemize}
+	\end{block}
+
+	\note{The message is not “the theory fails”; it is “the first-pass concentration proof is too crude for practical \(n\).”}
+\end{frame}
+
+% -----------------------
+\begin{frame}{If we relax the tolerance}
+	\small
+	Keeping \(K=4\), \(d=9\), \(\delta=0.05\), \(\kappa=\tfrac32\), but changing \(\varepsilon\):
+
+	\begin{table}
+		\centering
+		\begin{tabular}{c c c c}
+			\hline
+			\(\varepsilon\) & Lemma A                    & Lemma C                    & Lemma B                     \\
+			\hline
+			0.10            & \(\approx 6.5\times 10^3\) & \(\approx 2.9\times 10^4\) & \(\approx 5.8\times 10^4\)  \\
+			0.05            & \(\approx 2.6\times 10^4\) & \(\approx 1.3\times 10^5\) & \(\approx 2.3\times 10^5\)  \\
+			0.02            & \(\approx 1.6\times 10^5\) & \(\approx 8.8\times 10^5\) & \(\approx 1.45\times 10^6\) \\
+			\hline
+		\end{tabular}
+	\end{table}
+
+	\begin{block}{Pattern}
+		The sample size grows essentially like \(1/\varepsilon^2\), so pushing to small error rapidly becomes expensive.
+	\end{block}
+
+	\note{This makes the tradeoff visually obvious: the issue is not just the constants, but also the \(1/\varepsilon^2\) scaling.}
+\end{frame}
+
+\end{document}
+
+\end{document}

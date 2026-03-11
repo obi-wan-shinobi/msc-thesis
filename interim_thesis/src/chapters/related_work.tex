@@ -856,6 +856,37 @@ interaction motivates empirical analyses that track mode-wise error decay
 alongside kernel evolution and provides a natural link between kernel-based and
 mean-field viewpoints.
 
+\section{Research gap}\label{sec:research-gap}
+
+Existing theory provides a clear explanation of spectral bias in idealized
+settings. In the infinite-width NTK regime, training dynamics are governed by a
+fixed kernel operator, and learning rates are determined by its spectrum
+\citep{cao2020understandingspectralbiasdeep}. On symmetric domains such as $S^1$
+under uniform sampling, this operator reduces to a convolution, yielding an
+explicit Fourier-mode description of spectral bias
+(Section~\ref{sec:spectral-bias}). Recent work further shows that this bias can
+persist beyond the training set when predictions are compared to population-level
+kernel dynamics \citep{bowman2022spectralbiasoutsidetraining}.
+
+In practice, however, networks are trained at finite width and on finitely many
+samples. While kernel drift and feature learning have been studied in various
+regimes, there is no precise characterization of how finite width and finite
+sample size perturb the operator governing training dynamics in settings where
+the infinite-width NTK is analytically tractable. In particular, it remains
+unclear how these perturbations affect mode-wise residual dynamics, such as
+independence, monotonicity, and ordering of Fourier-mode decay.
+
+Preliminary experiments in Chapter~\ref{cha:prelim} indicate that finite-width
+networks can exhibit non-monotone residual behavior, slow transients, and
+apparent mode coupling, even when the NTK remains close to its initial value in
+norm. Whether these effects arise primarily from finite sampling, finite width,
+or their interaction is not well understood.
+
+This thesis addresses this gap by studying spectral bias through controlled
+perturbations of the convolutional NTK model. Focusing on regression on $S^1$
+under uniform sampling, we aim to isolate and analyze finite-sample and
+finite-width effects via their impact on mode-wise residual dynamics.
+
 \section{Research questions}\label{sec:rq}
 
 On symmetric domains such as $S^1$ under uniform sampling, the infinite-width
@@ -894,7 +925,11 @@ of the kernel operator governing training dynamics?
 	      More precisely, this question targets bounds or asymptotic estimates for the
 	      deviation between the population NTK integral operator $T$ and its empirical
 	      counterpart $T_n$, and an analysis of how these perturbations induce coupling
-	      between Fourier modes as a function of sample size and frequency.
+
+	      \emph{Idea:} Start from the infinite-width convolution operator whose action on
+	      Fourier modes is known exactly, replace the integral by a finite sum over $n$
+	      uniform samples, and study how this discretization alters the decay rates and
+	      introduces mixing between different Fourier modes.      between Fourier modes as a function of sample size and frequency.
 
 	\item[(Q3)] \textbf{Finite-width perturbation of the NTK operator.}
 	      In the infinite-population setting (uniform measure on $S^1$), how does finite
@@ -905,27 +940,45 @@ of the kernel operator governing training dynamics?
 	      of the deterministic convolutional operator and on characterizing eigenspace
 	      rotation or instability as potential mechanisms behind non-monotone residual
 	      dynamics and slow transients observed in practice.
+
+	      \emph{Idea:} Treat the finite-width NTK as a noisy version of the ideal
+	      convolution operator obtained by averaging over finitely many neurons, and
+	      analyze how this randomness affects Fourier-mode behavior, including possible
+	      rotation of eigenspaces and non-monotone residual decay.
 \end{enumerate}
 
-\paragraph{Planned schedule (12--15 weeks).}
+\paragraph{Planned schedule (February--May).}
 The project is structured to ensure that empirical results are obtained early
-and used to guide the theoretical analysis.
+and used to guide the theoretical analysis, while reserving sufficient time for
+rigorous derivations and writing.
 
 \begin{itemize}
-	\item \textbf{Weeks 1--3: Empirical analysis (Q1).}
+	\item \textbf{February 2 -- February 23: Empirical analysis (Q1).}
 	      Extend the existing experimental setup to independently vary network width and
-	      sample size (e.g. sample size $n \in \{250, 500, 1000, 5000,\ldots\}$). Produce mode-wise residual decay
-	      plots and kernel eigenspace diagnostics to isolate finite-width and finite-sample
-	      effects.
+	      sample size (e.g.\ $n = 250, 500, 1000, 5000$) for Fourier-mixture regression on
+	      $S^1$. Produce mode-wise residual decay plots and kernel eigenspace diagnostics
+	      to empirically separate finite-width and finite-sample effects.
 
-	\item \textbf{Weeks 4--8: Finite-sample theory (Q2).}
+	\item \textbf{February 24 -- March 24: Finite-sample theory (Q2).}
 	      Formalize the convolutional NTK integral operator on $S^1$ and its empirical
-	      discretization. Derive bounds or asymptotic estimates for eigenvalue and
-	      eigenfunction perturbations and relate them to observed Fourier-mode mixing.
+	      discretization based on finitely many uniformly sampled points. Derive bounds
+	      or asymptotic estimates for eigenvalue and eigenfunction perturbations, and
+	      relate these results to the empirical Fourier-mode mixing observed in Q1.
 
-	\item \textbf{Weeks 9--12: Finite-width analysis (Q3).}
-	      Study finite-width fluctuations of the NTK under uniform population measure.
-	      Analyze random perturbations of the convolutional operator and develop a
-	      perturbative explanation for eigenspace rotation and non-monotone residual
-	      dynamics.
+	\item \textbf{March 25 -- April 21: Finite-width analysis (Q3).}
+	      Study finite-width fluctuations of the NTK under the uniform population measure.
+	      Treat the finite-width NTK as a random perturbation of the convolutional
+	      operator and investigate eigenspace rotation or instability as potential
+	      mechanisms behind non-monotone residual dynamics and slow transients.
+
+	\item \textbf{April 22 -- May 15: Synthesis and writing.}
+	      Integrate empirical findings and theoretical results, refine conjectures where
+	      full proofs are not tractable, and finalize the thesis manuscript.
 \end{itemize}
+
+\paragraph{Risk mitigation.}
+The schedule prioritizes empirical analysis early in the project to ensure that
+all subsequent theoretical work is guided by robust observations. In cases
+where full theoretical proofs are not tractable within the available timeframe,
+we focus on partial results, asymptotic analyses, or well-supported conjectures
+validated by controlled experiments.

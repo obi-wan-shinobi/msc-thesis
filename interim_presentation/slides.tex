@@ -1,0 +1,265 @@
+\documentclass[10pt,aspectratio=169]{beamer}
+
+% --- pdflatex-safe font & micro-typography ---
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% --- math & symbols ---
+\usepackage{amsmath,amssymb,mathtools,bm}
+
+% --- hyperlinks (Beamer already loads hyperref; this is safe) ---
+\hypersetup{hidelinks}
+
+% --- theme ---
+\usetheme[numbering=fraction]{metropolis}
+
+\usepackage{pgfpages} % for notes layouts
+
+% --- bibliography ---
+\usepackage[round,authoryear]{natbib}
+
+% --- Choose ONE of these toggles when compiling ---
+% \setbeameroption{hide notes}                        % audience version (default)
+% \setbeameroption{show notes}                        % notes printed under each slide
+% \setbeameroption{show only notes}                   % notes-only PDF (for printing)
+% \setbeameroption{show notes on second screen=right} % slide + notes side-by-side
+
+% --- shortcuts ---
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\btheta}{\boldsymbol{\theta}}
+\newcommand{\bx}{\boldsymbol{x}}
+
+% --- title info ---
+\title{Training and generalization in overparameterized neural networks}
+\subtitle{Stage 1 review}
+\author{Shreyas Kalvankar}
+\institute{TU Delft}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+% -----------------------------------------------------------
+% AGENDA SLIDE (visual blocks)
+% -----------------------------------------------------------
+\begin{frame}{Agenda}
+
+	\textbf{Agenda}
+	\begin{enumerate}
+		\item Introduction \& Problem setup
+		\item Related work: NTK, mean-field, spectral bias
+		\item Research Questions \& Objectives
+		\item Preliminary observations
+		\item Planned work \& Discussions
+	\end{enumerate}
+
+\end{frame}
+% -----------------------------------------------------------
+% SECTION 1: Introduction \& Problem setup
+% -----------------------------------------------------------
+\begin{frame}{Introduction \& Problem setup}
+	\textbf{Problem setup: Empirical Risk Minimization}
+	\begin{itemize}
+		\item Given a parametric model $f_\theta : \mathbb{R}^d \to \mathbb{R}$ and a dataset
+		      $\{(x_i, y_i)\}_{i=1}^n$, with inputs $ x_i \in \mathbb{R}^d$ and targets $y_i \in \mathbb{R}$  (stacked as $X \in \mathbb{R}^{d \times n}, y \in \mathbb{R}^n$).
+		      \pause
+		\item Task: Find the parameters $\theta$
+		      \pause
+		\item Objective: that minimizes the empirical risk:
+		      \pause
+		      \only<4>{$\mathcal{L}(\theta) = \displaystyle\sum_{i=1}^{n} d(f_\theta(x_i), y_i) = \displaystyle\sum_{i=1}^{n}(f_\theta(x_i) - y_i)^2$}
+		      \only<5>{$\mathcal{L}(\theta) = d(f_\theta(X), Y) = \|(f_\theta(X) - y)\|^2$}
+	\end{itemize}
+
+	Large family of these models is generally trained using algorithms like gradient descent which
+	is notoriously hard to analyse.
+	To motivate the obstacles to deep learning theory, we begin with a simple case.
+\end{frame}
+
+\begin{frame}{Introduction \& Problem setup}
+	\textbf{Linear Networks}
+	\begin{itemize}
+		\item \textit{One-layer (no hidden layers):} $f_w(x) = x^\top w$, $w\in\mathbb{R}^d$
+		      \pause
+		\item Objective: $\mathcal{L}(w) = \frac{1}{2} \|X^\top w - y\|^2$
+		\item Gradient flow: $\dot{w_t} = -\nabla_w\mathcal{L}(w_t) = -X(X^\top w_t - y) = Xy - XX^\top w_t$
+		      \pause
+		\item Gradient descent is a linear dynamical system governed by the data covariance matrix.
+		      \pause
+		\item Parameter dynamics known, can be characterized and analysed.
+		      \pause
+	\end{itemize}
+
+	This is the extent to which we can do deep theoretical analysis of the training dynamics.
+\end{frame}
+
+\begin{frame}{Introduction \& Problem setup}
+	\textbf{Linear Networks}
+	\begin{itemize}
+		\item \textit{Deep Linear (1 hidden layer of width $m$):}
+		      $f_{v,W}(x) := (Wx)^\top v$ where $W \in \mathbb{R}^{m \times d}$, $v \in \mathbb{R}^{m}$.
+		      \pause
+		\item Objective: $\mathcal{L}(v,W) = \frac{1}{2} \|(WX)^\top v - y\|^2$
+		      \pause
+		\item Gradient flow:
+		      \[
+			      \dot v_t = -\nabla_v \mathcal{L}(v_t,W_t)
+			      = W_t X \bigl(y - X^\top W_t^\top v_t\bigr),
+		      \]
+		      \pause
+		      \[
+			      \dot W_t = -\nabla_W \mathcal{L}(v_t,W_t)
+			      = v_t \bigl(y - X^\top W_t^\top v_t\bigr)^\top X^\top .
+		      \]
+		      \pause
+		\item Introducing depth already creates complex dynamics (coupled ODEs of order three) with no known general analytic
+		      solutions.
+	\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Introduction \& Problem setup}
+	\textbf{Non-Linear Networks}
+	\begin{itemize}
+		\item $f_{v,W}(X) = \phi(Wx)^\top v$ where $\phi: \mathbb{R}\to \mathbb{R}$ is a continuously differentiable (a.e.)
+		      function applied elementwise, called an activation function.
+		\item Objective: $\mathcal{L}(v,W) = \frac{1}{2} \|\phi(WX)^\top v - y\|^2$
+		      \pause
+		\item Gradient flow:
+		      \[
+			      \dot v_t = -\nabla_v \mathcal{L}(v_t,W_t)
+			      = \phi(W_t X) \bigl(y - X^\top W_t^\top v_t\bigr),
+		      \]
+		      \pause
+		      \[
+			      \dot W_t
+			      = -\nabla_W \mathcal{L}(v_t,W_t)
+			      = \Big(\phi'(W_t X) \odot \big(v_t \bigl(y - \phi(W_t X)^\top v_t\bigr)^\top\big)\Big)\,X^\top.
+		      \]
+		      \pause
+		\item Activation functions mix matrix products with elementwise
+		      operations, we don't know of mathematical tools to handle these kinds of expressions.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Why Analyze Training Dynamics?}
+	\begin{itemize}
+		\item For linear models, gradient descent is a linear dynamical system governed by the spectrum of $XX^\top$
+		      with a closed-form solution.
+		      \pause
+		\item For nonlinear networks, training dynamics are coupled and nonlinear, with no general closed-form description.
+		      \pause
+		\item But having analytical solutions allows understanding the behaviour of the system.
+		      \pause
+		\item This motivates studying \textbf{simplified regimes} where the dynamics become analytically tractable.
+		      \pause
+		\item Two prominent approaches: the \textbf{NTK} and the \textbf{mean-field} regime (we focus on the NTK).
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{The NTK Regime}
+	\textit{Linearization at Infinite Width}
+
+	\begin{itemize}
+		\item \textbf{Motivation:} To analyze training dynamics by linearizing the network around initialization.
+		\item \textbf{Formalization:}
+		      \begin{itemize}
+			      \item As width $m \to \infty$, the empirical kernel $\Theta_t$ converges to a deterministic, static limit $\bar\Theta$.
+			            \[
+				            \bar\Theta(x,x')
+				            =
+				            \mathbb{E}_{w}\!\big[\varphi(w^\top x)\,\varphi(w^\top x')\big]
+				            +
+				            \sigma_v^2\,x^\top x'\,
+				            \mathbb{E}_{w}\!\big[\varphi'(w^\top x)\,\varphi'(w^\top x')\big]
+			            \]
+			      \item The network function $f_t$ evolves linearly with respect to this frozen kernel.
+		      \end{itemize}
+		\item \textbf{Training Dynamics:}
+		      \begin{itemize}
+			      \item Equivalent to Kernel Ridge Regression with the NTK.
+			      \item Convergence is guaranteed if the limit kernel is positive definite.
+		      \end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{2b. Related Work: The Mean-Field View}
+	\textit{Feature Learning at Infinite Width}
+
+	\begin{itemize}
+		\item \textbf{Motivation:} To capture feature learning, which is absent in the "lazy" NTK regime.
+		\item \textbf{Formalization:}
+		      \begin{itemize}
+			      \item Weights are treated as particles drawn from a distribution $\mu$.
+			      \item Output is scaled by $1/n$ (vs $1/\sqrt{n}$ in NTK).
+			            \[
+				            f_{v,w}(x)
+				            = \frac{1}{m} \sum_{\alpha=1}^m v_\alpha \varphi(w_\alpha^\top x)
+				            =\int_\Omega v\,\varphi(w^\top x)\,d\mu(v,w)
+			            \]
+		      \end{itemize}
+		\item \textbf{Training Dynamics:}
+		      \begin{itemize}
+			      \item Modeled as a Wasserstein gradient flow of the probability measure $\mu_t$.
+			      \item Allows the kernel (and features) to evolve during training.
+		      \end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{2c. Related Work: Spectral Bias}
+	\textit{Frequency-Dependent Convergence}
+
+	\begin{itemize}
+		\item \textbf{Phenomenon:} Neural networks fit low-frequency components of the target function faster than high-frequency noise.
+		\item \textbf{Theoretical Basis:}
+		      \begin{itemize}
+			      \item Convergence along eigen-directions is determined by the eigenvalues $\lambda_k$ of the NTK integral operator.
+			      \item High frequencies correspond to small eigenvalues $\to$ slow convergence.
+		      \end{itemize}
+		\item \textbf{Implications:} Provides a theoretical basis for early stopping and generalization in overparameterized models.
+	\end{itemize}
+\end{frame}
+
+% -----------------------------------------------------------
+% SECTION 3: PRELIMINARY EXPERIMENTS
+% -----------------------------------------------------------
+\begin{frame}{3. Preliminary Experiments}
+	\vspace{0.5cm}
+
+	\begin{enumerate}
+		\item \textbf{Function Space Convergence}
+		      % Investigating width dependent effects and gradient step size stability.
+
+		      \vspace{0.4cm}
+
+		\item \textbf{Kernel Drift \& Regime Transitions}
+		      % Distinguishing between feature learning (Mean-Field) and linear (NTK) regimes.
+
+		      \vspace{0.4cm}
+
+		\item \textbf{Spectral Analysis of Empirical NTK}
+		      % Eigendecomposition to verify spectral bias on real data.
+	\end{enumerate}
+\end{frame}
+
+% -----------------------------------------------------------
+% CONCLUSION
+% -----------------------------------------------------------
+\begin{frame}{Summary \& Discussion}
+	\textbf{Structure of Introduction \& Literature Review:}
+	\begin{enumerate}
+		\item \textbf{Foundations:} From linear regression to deep linear dynamics.
+		\item \textbf{Infinite Limits:} NTK limit (static kernel), Mean-Field limit (changing kernel).
+		\item \textbf{Spectral Properties:} How eigenvalues dictate learnability (Spectral Bias).
+	\end{enumerate}
+
+	\vspace{0.5cm}
+	\textit{Question for Supervisors: Does this structure logically support the move to finite-width deviations in later chapters?}
+\end{frame}
+
+% -----------------------
+\end{document}

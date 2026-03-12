@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ntk-experiments"
+version = "0.1.0"
+description = "JAX/Neural Tangents NTK experiments"
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["core*", "experiments*", "utils*"]
+exclude = ["configs*", "notebooks*", "results*", "tests*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-q"
+markers = [
+    "slow: long-running experiment-style tests",
+]

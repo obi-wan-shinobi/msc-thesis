@@ -37,42 +37,114 @@ def pairwise_principal_angle(
     return delta
 
 
-def theta_nobias(delta: jnp.ndarray) -> jnp.ndarray:
+def K0(delta: jnp.ndarray) -> jnp.ndarray:
     """
-    Closed-form no-bias NTK kernel on S^1 as a function of the principal angle delta.
+    Arc-cosine / NNGP covariance kernel block on S^1.
 
-    For delta in [0,pi],
-        Theta_nobias(delta) = (1/2pi) [ sin(delta) + 2(pi - delta) cos(delta) ].
+    For delta in [0, pi],
+        K0(delta) = (1 / 2pi) * [sin(delta) + (pi - delta) cos(delta)].
 
     Args:
-        delta: Array of principal angular differences in [0,pi].
+        delta: Principal angular differences in [0, pi].
 
     Returns:
-        Array of the same shape as delta.
+        Array with same shape as delta.
     """
-
     delta = jnp.asarray(delta)
-
-    value = jnp.sin(delta) + 2.0 * (jnp.pi - delta) * jnp.cos(delta)
-
+    value = jnp.sin(delta) + (jnp.pi - delta) * jnp.cos(delta)
     return value / TWO_PI
+
+
+def K1(delta: jnp.ndarray) -> jnp.ndarray:
+    """
+    Derivative-gate kernel block on S^1.
+
+    For delta in [0, pi],
+        K1(delta) = (pi - delta) / (2pi).
+
+    Args:
+        delta: Principal angular differences in [0, pi].
+
+    Returns:
+        Array with same shape as delta.
+    """
+    delta = jnp.asarray(delta)
+    return (jnp.pi - delta) / TWO_PI
+
+
+def theta_nobias(delta: jnp.ndarray) -> jnp.ndarray:
+    """
+    Infinite-width NTK on S^1 without hidden bias contribution.
+
+    Decomposition:
+        Theta_nobias(delta) = K0(delta) + cos(delta) * K1(delta)
+
+    Equivalent closed form:
+        Theta_nobias(delta)
+        = (1 / 2pi) * [sin(delta) + 2 (pi - delta) cos(delta)].
+    """
+    delta = jnp.asarray(delta)
+    return K0(delta) + jnp.cos(delta) * K1(delta)
 
 
 def theta_bias(delta: jnp.ndarray) -> jnp.ndarray:
     """
-    Closed-form bias NTK kernel on S^1 as a function of the principal angle delta.
+    Infinite-width NTK on S^1 with hidden bias contribution.
 
-    For delta in [0,pi],
-        Theta_bias(delta) = (1/2pi) [sin(delta) + 2(pi - delta) cos(delta) + (pi - delta)]
+    Decomposition:
+        Theta_bias(delta) = K0(delta) + (1 + cos(delta)) * K1(delta)
 
-    Equivalently,
-        Theta_bias(delta) = Theta_nobias(delta) + (pi - delta) / (2pi)
-
-    Args:
-        delta: Array of principal angular differences in [0,pi].
-    Returns:
-        Array of the same shape as delta
+    Equivalent closed form:
+        Theta_bias(delta)
+        = (1 / 2pi) * [sin(delta) + 2 (pi - delta) cos(delta) + (pi - delta)].
     """
     delta = jnp.asarray(delta)
+    return K0(delta) + (1.0 + jnp.cos(delta)) * K1(delta)
 
-    return theta_nobias(delta) + (jnp.pi - delta) / TWO_PI
+
+def kernel_cross_matrix_from_gamma(
+    gamma1: jnp.ndarray,
+    gamma2: jnp.ndarray,
+    kernel: str = "bias",
+) -> jnp.ndarray:
+    """
+    Build a cross-kernel matrix on S^1 from two angle arrays.
+
+    Given gamma1 of shape [N] and gamma2 of shape [M], this returns
+    the matrix K of shape [N, M] with entries
+        K_{ij} = Theta(gamma1_i, gamma2_j),
+    where Theta is either the bias-included or no-bias closed-form kernel.
+
+    Args:
+        gamma1: Array of shape [N] of angles in radians.
+        gamma2: Array of shape [M] of angles in radians.
+        kernel: Either "bias" or "nobias".
+
+    Returns:
+        Kernel matrix of shape [N, M].
+    """
+    delta = pairwise_principal_angle(gamma1, gamma2)
+
+    if kernel == "bias":
+        return theta_bias(delta)
+    if kernel == "nobias":
+        return theta_nobias(delta)
+
+    raise ValueError(f"Unknown kernel='{kernel}'. Expected 'bias' or 'nobias'.")
+
+
+def kernel_matrix_from_gamma(
+    gamma: jnp.ndarray,
+    kernel: str = "bias",
+) -> jnp.ndarray:
+    """
+    Build a square kernel matrix on S^1 from one angle array.
+
+    Args:
+        gamma: Array of shape [N] of angles in radians.
+        kernel: Either "bias" or "nobias".
+
+    Returns:
+        Kernel matrix of shape [N, N].
+    """
+    return kernel_cross_matrix_from_gamma(gamma, gamma, kernel=kernel)

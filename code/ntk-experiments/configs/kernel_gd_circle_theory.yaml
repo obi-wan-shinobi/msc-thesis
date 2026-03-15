@@ -1,0 +1,25 @@
+experiment:
+  name: kernel_gd_circle_theory
+  save_dir: results
+  seed: 0
+
+data:
+  n_train: 1024
+
+target:
+  Ks: [1, 3, 8]
+  amps: [1.0, 0.7, 0.35]
+  phases: [0.0, 0.0, 0.0]
+
+kernel:
+  name: bias # bias or nobias
+  init: zero # zero or gp
+
+train:
+  steps: 400
+  eta: null # if null, use eta_scale / lambda_max
+  eta_scale: 0.05
+
+analysis:
+  compare_first_k: 20
+  fourier_modes: [0, 1, 2, 3, 4, 8]

@@ -1,10 +1,10 @@
 experiment:
-  name: kernel_gd_circle_theory
+  name: kernel_gd_circle_theory_finegrid
   save_dir: results
   seed: 0
 
 data:
-  n_train: 1024
+  n_train: 4096
 
 target:
   Ks: [0, 1, 2, 3]
@@ -12,14 +12,14 @@ target:
   phases: [0.0, 0.0, 0.0, 0.0]
 
 kernel:
-  name: bias # bias or nobias
-  init: zero # zero or gp
+  name: bias
+  init: zero
 
 train:
   steps: 1000
-  eta: null # if null, use eta_scale / lambda_max
+  eta: null
   eta_scale: 0.05
 
 analysis:
-  compare_first_k: 20
+  compare_first_k: 40
   fourier_modes: [0, 1, 2, 3, 4, 8]

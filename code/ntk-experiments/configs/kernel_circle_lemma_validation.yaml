@@ -1,0 +1,32 @@
+experiment:
+  name: kernel_circle_lemma_validation
+  save_dir: results
+  seed: 0
+
+data:
+  n_trains: [64, 128, 256, 512, 1024]
+  n_eval: 720
+  noise_std: 0.0
+
+basis:
+  K_max: 10
+
+target:
+  Ks: [0, 1, 2, 3]
+  amps: [1.0, 0.9, 0.5, 0.35]
+  phases: [0.0, 0.0, 0.0, 0.0]
+
+kernel:
+  name: bias # bias only for now in this lemma-validation experiment
+
+train:
+  steps: 2000
+  eta: null # if null, use eta_scale / lambda_max(A)
+  eta_scale: 0.05
+  save_every: 100
+
+sweep:
+  seeds: 10 # interpreted as seeds 0,1,...,9 added to experiment.seed
+
+analysis:
+  mode_compare: [0, 1, 2, 3, 4, 5]

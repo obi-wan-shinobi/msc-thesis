@@ -80,3 +80,135 @@ def run_kernel_gd(
         "r": jnp.stack(rs),
         "loss": jnp.array(losses),
     }
+
+
+def run_operator_gd(
+    A_train: jnp.ndarray,
+    y_train: jnp.ndarray,
+    eta: float,
+    steps: int,
+    y_pred_train_0: Optional[jnp.ndarray] = None,
+    A_eval_train: Optional[jnp.ndarray] = None,
+    y_pred_eval_0: Optional[jnp.ndarray] = None,
+    save_every: int = 100,
+):
+    """
+    Run gradient descent driven by a precomputed operator A_train.
+
+    Train dynamics:
+        r_t = y_pred_train_t - y_train
+        y_pred_train_{t+1} = y_pred_train_t - eta * A_train @ r_t
+
+    Optional eval dynamics:
+        y_pred_eval_{t+1} = y_pred_eval_t - eta * A_eval_train @ r_t
+
+    where the eval update uses the same train residual r_t.
+
+    Args:
+        A_train: [n, n] train operator, typically K_train / n.
+        y_train: [n] train targets.
+        eta: step size.
+        steps: number of GD steps.
+        y_pred_train_0: optional initial train prediction, shape [n].
+        A_eval_train: optional [m, n] eval-train operator, typically K_eval_train / n.
+        y_pred_eval_0: optional initial eval prediction, shape [m].
+        save_every: save eval snapshots every save_every steps, plus step 0 and final step.
+
+    Returns:
+        dict with:
+            y_pred_train: [steps+1, n]
+            r_train: [steps+1, n]
+            loss: [steps+1]
+            eta: scalar
+            snapshot_steps: [S]
+            y_pred_eval_snapshots: [S, m] or None
+            y_pred_eval_final: [m] or None
+    """
+    A_train = jnp.asarray(A_train)
+    y_train = jnp.asarray(y_train)
+
+    if A_train.ndim != 2 or A_train.shape[0] != A_train.shape[1]:
+        raise ValueError(f"A_train must be square, got shape {A_train.shape}.")
+    if y_train.ndim != 1 or y_train.shape[0] != A_train.shape[0]:
+        raise ValueError(
+            f"y_train must have shape ({A_train.shape[0]},), got {y_train.shape}."
+        )
+    if steps < 0:
+        raise ValueError(f"steps must be nonnegative, got {steps}.")
+    if save_every <= 0:
+        raise ValueError(f"save_every must be positive, got {save_every}.")
+
+    n = y_train.shape[0]
+
+    if y_pred_train_0 is None:
+        y_pred_train = jnp.zeros_like(y_train)
+    else:
+        y_pred_train = jnp.asarray(y_pred_train_0)
+        if y_pred_train.shape != (n,):
+            raise ValueError(
+                f"y_pred_train_0 must have shape ({n},), got {y_pred_train.shape}."
+            )
+
+    use_eval = A_eval_train is not None
+    if use_eval:
+        A_eval_train = jnp.asarray(A_eval_train)
+        if A_eval_train.ndim != 2 or A_eval_train.shape[1] != n:
+            raise ValueError(
+                f"A_eval_train must have shape [m, {n}], got {A_eval_train.shape}."
+            )
+
+        m = A_eval_train.shape[0]
+        if y_pred_eval_0 is None:
+            y_pred_eval = jnp.zeros((m,), dtype=y_train.dtype)
+        else:
+            y_pred_eval = jnp.asarray(y_pred_eval_0)
+            if y_pred_eval.shape != (m,):
+                raise ValueError(
+                    f"y_pred_eval_0 must have shape ({m},), got {y_pred_eval.shape}."
+                )
+    else:
+        y_pred_eval = None
+
+    y_preds = [y_pred_train]
+    rs = [y_pred_train - y_train]
+    losses = [0.5 * jnp.sum((y_pred_train - y_train) ** 2)]
+
+    snapshot_steps = []
+    y_eval_snaps = []
+
+    if use_eval:
+        snapshot_steps.append(0)
+        y_eval_snaps.append(y_pred_eval)
+
+    for t in range(steps):
+        r_t = y_pred_train - y_train
+
+        y_pred_train = y_pred_train - eta * (A_train @ r_t)
+
+        if use_eval:
+            y_pred_eval = y_pred_eval - eta * (A_eval_train @ r_t)
+
+        r_next = y_pred_train - y_train
+
+        y_preds.append(y_pred_train)
+        rs.append(r_next)
+        losses.append(0.5 * jnp.sum(r_next**2))
+
+        step_idx = t + 1
+        if use_eval and ((step_idx % save_every == 0) or (step_idx == steps)):
+            snapshot_steps.append(step_idx)
+            y_eval_snaps.append(y_pred_eval)
+
+    return {
+        "y_pred_train": jnp.stack(y_preds),
+        "r_train": jnp.stack(rs),
+        "loss": jnp.asarray(losses),
+        "eta": jnp.asarray(eta),
+        "snapshot_steps": (
+            jnp.asarray(snapshot_steps, dtype=jnp.int32)
+            if use_eval
+            else jnp.asarray([], dtype=jnp.int32)
+        ),
+        "y_pred_eval_snapshots": jnp.stack(y_eval_snaps) if use_eval else None,
+        "y_pred_eval_final": y_pred_eval if use_eval else None,
+    }

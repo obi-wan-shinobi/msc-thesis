@@ -37,7 +37,7 @@ def make_fourier_target(Ks, amps, phases=None) -> FourierTarget:
 # --- Evaluate f*(γ) = Σ a_k sin(kγ + φ_k) ---
 def f_star_gamma(gamma: jnp.ndarray, spec: FourierTarget) -> jnp.ndarray:
     A = spec.Ks[:, None] * gamma[None, :] + spec.phases[:, None]
-    return jnp.einsum("m,mn->n", spec.amps, jnp.sin(A))
+    return jnp.einsum("m,mn->n", spec.amps, jnp.cos(A))
 
 
 # --- Evaluate f*(x) for 2D circle points ---
@@ -91,7 +91,7 @@ def make_probe_circle(n_points: int) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndar
         X_circle: [N,2] coordinates
         x0: [1,2] anchor at (1,0)
     """
-    gamma = jnp.linspace(-jnp.pi, jnp.pi, n_points, endpoint=False)
+    gamma = jnp.linspace(0, 2 * jnp.pi, n_points, endpoint=False)
     X_circle = jnp.stack([jnp.cos(gamma), jnp.sin(gamma)], axis=1)
     x0 = jnp.array([[1.0, 0.0]])
     return gamma, X_circle, x0

@@ -1,0 +1,307 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{float}
+\hypersetup{hidelinks}
+
+\title{Kernel experiments for lemma validation on $S^1$}
+\author{Shreyas Kalvankar}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Finite-sample lemma validation for the analytic NTK on $S^1$}
+
+\subsection{Hypotheses and objects}
+
+We work on the circle $S^1$, parameterized by $\gamma \in [0,2\pi)$, with uniform measure
+$$
+	\mu(d\gamma)=\frac{d\gamma}{2\pi}.
+$$
+
+We consider the analytic circle NTK $\Theta(\gamma,\psi)=\Theta(\gamma-\psi)$, so the associated continuum operator is
+$$
+	(Tf)(\gamma)=\int_0^{2\pi}\Theta(\gamma,\psi)\,f(\psi)\,\mu(d\psi).
+$$
+
+Because $\Theta$ is translation-invariant on the circle, the real Fourier modes diagonalize $T$. We use
+$$
+	\varphi_0(\gamma)=1,\qquad
+	\varphi_{k,c}(\gamma)=\sqrt{2}\cos(k\gamma),\qquad
+	\varphi_{k,s}(\gamma)=\sqrt{2}\sin(k\gamma),\qquad k\ge 1.
+$$
+
+For each frequency $k$, the corresponding continuum eigenvalue is denoted by $\lambda_k$, so
+$$
+	T\varphi_0=\lambda_0\varphi_0,\qquad
+	T\varphi_{k,c}=\lambda_k\varphi_{k,c},\qquad
+	T\varphi_{k,s}=\lambda_k\varphi_{k,s}.
+$$
+
+We then sample
+$$
+	\phi_1,\dots,\phi_n \overset{\mathrm{iid}}{\sim} \mathrm{Unif}[0,2\pi),
+$$
+and form the empirical operator
+$$
+	(A_n v)_i=\frac{1}{n}\sum_{j=1}^n \Theta(\phi_i,\phi_j)\,v_j.
+$$
+Equivalently, if $K_{ij}=\Theta(\phi_i,\phi_j)$, then
+$$
+	A_n=\frac{1}{n}K.
+$$
+
+We choose a fixed low-frequency cutoff $\bold K_{\max}$, and evaluate the Fourier basis on the sampled points. This gives the matrix
+$$
+	\Phi\in\mathbb{R}^{n\times d},\qquad d=2\bold K_{\max}+1.
+$$
+
+where $\Phi$ is the matrix $\begin{pmatrix} \varphi_0(\gamma_i) & \varphi_{1,c}(\gamma_i) & \varphi_{1,s}(\gamma_i) & \dots & \varphi_{k,c}(\gamma_i) & \varphi_{k,s}(\gamma_i) \end{pmatrix}_{i=1}^n$
+
+\subsection{Finite-sample objects and hypotheses}
+
+The key finite-sample objects are the following.
+
+\paragraph{1. Sampled Fourier geometry.}
+We define
+$$
+	G=\frac{1}{n}\Phi^\top\Phi.
+$$
+This is the sampled Gram matrix of the low-frequency Fourier basis. It measures whether the sampled Fourier vectors remain approximately orthonormal. Our first hypothesis is that
+$$
+	G \approx I.
+$$
+Equivalently, the sampled Fourier geometry should concentrate near the continuum orthonormal geometry.
+
+\paragraph{2. Compressed empirical operator.}
+We define
+$$
+	H=\frac{1}{n}\Phi^\top A_n\Phi.
+$$
+This is the empirical operator compressed onto the sampled low-frequency Fourier block. Since the continuum operator is diagonal in the Fourier basis, the natural hypothesis is that $H$ should be approximately diagonal as well.
+
+\paragraph{3. Approximate eigenvalues.}
+For each mode of frequency $k$, define
+$$
+	\lambda_k^{(n)}
+	=
+	\left(1-\frac{1}{n}\right)\lambda_k+\frac{1}{n}g(0),
+	\qquad
+	g(0)=\Theta(x,x)=\Theta(0).
+$$
+These are the finite-sample approximate eigenvalues.
+
+The motivation for this definition is that for a sampled Fourier mode $\varphi_k$,
+$$
+	\mathbb{E}\!\left[\frac{1}{n}\,\varphi_k^\top A_n\varphi_k\right]
+	=
+	\left(1-\frac{1}{n}\right)\lambda_k+\frac{1}{n}g(0).
+$$
+Thus $\lambda_k^{(n)}$ is the expected diagonal action of the empirical operator on that sampled mode.
+
+\paragraph{4. Approximate eigen-action error.}
+We define
+$$
+	E=A_n\Phi-\Phi\Lambda^{(n)},
+$$
+where $\Lambda^{(n)}$ is the diagonal matrix whose entries are the $\lambda_k^{(n)}$, repeated for cosine and sine at the same frequency $k$.
+
+This measures how close the sampled Fourier basis vectors are to actual empirical eigenvectors.
+
+With these objects in place, the three finite-sample hypotheses can be stated as follows.
+
+\paragraph{Hypothesis A: concentration of the sampled Fourier geometry.}
+$$
+	G=\frac{1}{n}\Phi^\top\Phi \approx I.
+$$
+Interpretation: the sampled Fourier vectors remain almost orthonormal.
+
+\paragraph{Hypothesis B: concentration of the compressed empirical operator.}
+$$
+	H=\frac{1}{n}\Phi^\top A_n\Phi \approx \Lambda^{(n)}.
+$$
+Interpretation: inside the low-frequency Fourier block, the empirical operator is approximately diagonal, with diagonal entries given by the approximate eigenvalues.
+
+\paragraph{Hypothesis C: approximate eigen-action of the sampled Fourier modes.}
+$$
+	A_n\Phi \approx \Phi\Lambda^{(n)}.
+$$
+Interpretation: each sampled Fourier mode is acted on approximately by scalar multiplication with $\lambda_k^{(n)}$.
+
+These are the three finite-sample lemmas in operational form.
+
+\subsection{What is expected to concentrate}
+
+More explicitly, as $n$ grows, we expect:
+$$
+	\|G-I\|\to 0,
+$$
+$$
+	\|H-\Lambda^{(n)}\|\to 0,
+$$
+and
+$$
+	\|A_n\Phi-\Phi\Lambda^{(n)}\|\to 0.
+$$
+
+Mode-by-mode, this means
+$$
+	\frac{\|A_n\varphi_k-\lambda_k^{(n)}\varphi_k\|_2}{\|\varphi_k\|_2}\to 0
+$$
+for low frequencies $k$, with cosine and sine treated separately.
+
+\subsection{What this gets us dynamically}
+
+Now consider kernel gradient descent with zero initialization:
+$$
+	y_{t+1}=y_t-\eta A_n r_t,
+	\qquad
+	r_t=y_t-y^*.
+$$
+Equivalently,
+$$
+	r_{t+1}=(I-\eta A_n)r_t.
+$$
+
+If the sampled Fourier modes were exact eigenvectors of $A_n$, then the residual coefficient along a mode of frequency $k$ would evolve as
+$$
+	\alpha_k(t+1)=(1-\eta\lambda_k^{(n)})\alpha_k(t),
+$$
+hence
+$$
+	\alpha_k(t)=(1-\eta\lambda_k^{(n)})^t\alpha_k(0).
+$$
+
+So the concentration of $G$, $H$, and $E$ gives the following consequence: the residual dynamics should approximately decouple along low Fourier modes, and each low mode should decay at a rate determined by its approximate eigenvalue $\lambda_k^{(n)}$.
+
+That is the central reason we care about the three static operator lemmas.
+
+\subsection{Target}
+
+The target
+$$
+	f^*(\gamma)=1+0.9\cos(\gamma)+0.5\cos(2\gamma)+0.35\cos(3\gamma)
+$$
+lives only in the first few Fourier modes.
+
+This is useful because:
+\begin{itemize}
+	\item it makes the mode-wise decay easy to interpret,
+	\item it isolates the low-frequency part where the concentration is expected to be best,
+	\item and any nonzero coefficients outside the target frequencies can be interpreted as finite-sample leakage.
+\end{itemize}
+
+\subsection{Operator concentration under uniform sampling}
+
+We first examine the three static finite-sample concentration statements:
+\[
+	G=\frac{1}{n}\Phi^\top \Phi \approx I,
+	\qquad
+	H=\frac{1}{n}\Phi^\top A_n \Phi \approx \Lambda^{(n)},
+	\qquad
+	A_n\Phi \approx \Phi\Lambda^{(n)}.
+\]
+For each quantity, we plot the maximum-entry error against the sample size $n$, aggregating over multiple random seeds. The solid blue line shows the mean over seeds, the shaded band shows one standard deviation, and the individual points show the per-seed values. In addition, the dashed orange curve shows the theoretical concentration scale predicted by the finite-sample lemmas.
+
+\begin{figure}[t]
+	\centering
+
+	\begin{subfigure}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{lemma_images/concentration_plot_gram_err_max.png}
+		\caption{Gram concentration: $\|G-I\|_{\max}$ versus $n$.}
+		\label{fig:lemma-gram-concentration}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{lemma_images/concentration_plot_comp_err_max.png}
+		\caption{Compressed operator concentration: $\|H-\Lambda^{(n)}\|_{\max}$ versus $n$.}
+		\label{fig:lemma-comp-concentration}
+	\end{subfigure}
+
+	\vspace{0.8em}
+
+	\begin{subfigure}[t]{0.62\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{lemma_images/concentration_plot_action_err_max.png}
+		\caption{Approximate eigen-action concentration: $\|A_n\Phi-\Phi\Lambda^{(n)}\|_{\max}$ versus $n$.}
+		\label{fig:lemma-action-concentration}
+	\end{subfigure}
+
+	\caption{Finite-sample operator concentration for the sampled Fourier geometry, compressed operator, and approximate eigen-action. The dashed orange curves indicate the theoretical concentration scales predicted by the lemmas: $n^{-1/2}$ for the Gram and compressed operator errors, and $\sqrt{\log n / n}$ for the action error. In all three cases, the empirical mean decreases with $n$ and tracks the expected scaling well.}
+	\label{fig:lemma-operator-concentration}
+\end{figure}
+
+\paragraph{Why these are the correct theoretical rates.}
+The lemmas give exponential tail bounds in the deviation parameter $\varepsilon$ at fixed sample size $n$, rather than exponential decay of the plotted error as a function of $n$. More precisely, the note gives bounds of the form
+\[
+	\mathbb{P}\!\left(\|G-I\|_{\max}\geq \varepsilon\right)
+	\leq
+	2d^2 e^{-n\varepsilon^2/8},
+\]
+\[
+	\mathbb{P}\!\left(\|H-\mathbb{E}H\|_{\max}\geq \varepsilon\right)
+	\leq
+	2d^2 e^{-n\varepsilon^2/(32\kappa^2)},
+\]
+and
+\[
+	\mathbb{P}\!\left(\|A_n\Phi-\Phi\Lambda^{(n)}\|_{\max}\geq \varepsilon\right)
+	\leq
+	2nd\, e^{-n\varepsilon^2/(4\kappa^2)}.
+\]
+Solving these bounds for the deviation size $\varepsilon$ at confidence level $1-\delta$ yields the concentration scales
+\[
+	\varepsilon_G(n,\delta)\asymp
+	\sqrt{\frac{\log(2d^2/\delta)}{n}},
+	\qquad
+	\varepsilon_H(n,\delta)\asymp
+	\kappa \sqrt{\frac{\log(2d^2/\delta)}{n}},
+\]
+and
+\[
+	\varepsilon_E(n,\delta)\asymp
+	\kappa \sqrt{\frac{\log(2nd/\delta)}{n}}.
+\]
+Thus the expected rates are:
+\[
+	\|G-I\|_{\max} \sim n^{-1/2},
+	\qquad
+	\|H-\Lambda^{(n)}\|_{\max} \sim n^{-1/2},
+	\qquad
+	\|A_n\Phi-\Phi\Lambda^{(n)}\|_{\max} \sim \sqrt{\frac{\log n}{n}},
+\]
+up to constants and lower-order logarithmic factors. For the bias kernel, a natural constant choice is
+\[
+	\kappa=\sup_{\theta}|\Theta(\theta)|=\Theta(0)=\frac{3}{2},
+\]
+since the kernel is nonnegative and is maximized on the diagonal.
+
+\paragraph{Observations.}
+Figure~\ref{fig:lemma-operator-concentration} shows a clear and consistent concentration trend across all three operator-level diagnostics.
+
+\begin{itemize}
+	\item The sampled Gram matrix error $\|G-I\|_{\max}$ decreases steadily with $n$ and closely follows the predicted $n^{-1/2}$ behavior. This indicates that the sampled low-frequency Fourier vectors become increasingly close to an orthonormal system as the number of sampled points grows.
+
+	\item The compressed operator error $\|H-\Lambda^{(n)}\|_{\max}$ also decreases with $n$, again in a way consistent with the predicted $n^{-1/2}$ scaling. This supports the claim that, inside the sampled low-frequency Fourier block, the empirical operator becomes increasingly close to a diagonal operator with entries given by the approximate eigenvalues.
+
+	\item The action error $\|A_n\Phi-\Phi\Lambda^{(n)}\|_{\max}$ decreases more slowly, consistent with the extra logarithmic factor coming from the stronger union bound in the corresponding lemma. Empirically, the plotted mean tracks the predicted $\sqrt{\log n / n}$ scale well.
+\end{itemize}
+
+% \paragraph{Interpretation.}
+% Taken together, these plots provide direct empirical support for the three finite-sample lemmas. As $n$ increases, the sampled Fourier block becomes better conditioned, the compressed operator becomes more nearly diagonal, and the sampled Fourier modes behave more like approximate empirical eigenvectors. The observed error magnitudes are not only decreasing qualitatively, but doing so at rates consistent with the concentration theory. This is exactly the static structure needed for the later dynamical conclusion: low Fourier modes should evolve approximately independently, with decay governed by the approximate eigenvalues $\lambda_k^{(n)}$.
+%
+% \paragraph{Additional remark.}
+% The spread across seeds is largest at the smallest sample sizes and shrinks as $n$ increases, which is again consistent with the concentration picture. Since the maximum-entry norm is a stringent metric, these plots should be read as conservative diagnostics: even the worst localized errors in the relevant matrices and operator actions decrease with sample size at the expected theoretical rates.
+
+\end{document}

@@ -6,7 +6,7 @@ from theme import BG_COLOR, BODY_FS, HEADER_FS, MATH_FS, TEXT_COLOR, add_logo
 
 class LinearModelsAndGD(Slide):
     """
-    Linear least-squares in operator form + gradient descent intuition.
+    Linear least-squares in operator form + GD intuition.
     Convention: X in R^{d x n} (columns are x_i), predictions X^T w.
     """
 
@@ -14,6 +14,7 @@ class LinearModelsAndGD(Slide):
         self.camera.background_color = BG_COLOR
         Text.set_default(color=TEXT_COLOR)
         MathTex.set_default(color=TEXT_COLOR)
+
         self.clear()
         add_logo(self)
 
@@ -32,142 +33,189 @@ class LinearModelsAndGD(Slide):
         self.next_slide()
 
         # ---------------------------------------------------------------------
-        # LEFT COLUMN — structured derivation + gradient derivation
+        # LEFT COLUMN — Setup
         # ---------------------------------------------------------------------
-
-        # --- Model ---
-        model_lab = Text("Model:", font_size=BODY_FS, color=label_color, weight=BOLD)
-        model_eq = MathTex(r"f_w(x)=x^\top w,\quad w\in\mathbb{R}^d", font_size=MATH_FS)
-        model = VGroup(model_lab, model_eq).arrange(RIGHT, buff=0.45, aligned_edge=UP)
-        model.next_to(title, DOWN, buff=0.6).to_edge(LEFT, buff=0.9)
-
-        self.play(Write(model_lab), run_time=0.35)
-        self.play(Write(model_eq), run_time=0.7)
-        self.next_slide()
-
-        # --- Data ---
-        data_lab = Text("Data:", font_size=BODY_FS, color=label_color, weight=BOLD)
-        data_eq = MathTex(
-            r"X=[x_1,\dots,x_n]\in\mathbb{R}^{d\times n},\quad y\in\mathbb{R}^n",
+        setup_lab = Text("Setup:", font_size=BODY_FS, color=label_color, weight=BOLD)
+        setup_eq = MathTex(
+            r"f_w(x)=x^\top w,\quad w\in\mathbb{R}^d",
             font_size=MATH_FS,
         )
-        data = VGroup(data_lab, data_eq).arrange(RIGHT, buff=0.45, aligned_edge=UP)
-        data.next_to(model, DOWN, buff=0.35).align_to(model, LEFT)
+        setup = VGroup(setup_lab, setup_eq).arrange(RIGHT, buff=0.45, aligned_edge=UP)
+        setup.next_to(title, DOWN, buff=0.6).to_edge(LEFT, buff=0.9)
 
-        self.play(Write(data_lab), run_time=0.35)
-        self.play(Write(data_eq), run_time=0.8)
-        self.next_slide()
-
-        # --- Empirical Risk ---
-        risk_lab = Text(
-            "Empirical risk:", font_size=BODY_FS, color=label_color, weight=BOLD
-        )
-        risk_eq = MathTex(
-            r"\mathcal{L}(w)=\tfrac12\|X^\top w-y\|_2^2",
-            font_size=MATH_FS,
-        )
-        risk = VGroup(risk_lab, risk_eq).arrange(RIGHT, buff=0.45, aligned_edge=UP)
-        risk.next_to(data, DOWN, buff=0.35).align_to(model, LEFT)
-
-        self.play(Write(risk_lab), run_time=0.35)
-        self.play(Write(risk_eq), run_time=0.8)
-        self.next_slide()
-
-        # --- Derive gradient (animate) ---
-        grad_lab = Text("Gradient:", font_size=BODY_FS, color=label_color, weight=BOLD)
-
-        # Step A: expand norm
-        risk_expanded = MathTex(
-            r"\mathcal{L}(w)=\tfrac12\,(X^\top w-y)^\top(X^\top w-y)",
-            font_size=MATH_FS,
-        ).move_to(risk_eq, aligned_edge=LEFT)
-
-        self.play(TransformMatchingTex(risk_eq, risk_expanded), run_time=0.9)
-        self.next_slide()
-        risk_eq = risk_expanded
-
-        # Step B: chain rule
-        grad_eq1 = MathTex(
-            r"\nabla_w\mathcal{L}(w)=X(X^\top w-y)",
-            font_size=MATH_FS,
-        )
-        grad = VGroup(grad_lab, grad_eq1).arrange(RIGHT, buff=0.45, aligned_edge=UP)
-        grad.next_to(risk, DOWN, buff=0.35).align_to(model, LEFT)
-
-        self.play(Write(grad_lab), run_time=0.35)
-        self.play(Write(grad_eq1), run_time=0.75)
-        self.next_slide()
-
-        # Step C: operator form
-        grad_eq2 = MathTex(
-            r"\nabla_w\mathcal{L}(w)=XX^\top w-Xy",
-            font_size=MATH_FS,
-        ).move_to(grad_eq1, aligned_edge=LEFT)
-
-        self.play(TransformMatchingTex(grad_eq1, grad_eq2), run_time=0.8)
-        self.next_slide()
-
-        # --- Stationary condition ---
-        stat_lab = Text(
-            "Stationary point:", font_size=BODY_FS, color=label_color, weight=BOLD
-        )
-        stat_eq = MathTex(r"XX^\top w^\star=Xy", font_size=MATH_FS, color=GREEN)
-        stat = VGroup(stat_lab, stat_eq).arrange(RIGHT, buff=0.45, aligned_edge=UP)
-        stat.next_to(grad, DOWN, buff=0.35).align_to(model, LEFT)
-
-        self.play(Write(stat_lab), run_time=0.35)
-        self.play(FadeIn(stat_eq, shift=UP * 0.1), run_time=0.6)
+        self.play(Write(setup_lab), run_time=0.35)
+        self.play(Write(setup_eq), run_time=0.7)
         self.next_slide()
 
         # ---------------------------------------------------------------------
-        # RIGHT COLUMN — 1D gradient descent (arrow follows GD step on curve)
+        # RIGHT COLUMN — Network (top-right) as anchor
         # ---------------------------------------------------------------------
+        neuron_stroke = GRAY_B
+        edge_color = GRAY_C
 
-        axes = Axes(
-            x_range=[-3, 3, 1],
-            y_range=[0, 6, 1],
-            x_length=5.0,
-            y_length=3.0,
-            tips=False,
+        nn = NetworkMobject(
+            layer_sizes=(7, 1),
+            neuron_radius=0.10,
+            neuron_to_neuron_buff=0.30,
+            layer_to_layer_buff=1.75,
+            neuron_stroke_color=neuron_stroke,
+            neuron_stroke_width=2.2,
+            neuron_fill_color=BLUE_E,
+            neuron_fill_opacity=0.0,
+            edge_color=edge_color,
+            edge_stroke_width=1.2,
+            edge_propagation_color=YELLOW,
+            edge_propagation_time=0.55,
+            brace_for_large_layers=False,
+        ).deactivate()
+
+        nn.scale(0.72)
+        nn.to_edge(RIGHT, buff=0.85).shift(UP * 1.25)
+        nn.shift(LEFT * 1.25)  # leave room for inset
+
+        x_lbl = MathTex(r"x", font_size=BODY_FS).next_to(nn.layers[0], LEFT, buff=0.18)
+        fx_lbl = MathTex(r"f_w(x)", font_size=BODY_FS).next_to(
+            nn.layers[-1], RIGHT, buff=0.18
         )
-        axes.to_edge(RIGHT, buff=0.8).shift(UP * 0.1)
-
-        xlab = MathTex(r"w", font_size=BODY_FS).next_to(axes.x_axis, DOWN, buff=0.15)
-        ylab = MathTex(r"\mathcal{L}(w)", font_size=BODY_FS).next_to(
-            axes.y_axis, LEFT, buff=0.15
+        w_lbl = MathTex(r"w", font_size=BODY_FS, color=label_color).move_to(
+            nn.get_center() + DOWN * 0.75
         )
 
         self.play(
-            FadeIn(axes, shift=UP * 0.1), FadeIn(xlab), FadeIn(ylab), run_time=0.6
+            FadeIn(nn, shift=RIGHT * 0.15),
+            FadeIn(x_lbl, shift=RIGHT * 0.1),
+            FadeIn(fx_lbl, shift=LEFT * 0.1),
+            FadeIn(w_lbl, shift=UP * 0.1),
+            run_time=0.6,
         )
         self.next_slide()
 
-        a, b = 1.4, 0.8
-
-        def L_scalar(w):
-            return 0.5 * a * (w - b) ** 2
-
-        curve = axes.plot(lambda x: L_scalar(x), x_range=[-3, 3])
-        self.play(Create(curve), run_time=0.7)
+        # quick deterministic pulse
+        acts = [
+            np.full(len(nn.layers[0].neurons), 0.35),
+            np.array([0.70]),
+        ]
+        self.play(nn.layer_activate_anim(0, acts[0], run_time=0.22), run_time=0.22)
+        self.play(nn.forward_pass_anim(activations=acts), run_time=0.9)
         self.next_slide()
 
-        # GD parameters
-        eta = 0.55
+        self.play(nn.layer_activate_anim(1, np.array([0.0]), run_time=0.22), run_time=0.25)
+        self.next_slide()
+
+        # ---------------------------------------------------------------------
+        # LEFT COLUMN — Loss
+        # ---------------------------------------------------------------------
+        loss_lab = Text("Loss:", font_size=BODY_FS, color=label_color, weight=BOLD)
+        loss_eq = MathTex(
+            r"\mathcal{L}(w)=\tfrac12\|X^\top w-y\|_2^2",
+            font_size=MATH_FS,
+        )
+        loss = VGroup(loss_lab, loss_eq).arrange(RIGHT, buff=0.45, aligned_edge=UP)
+        loss.next_to(setup, DOWN, buff=0.35).align_to(setup, LEFT)
+
+        self.play(Write(loss_lab), run_time=0.35)
+        self.play(Write(loss_eq), run_time=0.8)
+        self.next_slide()
+
+        # ---------------------------------------------------------------------
+        # LEFT COLUMN — GD update as a HEADER line, equations start BELOW it
+        # ---------------------------------------------------------------------
+        upd_lab = Text("GD update:", font_size=BODY_FS, color=label_color, weight=BOLD)
+        upd_lab.next_to(loss, DOWN, buff=0.42).align_to(setup, LEFT)
+
+        self.play(Write(upd_lab), run_time=0.35)
+        self.next_slide()
+
+        # Equation column alignment: align to loss_eq (so it matches Setup/Loss equation column)
+        upd_generic = MathTex(
+            r"w_{t+1}=w_t-\eta\,\nabla_w\mathcal{L}(w_t)",
+            font_size=MATH_FS,
+        )
+        upd_generic.next_to(upd_lab, DOWN, buff=0.18).align_to(loss_eq, LEFT)
+
+        self.play(Write(upd_generic), run_time=0.75)
+        self.next_slide()
+
+        grad_eq = MathTex(
+            r"\nabla_w\mathcal{L}(w)=X(X^\top w-y)=XX^\top w-Xy",
+            font_size=MATH_FS * 0.92,
+        )
+        grad_eq.next_to(upd_generic, DOWN, buff=0.18).align_to(upd_generic, LEFT)
+
+        self.play(FadeIn(grad_eq, shift=UP * 0.06), run_time=0.55)
+        self.next_slide()
+
+        convex_line = MathTex(
+            r"\mathcal{L}\ \text{is convex}\ \Rightarrow\ \nabla_w\mathcal{L}(w^\star)=0",
+            font_size=MATH_FS * 0.78,
+            color=GRAY_A,
+        )
+        convex_line.next_to(grad_eq, DOWN, buff=0.22).align_to(upd_generic, LEFT)
+
+        opt_eq = MathTex(
+            r"XX^\top w^\star=Xy",
+            font_size=MATH_FS * 0.98,
+            color=GREEN,
+        )
+        opt_eq.next_to(convex_line, DOWN, buff=0.14).align_to(upd_generic, LEFT)
+
+        uniq_line = MathTex(
+            r"\text{(unique if }XX^\top \succ 0\text{)}",
+            font_size=MATH_FS * 0.72,
+            color=GRAY_B,
+        )
+        uniq_line.next_to(opt_eq, DOWN, buff=0.10).align_to(upd_generic, LEFT)
+
+        self.play(FadeIn(convex_line, shift=UP * 0.05), run_time=0.45)
+        self.play(FadeIn(opt_eq, shift=UP * 0.06), run_time=0.55)
+        self.play(FadeIn(uniq_line, shift=UP * 0.04), run_time=0.35)
+        self.next_slide()
+
+        # ---------------------------------------------------------------------
+        # Bottom-right inset — keep EXACTLY your w/c plot code
+        # ---------------------------------------------------------------------
+        c = 0.8
+        eta = 0.8  # stable for this quadratic (0 < eta < 2)
+
+        axes = Axes(
+            x_range=[-3, 3, 1],
+            y_range=[0, 8, 1],
+            x_length=3.7,
+            y_length=2.2,
+            tips=False,
+        )
+        axes.to_corner(DR, buff=0.85).shift(UP * 0.25)
+
+        xlab = MathTex(r"w", font_size=BODY_FS).next_to(axes.x_axis, DOWN, buff=0.12)
+        ylab = MathTex(r"\mathcal{L}(w)", font_size=BODY_FS).next_to(
+            axes.y_axis, LEFT, buff=0.12
+        )
+
+        self.play(
+            FadeIn(axes, shift=UP * 0.08), FadeIn(xlab), FadeIn(ylab), run_time=0.55
+        )
+        self.next_slide()
+
+        def L_scalar(w):
+            return 0.5 * (w - c) ** 2
+
+        curve = axes.plot(lambda x: L_scalar(x), x_range=[-3, 3])
+        self.play(Create(curve), run_time=0.6)
+        self.next_slide()
+
         w0 = -2.4
-        T = 4
+        T = 3
 
         ws = [w0]
         for _ in range(T):
             wt = ws[-1]
-            ws.append(wt - eta * a * (wt - b))
+            ws.append(wt - eta * (wt - c))
 
         pts = [axes.c2p(w, L_scalar(w)) for w in ws]
-
-        dot = Dot(pts[0], radius=0.06)
+        dot = Dot(pts[0], radius=0.055)
 
         def gd_arrow_at(w):
-            grad = a * (w - b)
-            w_next = w - eta * grad
+            w_next = w - eta * (w - c)
             return Arrow(
                 axes.c2p(w, L_scalar(w)),
                 axes.c2p(w_next, L_scalar(w_next)),
@@ -178,28 +226,21 @@ class LinearModelsAndGD(Slide):
 
         arr = gd_arrow_at(ws[0])
 
-        step_eq = MathTex(
-            r"w_{t+1}=w_t-\eta\,\nabla\mathcal{L}(w_t)",
-            font_size=MATH_FS,
-        )
-        step_eq.next_to(axes, DOWN, buff=0.25).align_to(axes, LEFT)
-        step_eq.shift(DOWN * 0.2)
-
-        self.play(FadeIn(dot), FadeIn(arr), FadeIn(step_eq), run_time=0.5)
+        self.play(FadeIn(dot), FadeIn(arr), run_time=0.5)
         self.next_slide()
 
         for i in range(T):
             self.play(
                 dot.animate.move_to(pts[i + 1]),
                 Transform(arr, gd_arrow_at(ws[i + 1])),
-                run_time=0.5,
+                run_time=0.45,
                 rate_func=smooth,
             )
             self.next_slide()
 
-        wstar_dot = Dot(axes.c2p(b, L_scalar(b)), radius=0.06)
+        wstar_dot = Dot(axes.c2p(c, L_scalar(c)), radius=0.055)
         wstar_lbl = MathTex(r"w^\star", font_size=BODY_FS, color=GREEN).next_to(
-            wstar_dot, UP, buff=0.15
+            wstar_dot, UP, buff=0.12
         )
-        self.play(FadeIn(wstar_dot), FadeIn(wstar_lbl), run_time=0.5)
+        self.play(FadeIn(wstar_dot), FadeIn(wstar_lbl), run_time=0.45)
         self.next_slide()

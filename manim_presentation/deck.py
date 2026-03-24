@@ -1,25 +1,23 @@
 from manim import *
 from manim_slides import Slide
 
-from scenes import (
-    IntroProblemSetup,
-    LinearModelsAndGD,
-    SupervisedLearningFramework,
-    ThesisIntro,
-)
+from scenes import (IntroProblemSetup, LinearModelsAndGD,
+                    SupervisedLearningFramework, ThesisIntro)
 from theme import BG_COLOR, BODY_FS, HEADER_FS, MATH_FS, TEXT_COLOR, add_logo
 from utils import *
 
 
 class LinearModelsAndGD(Slide):
     """
-    Scalar linear model + GD (kept consistent with deep-linear toy later).
+    Linear least-squares in operator form + GD intuition.
+    Convention: X in R^{d x n} (columns are x_i), predictions X^T w.
     """
 
     def construct(self):
         self.camera.background_color = BG_COLOR
         Text.set_default(color=TEXT_COLOR)
         MathTex.set_default(color=TEXT_COLOR)
+
         self.clear()
         add_logo(self)
 
@@ -38,7 +36,7 @@ class LinearModelsAndGD(Slide):
         self.next_slide()
 
         # ---------------------------------------------------------------------
-        # LEFT COLUMN — consistent 3-slot summary (Setup / Loss / Update)
+        # LEFT COLUMN — Setup
         # ---------------------------------------------------------------------
         setup_lab = Text("Setup:", font_size=BODY_FS, color=label_color, weight=BOLD)
         setup_eq = MathTex(
@@ -52,32 +50,8 @@ class LinearModelsAndGD(Slide):
         self.play(Write(setup_eq), run_time=0.7)
         self.next_slide()
 
-        loss_lab = Text("Loss:", font_size=BODY_FS, color=label_color, weight=BOLD)
-        loss_eq = MathTex(
-            r"\mathcal{L}(w)=\tfrac12\|X^\top w-y\|_2^2",
-            font_size=MATH_FS,
-        )
-        loss = VGroup(loss_lab, loss_eq).arrange(RIGHT, buff=0.45, aligned_edge=UP)
-        loss.next_to(setup, DOWN, buff=0.35).align_to(setup, LEFT)
-
-        self.play(Write(loss_lab), run_time=0.35)
-        self.play(Write(loss_eq), run_time=0.75)
-        self.next_slide()
-
-        upd_lab = Text("GD update:", font_size=BODY_FS, color=label_color, weight=BOLD)
-        upd_eq = MathTex(
-            r"w_{t+1}=w_t-\eta\,X\big(X^\top w_t-y\big)",
-            font_size=MATH_FS,
-        )
-        update = VGroup(upd_lab, upd_eq).arrange(RIGHT, buff=0.45, aligned_edge=UP)
-        update.next_to(loss, DOWN, buff=0.35).align_to(setup, LEFT)
-
-        self.play(Write(upd_lab), run_time=0.35)
-        self.play(Write(upd_eq), run_time=0.9)
-        self.next_slide()
-
         # ---------------------------------------------------------------------
-        # RIGHT COLUMN — Network (top-right), persistent anchor
+        # RIGHT COLUMN — Network (top-right) as anchor
         # ---------------------------------------------------------------------
         neuron_stroke = GRAY_B
         edge_color = GRAY_C
@@ -99,15 +73,15 @@ class LinearModelsAndGD(Slide):
         ).deactivate()
 
         nn.scale(0.72)
-        nn.to_edge(RIGHT, buff=0.85).shift(UP * 1.25)  # room for inset later
-        nn.shift(LEFT * 1.25)  # room for inset later
+        nn.to_edge(RIGHT, buff=0.85).shift(UP * 1.25)
+        nn.shift(LEFT * 1.25)  # leave room for inset
 
         x_lbl = MathTex(r"x", font_size=BODY_FS).next_to(nn.layers[0], LEFT, buff=0.18)
         fx_lbl = MathTex(r"f_w(x)", font_size=BODY_FS).next_to(
             nn.layers[-1], RIGHT, buff=0.18
         )
         w_lbl = MathTex(r"w", font_size=BODY_FS, color=label_color).move_to(
-            nn.get_center() + DOWN * 0.25
+            nn.get_center() + DOWN * 0.75
         )
 
         self.play(
@@ -119,31 +93,89 @@ class LinearModelsAndGD(Slide):
         )
         self.next_slide()
 
-        # Deterministic activations so renders are stable
-        def ramp(n, lo, hi):
-            if n <= 1:
-                return np.array([(lo + hi) * 0.5])
-            return np.linspace(lo, hi, n)
-
+        # quick deterministic pulse
         acts = [
-            np.full(len(nn.layers[0].neurons), 0.35),  # input pulse
-            ramp(len(nn.layers[1].neurons), 0.35, 0.80),  # output
+            np.full(len(nn.layers[0].neurons), 0.35),
+            np.array([0.70]),
         ]
-
-        self.play(nn.layer_activate_anim(0, acts[0], run_time=0.25), run_time=0.25)
-        self.play(nn.forward_pass_anim(activations=acts), run_time=1.35)
+        self.play(nn.layer_activate_anim(0, acts[0], run_time=0.22), run_time=0.22)
+        self.play(nn.forward_pass_anim(activations=acts), run_time=0.9)
         self.next_slide()
 
-        # fade fills back down (network stays subtle)
-        zeros = [np.zeros(len(layer.neurons)) for layer in nn.layers]
-        self.play(
-            nn.layer_activate_anim(1, zeros[1], run_time=0.25),
-            run_time=0.35,
-        )
+        self.play(nn.layer_activate_anim(1, np.array([0.0]), run_time=0.22), run_time=0.25)
         self.next_slide()
 
         # ---------------------------------------------------------------------
-        # Bottom-right inset — 1D loss + GD steps (consistent with L(w)=1/2(w-c)^2)
+        # LEFT COLUMN — Loss
+        # ---------------------------------------------------------------------
+        loss_lab = Text("Loss:", font_size=BODY_FS, color=label_color, weight=BOLD)
+        loss_eq = MathTex(
+            r"\mathcal{L}(w)=\tfrac12\|X^\top w-y\|_2^2",
+            font_size=MATH_FS,
+        )
+        loss = VGroup(loss_lab, loss_eq).arrange(RIGHT, buff=0.45, aligned_edge=UP)
+        loss.next_to(setup, DOWN, buff=0.35).align_to(setup, LEFT)
+
+        self.play(Write(loss_lab), run_time=0.35)
+        self.play(Write(loss_eq), run_time=0.8)
+        self.next_slide()
+
+        # ---------------------------------------------------------------------
+        # LEFT COLUMN — GD update as a HEADER line, equations start BELOW it
+        # ---------------------------------------------------------------------
+        upd_lab = Text("GD update:", font_size=BODY_FS, color=label_color, weight=BOLD)
+        upd_lab.next_to(loss, DOWN, buff=0.42).align_to(setup, LEFT)
+
+        self.play(Write(upd_lab), run_time=0.35)
+        self.next_slide()
+
+        # Equation column alignment: align to loss_eq (so it matches Setup/Loss equation column)
+        upd_generic = MathTex(
+            r"w_{t+1}=w_t-\eta\,\nabla_w\mathcal{L}(w_t)",
+            font_size=MATH_FS,
+        )
+        upd_generic.next_to(upd_lab, DOWN, buff=0.18).align_to(loss_eq, LEFT)
+
+        self.play(Write(upd_generic), run_time=0.75)
+        self.next_slide()
+
+        grad_eq = MathTex(
+            r"\nabla_w\mathcal{L}(w)=X(X^\top w-y)=XX^\top w-Xy",
+            font_size=MATH_FS * 0.92,
+        )
+        grad_eq.next_to(upd_generic, DOWN, buff=0.18).align_to(upd_generic, LEFT)
+
+        self.play(FadeIn(grad_eq, shift=UP * 0.06), run_time=0.55)
+        self.next_slide()
+
+        convex_line = MathTex(
+            r"\mathcal{L}\ \text{is convex}\ \Rightarrow\ \nabla_w\mathcal{L}(w^\star)=0",
+            font_size=MATH_FS * 0.78,
+            color=GRAY_A,
+        )
+        convex_line.next_to(grad_eq, DOWN, buff=0.22).align_to(upd_generic, LEFT)
+
+        opt_eq = MathTex(
+            r"XX^\top w^\star=Xy",
+            font_size=MATH_FS * 0.98,
+            color=GREEN,
+        )
+        opt_eq.next_to(convex_line, DOWN, buff=0.14).align_to(upd_generic, LEFT)
+
+        uniq_line = MathTex(
+            r"\text{(unique if }XX^\top \succ 0\text{)}",
+            font_size=MATH_FS * 0.72,
+            color=GRAY_B,
+        )
+        uniq_line.next_to(opt_eq, DOWN, buff=0.10).align_to(upd_generic, LEFT)
+
+        self.play(FadeIn(convex_line, shift=UP * 0.05), run_time=0.45)
+        self.play(FadeIn(opt_eq, shift=UP * 0.06), run_time=0.55)
+        self.play(FadeIn(uniq_line, shift=UP * 0.04), run_time=0.35)
+        self.next_slide()
+
+        # ---------------------------------------------------------------------
+        # Bottom-right inset — keep EXACTLY your w/c plot code
         # ---------------------------------------------------------------------
         c = 0.8
         eta = 0.8  # stable for this quadratic (0 < eta < 2)
@@ -197,16 +229,7 @@ class LinearModelsAndGD(Slide):
 
         arr = gd_arrow_at(ws[0])
 
-        step_eq = (
-            MathTex(
-                r"w_{t+1}=w_t-\eta(w_t-c)",
-                font_size=MATH_FS * 0.85,
-            )
-            .next_to(axes, UP, buff=0.18)
-            .align_to(axes, LEFT)
-        )
-
-        self.play(FadeIn(dot), FadeIn(arr), FadeIn(step_eq), run_time=0.5)
+        self.play(FadeIn(dot), FadeIn(arr), run_time=0.5)
         self.next_slide()
 
         for i in range(T):

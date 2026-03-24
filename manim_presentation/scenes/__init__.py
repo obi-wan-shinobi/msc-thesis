@@ -7,5 +7,13 @@ SupervisedLearningFramework = import_module(
 LinearModelsAndGD = import_module(
     ".04_linear_models_and_gd", __name__
 ).LinearModelsAndGD
+IntroProblemSetup = import_module(
+    ".03_introduction_to_problem_setup", __name__
+).IntroProblemSetup
 
-__all__ = ["SupervisedLearningFramework", "ThesisIntro", "LinearModelsAndGD"]
+__all__ = [
+    "SupervisedLearningFramework",
+    "ThesisIntro",
+    "IntroProblemSetup",
+    "LinearModelsAndGD",
+]

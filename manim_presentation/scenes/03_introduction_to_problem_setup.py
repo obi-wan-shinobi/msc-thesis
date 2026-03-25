@@ -43,7 +43,7 @@ class IntroProblemSetup(Slide):
             color=TEXT_COLOR,
             weight=BOLD,
         )
-        title.to_edge(UP).to_edge(LEFT, buff=1.0)
+        title.to_edge(UP)
 
         self.play(FadeIn(title, shift=UP * 0.2), run_time=0.6)
 

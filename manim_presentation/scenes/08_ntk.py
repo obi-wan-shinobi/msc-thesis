@@ -1,18 +1,15 @@
-import numpy as np
 from manim import *
-from manim_slides import Slide, ThreeDSlide
+from manim_slides import Slide
 
-from scenes import (
-    DeepLinearModelsAndGD,
-    IntroProblemSetup,
-    LinearModelsAndGD,
-    NonLinearModelsAndGD,
-    SupervisedLearningFramework,
-    ThesisIntro,
-    WhyAnalyzeTrainingDynamics,
-)
 from theme import BG_COLOR, BODY_FS, HEADER_FS, MATH_FS, TEXT_COLOR, add_logo
 from utils import *
+
+try:
+    from manim_slides import ThreeDSlide
+except Exception:
+    # Fallback: this will NOT have next_slide(), but at least makes the 3D code explicit.
+    # Prefer fixing your imports to use manim_slides.ThreeDSlide.
+    ThreeDSlide = ThreeDScene
 
 
 class NTK(ThreeDSlide):
@@ -276,52 +273,3 @@ class NTK(ThreeDSlide):
 
         m5.set_opacity(1)
         self.play(FadeIn(m5), run_time=0.45)
-
-
-class ThesisDeck(ThreeDSlide):
-    """
-    A wrapper that forces slide order for manim-slides.
-    Render/present THIS class.
-    """
-
-    def construct(self):
-        # 1) Intro
-        ThesisIntro.construct(self)
-        self.clear()
-
-        # 2) Overview
-        SupervisedLearningFramework.construct(self)
-        self.clear()
-
-        # 3) Models
-        IntroProblemSetup.construct(self)
-        self.clear()
-
-        # 4) Linear models & GD
-        LinearModelsAndGD.construct(self)
-        self.clear()
-
-        # 5) Deep Linear models & GD
-        DeepLinearModelsAndGD.construct(self)
-        self.clear()
-        self.set_camera_orientation(
-            phi=0 * DEGREES, theta=-90 * DEGREES, gamma=0 * DEGREES
-        )
-
-        # 6) Non-linear models & GD
-        NonLinearModelsAndGD.construct(self)
-        self.clear()
-        self.set_camera_orientation(
-            phi=0 * DEGREES, theta=-90 * DEGREES, gamma=0 * DEGREES
-        )
-
-        # 7) Why analyze these dynamics?
-        WhyAnalyzeTrainingDynamics.construct(self)
-        self.clear()
-
-        # 8) NTK
-        NTK.construct(self)
-        self.clear()
-        self.set_camera_orientation(
-            phi=0 * DEGREES, theta=-90 * DEGREES, gamma=0 * DEGREES
-        )

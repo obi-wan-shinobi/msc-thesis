@@ -2,6 +2,7 @@ from manim import *
 from manim_slides import Slide
 
 from theme import BG_COLOR, BODY_FS, HEADER_FS, MATH_FS, TEXT_COLOR, add_logo
+from utils import *
 
 
 class LinearModelsAndGD(Slide):
@@ -99,7 +100,9 @@ class LinearModelsAndGD(Slide):
         self.play(nn.forward_pass_anim(activations=acts), run_time=0.9)
         self.next_slide()
 
-        self.play(nn.layer_activate_anim(1, np.array([0.0]), run_time=0.22), run_time=0.25)
+        self.play(
+            nn.layer_activate_anim(1, np.array([0.0]), run_time=0.22), run_time=0.25
+        )
         self.next_slide()
 
         # ---------------------------------------------------------------------

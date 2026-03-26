@@ -52,10 +52,6 @@ class NonlinearModelsAndGD(ThreeDSlide):
         setup = VGroup(setup_lab, setup_eq).arrange(RIGHT, buff=0.45, aligned_edge=UP)
         setup.next_to(title, DOWN, buff=0.6).to_edge(LEFT, buff=0.9)
 
-        self.play(FadeIn(setup_lab), run_time=0.35)
-        self.play(FadeIn(setup_eq), run_time=0.8)
-        self.next_slide()
-
         # ---------------------------------------------------------------------
         # RIGHT COLUMN — Network (top-right)
         # ---------------------------------------------------------------------
@@ -95,6 +91,9 @@ class NonlinearModelsAndGD(ThreeDSlide):
             nn.get_center() + DOWN * 1.0 + RIGHT * 0.55
         )
 
+        self.play(FadeIn(setup_lab), run_time=0.35)
+        self.play(FadeIn(setup_eq), run_time=0.35)
+
         self.play(
             FadeIn(nn, shift=RIGHT * 0.15),
             FadeIn(x_lbl, shift=RIGHT * 0.1),
@@ -103,7 +102,6 @@ class NonlinearModelsAndGD(ThreeDSlide):
             FadeIn(v_lbl, shift=UP * 0.1),
             run_time=0.6,
         )
-        self.next_slide()
 
         # quick deterministic pulse
         acts = [
@@ -113,11 +111,9 @@ class NonlinearModelsAndGD(ThreeDSlide):
         ]
         self.play(nn.layer_activate_anim(0, acts[0], run_time=0.20), run_time=0.20)
         self.play(nn.forward_pass_anim(activations=acts), run_time=0.9)
-        self.next_slide()
         self.play(
             nn.layer_activate_anim(2, np.array([0.0]), run_time=0.22), run_time=0.25
         )
-        self.next_slide()
 
         # ---------------------------------------------------------------------
         # LEFT COLUMN — Loss (deep linear)
@@ -132,7 +128,6 @@ class NonlinearModelsAndGD(ThreeDSlide):
 
         self.play(FadeIn(loss_lab), run_time=0.35)
         self.play(FadeIn(loss_eq), run_time=0.75)
-        self.next_slide()
 
         # ---------------------------------------------------------------------
         # LEFT COLUMN — GD update

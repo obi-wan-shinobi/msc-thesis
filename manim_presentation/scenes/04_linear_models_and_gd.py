@@ -44,8 +44,8 @@ class LinearModelsAndGD(Slide):
         setup = VGroup(setup_lab, setup_eq).arrange(RIGHT, buff=0.45, aligned_edge=UP)
         setup.next_to(title, DOWN, buff=0.6).to_edge(LEFT, buff=0.9)
 
-        self.play(Write(setup_lab), run_time=0.35)
-        self.play(Write(setup_eq), run_time=0.7)
+        self.play(FadeIn(setup_lab), run_time=0.35)
+        self.play(FadeIn(setup_eq), run_time=0.7)
         self.next_slide()
 
         # ---------------------------------------------------------------------
@@ -116,8 +116,8 @@ class LinearModelsAndGD(Slide):
         loss = VGroup(loss_lab, loss_eq).arrange(RIGHT, buff=0.45, aligned_edge=UP)
         loss.next_to(setup, DOWN, buff=0.35).align_to(setup, LEFT)
 
-        self.play(Write(loss_lab), run_time=0.35)
-        self.play(Write(loss_eq), run_time=0.8)
+        self.play(FadeIn(loss_lab), run_time=0.35)
+        self.play(FadeIn(loss_eq), run_time=0.8)
         self.next_slide()
 
         # ---------------------------------------------------------------------
@@ -126,7 +126,7 @@ class LinearModelsAndGD(Slide):
         upd_lab = Text("GD update:", font_size=BODY_FS, color=label_color, weight=BOLD)
         upd_lab.next_to(loss, DOWN, buff=0.42).align_to(setup, LEFT)
 
-        self.play(Write(upd_lab), run_time=0.35)
+        self.play(FadeIn(upd_lab), run_time=0.35)
         self.next_slide()
 
         # Equation column alignment: align to loss_eq (so it matches Setup/Loss equation column)
@@ -136,7 +136,7 @@ class LinearModelsAndGD(Slide):
         )
         upd_generic.next_to(upd_lab, DOWN, buff=0.18).align_to(loss_eq, LEFT)
 
-        self.play(Write(upd_generic), run_time=0.75)
+        self.play(FadeIn(upd_generic), run_time=0.75)
         self.next_slide()
 
         grad_eq = MathTex(
@@ -187,6 +187,7 @@ class LinearModelsAndGD(Slide):
             y_length=2.2,
             tips=False,
         )
+        axes.set_color(TEXT_COLOR)
         axes.to_corner(DR, buff=0.85).shift(UP * 0.25)
 
         xlab = MathTex(r"w", font_size=BODY_FS).next_to(axes.x_axis, DOWN, buff=0.12)

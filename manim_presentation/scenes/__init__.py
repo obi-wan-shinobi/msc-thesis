@@ -23,7 +23,23 @@ WhyAnalyzeTrainingDynamics = import_module(
     ".07_why_analyze_dynamics", __name__
 ).WhyAnalyzeTrainingDynamics
 
+SpectralBias = import_module(".09_spectral_bias", __name__).SpectralBias
+
+CircleToyFourierDiagonalization = import_module(
+    ".10_circle_toy_fourier", __name__
+).CircleToyFourierDiagonalization
+
 NTK = import_module(".08_ntk", __name__).NTK
+
+FiniteSampleStory = import_module(".11_finite_sample_story", __name__).FiniteSampleStory
+
+LemmaConcentrationBounds = import_module(
+    ".12_lemma_concentration_bounds", __name__
+).LemmaConcentrationBounds
+
+FiniteSampleResults = import_module(
+    ".13_finite_sample_results", __name__
+).FiniteSampleResults
 
 __all__ = [
     "SupervisedLearningFramework",
@@ -34,4 +50,9 @@ __all__ = [
     "NonLinearModelsAndGD",
     "WhyAnalyzeTrainingDynamics",
     "NTK",
+    "SpectralBias",
+    "CircleToyFourierDiagonalization",
+    "FiniteSampleStory",
+    "LemmaConcentrationBounds",
+    "FiniteSampleResults",
 ]

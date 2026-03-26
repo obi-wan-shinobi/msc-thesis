@@ -60,8 +60,8 @@ class IntroProblemSetup(Slide):
         sentence = VGroup(s1, s2).arrange(DOWN, buff=0.15, aligned_edge=LEFT)
         sentence.next_to(title, DOWN, buff=0.55).to_edge(LEFT, buff=1.0)
 
-        self.play(Write(s1), run_time=1.0)
-        self.play(Write(s2), run_time=0.6)
+        self.play(FadeIn(s1), run_time=1.0)
+        self.play(FadeIn(s2), run_time=0.6)
         self.next_slide()
 
         r_lin, lab_lin, ex_lin = row("Linear Networks:", r"f_\theta(x)=x^\top\theta")

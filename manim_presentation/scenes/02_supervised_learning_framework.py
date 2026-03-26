@@ -85,30 +85,30 @@ class SupervisedLearningFramework(Slide):
         rows.next_to(title, DOWN, buff=0.6).to_edge(LEFT, buff=1.0)
 
         # Animate row-by-row
-        self.play(Write(lab1), run_time=0.4)
-        self.play(Write(ex1), run_time=0.9)
+        self.play(FadeIn(lab1), run_time=0.4)
+        self.play(FadeIn(ex1), run_time=0.9)
         self.next_slide()
 
-        self.play(Write(lab2), run_time=0.4)
-        self.play(Write(ex2), run_time=0.6)
+        self.play(FadeIn(lab2), run_time=0.4)
+        self.play(FadeIn(ex2), run_time=0.6)
         self.next_slide()
 
-        self.play(Write(lab3), run_time=0.4)
-        self.play(Write(ex3), run_time=0.7)
+        self.play(FadeIn(lab3), run_time=0.4)
+        self.play(FadeIn(ex3), run_time=0.7)
         self.next_slide()
 
-        self.play(Write(how_label), run_time=0.35)
-        self.play(Write(how_a), run_time=0.45)
+        self.play(FadeIn(how_label), run_time=0.35)
+        self.play(FadeIn(how_a), run_time=0.45)
         self.next_slide()
 
-        self.play(Write(how_b), run_time=0.8)
+        self.play(FadeIn(how_b), run_time=0.8)
         self.next_slide()
 
-        self.play(Write(risk), run_time=1.0)
+        self.play(FadeIn(risk), run_time=0.45)
         self.next_slide()
 
-        self.play(Write(prob_label), run_time=0.35)
-        self.play(Write(prob_expr_unknown), run_time=0.55)
+        self.play(FadeIn(prob_label), run_time=0.35)
+        self.play(FadeIn(prob_expr_unknown), run_time=0.55)
         self.next_slide()
 
         self.play(Indicate(prob_expr_unknown, scale_factor=1.03), run_time=0.7)
@@ -152,7 +152,7 @@ class SupervisedLearningFramework(Slide):
         self.play(Transform(rows, rows_target), run_time=0.6)
 
         sol_punchline.next_to(sol_expr, RIGHT, buff=0.6).align_to(sol_expr, UP)
-        self.play(Write(sol_punchline), run_time=0.55)
+        self.play(FadeIn(sol_punchline), run_time=0.55)
         self.next_slide()
 
         self.play(Indicate(sol_punchline, scale_factor=1.03), run_time=0.7)

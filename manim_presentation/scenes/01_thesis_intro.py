@@ -11,7 +11,7 @@ class ThesisIntro(Slide):
         MathTex.set_default(color=TEXT_COLOR)
 
         title = Paragraph(
-            "Training and Generalization in",
+            "Training dynamics in",
             "overparameterized neural networks",
             alignment="center",
             font_size=TITLE_FS,
@@ -19,7 +19,7 @@ class ThesisIntro(Slide):
         ).to_edge(UP, buff=1.2)
 
         subtitle = Text(
-            "Interim Thesis Presentation",
+            "Student Meeting Presentation",
             font_size=SUBTITLE_FS,
             color=BLUE,
         ).next_to(title, DOWN, buff=0.4)

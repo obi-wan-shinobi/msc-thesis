@@ -15,7 +15,7 @@ class WhyAnalyzeTrainingDynamics(Slide):
         add_logo(self)
 
         label_color = BLUE
-        bullet_color = GRAY_A
+        bullet_color = BLUE
 
         # ---------------------------------------------------------------------
         # Title
@@ -148,7 +148,7 @@ class WhyAnalyzeTrainingDynamics(Slide):
             )
             curves.add(curve)
 
-            lbl = MathTex(rf"\lambda={lam}_{i}", font_size=BODY_FS * 0.8, color=colr)
+            lbl = MathTex(rf"\lambda_{i}={lam}", font_size=BODY_FS * 0.8, color=colr)
             lbl.next_to(axes.c2p(5.6, np.exp(-lam * 5.6)), RIGHT, buff=0.35)
             labels.add(lbl)
 

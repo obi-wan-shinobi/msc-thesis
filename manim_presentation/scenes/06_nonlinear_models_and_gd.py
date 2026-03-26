@@ -52,8 +52,8 @@ class NonlinearModelsAndGD(ThreeDSlide):
         setup = VGroup(setup_lab, setup_eq).arrange(RIGHT, buff=0.45, aligned_edge=UP)
         setup.next_to(title, DOWN, buff=0.6).to_edge(LEFT, buff=0.9)
 
-        self.play(Write(setup_lab), run_time=0.35)
-        self.play(Write(setup_eq), run_time=0.8)
+        self.play(FadeIn(setup_lab), run_time=0.35)
+        self.play(FadeIn(setup_eq), run_time=0.8)
         self.next_slide()
 
         # ---------------------------------------------------------------------
@@ -130,8 +130,8 @@ class NonlinearModelsAndGD(ThreeDSlide):
         loss = VGroup(loss_lab, loss_eq).arrange(RIGHT, buff=0.45, aligned_edge=UP)
         loss.next_to(setup, DOWN, buff=0.35).align_to(setup, LEFT)
 
-        self.play(Write(loss_lab), run_time=0.35)
-        self.play(Write(loss_eq), run_time=0.75)
+        self.play(FadeIn(loss_lab), run_time=0.35)
+        self.play(FadeIn(loss_eq), run_time=0.75)
         self.next_slide()
 
         # ---------------------------------------------------------------------
@@ -139,7 +139,7 @@ class NonlinearModelsAndGD(ThreeDSlide):
         # ---------------------------------------------------------------------
         upd_lab = Text("GD update:", font_size=BODY_FS, color=label_color, weight=BOLD)
         upd_lab.next_to(loss, DOWN, buff=0.42).align_to(setup, LEFT)
-        self.play(Write(upd_lab), run_time=0.35)
+        self.play(FadeIn(upd_lab), run_time=0.35)
         self.next_slide()
 
         v_upd = MathTex(
@@ -152,7 +152,7 @@ class NonlinearModelsAndGD(ThreeDSlide):
         )
         upd_generic = VGroup(v_upd, W_upd).arrange(DOWN, buff=0.45, aligned_edge=UP)
         upd_generic.next_to(upd_lab, DOWN, buff=0.18).align_to(loss_eq, LEFT)
-        self.play(Write(upd_generic), run_time=0.85)
+        self.play(FadeIn(upd_generic), run_time=0.85)
         self.next_slide()
 
         grad_v = MathTex(

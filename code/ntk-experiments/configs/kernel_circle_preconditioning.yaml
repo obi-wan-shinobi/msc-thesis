@@ -1,15 +1,14 @@
 experiment:
-  name: kernel_circle_lemma_validation_const_eta
+  name: kernel_circle_preconditioning_kmax4
   save_dir: results
   seed: 0
 
 data:
-  n_trains: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
-  n_eval: 720
+  n_trains: [64, 128, 256, 512, 1024, 2048, 4096]
   noise_std: 0.0
 
 basis:
-  K_max: 10
+  K_max: 4
 
 target:
   Ks: [0, 1, 2, 3]
@@ -22,11 +21,13 @@ kernel:
 train:
   steps: 2000
   eta: 0.08
-  eta_scale: 0.05
-  save_every: 100
 
 sweep:
   seeds: 10
 
+preconditioner:
+  tau: 0.0
+  reg: 1e-8
+
 analysis:
-  mode_compare: [0, 1, 2, 3, 4, 5]
+  mode_compare: [0, 1, 2, 3, 4]

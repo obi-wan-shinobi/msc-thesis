@@ -339,3 +339,25 @@ def compute_lemma_error_metrics(
         "action_err_max": action_metrics["max"],
         "action_err_fro": action_metrics["fro"],
     }
+
+
+def compressed_operator_from_lemma_objects(
+    G: jnp.ndarray,
+    H: jnp.ndarray,
+    reg: float = 1e-8,
+) -> jnp.ndarray:
+    """
+    Effective compressed operator in sampled Fourier coordinates:
+
+        C = G^{-1} H
+    """
+    G = jnp.asarray(G)
+    H = jnp.asarray(H)
+
+    if G.shape != H.shape:
+        raise ValueError(
+            f"G and H must have the same shape, got {G.shape} and {H.shape}."
+        )
+
+    I = jnp.eye(G.shape[0], dtype=G.dtype)
+    return jnp.linalg.solve(G + reg * I, H)

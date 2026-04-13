@@ -148,6 +148,7 @@ def run(config_path: str):
     sweep_cfg = cfg["sweep"]
     prec_cfg = cfg.get("preconditioner", {})
     analysis_cfg = cfg.get("analysis", {})
+    artifacts_cfg = cfg.get("artifacts", {})
 
     base_seed = int(exp_cfg.get("seed", 0))
     n_trains = [int(n) for n in data_cfg["n_trains"]]
@@ -156,9 +157,9 @@ def run(config_path: str):
 
     K_max = int(basis_cfg["K_max"])
 
-    Ks = np.array(target_cfg["Ks"], dtype=float)
-    amps = np.array(target_cfg["amps"], dtype=float)
-    phases = np.array(target_cfg["phases"], dtype=float)
+    Ks = jnp.asarray(target_cfg["Ks"], dtype=float)
+    amps = jnp.asarray(target_cfg["amps"], dtype=float)
+    phases = jnp.asarray(target_cfg["phases"], dtype=float)
 
     kernel_name = kernel_cfg["name"]
     if kernel_name != "bias":
@@ -173,6 +174,12 @@ def run(config_path: str):
     tau = float(prec_cfg.get("tau", 0.0))
     reg = float(prec_cfg.get("reg", 1e-8))
 
+    save_profile = str(artifacts_cfg.get("save_profile", "compact")).lower()
+    if save_profile not in {"compact", "full"}:
+        raise ValueError(
+            f"artifacts.save_profile must be 'compact' or 'full', got {save_profile!r}."
+        )
+
     seed_list = _resolve_seed_list(sweep_cfg["seeds"], base_seed)
     mode_compare = list(analysis_cfg.get("mode_compare", []))
 
@@ -181,6 +188,7 @@ def run(config_path: str):
 
     print("=== Kernel circle preconditioning run ===")
     print(f"Saving results to: {save_dir}\n")
+    print(f"Artifact profile: {save_profile}\n")
     t0 = time.time()
 
     ft = FourierTarget(Ks=Ks, amps=amps, phases=phases)
@@ -389,67 +397,76 @@ def run(config_path: str):
             run_key = f"size_{n_train}_seed_{seed}"
             run_path = runs_dir / f"{run_key}.npz"
 
-            save_npz(
-                run_path,
+            arrays_to_save = {
                 # geometry / target
-                gamma_train=np.asarray(gamma_train),
-                X_train=np.asarray(X_train),
-                y_train=np.asarray(y_train),
+                "gamma_train": np.asarray(gamma_train),
+                "X_train": np.asarray(X_train),
+                "y_train": np.asarray(y_train),
                 # basis
-                Phi=np.asarray(Phi),
-                Phi_unit=np.asarray(Phi_unit),
-                mode_names=np.asarray(mode_names),
-                mode_freqs=np.asarray(mode_freqs),
-                mode_types=np.asarray(mode_types),
-                # operator / theory block
-                A=np.asarray(A),
-                G=np.asarray(G),
-                H=np.asarray(H),
-                C=np.asarray(C),
-                Lambda_n=np.asarray(Lambda_n),
-                lambda_by_k=np.asarray(lambda_by_k),
-                lambda_n_diag=np.asarray(lambda_n_diag),
-                g0=np.asarray([g0]),
-                # preconditioners / preconditioned operators
-                M_th=np.asarray(M_th),
-                M_emp=np.asarray(M_emp),
-                P_th=np.asarray(P_th),
-                P_emp=np.asarray(P_emp),
-                B_th=np.asarray(B_th),
-                B_emp=np.asarray(B_emp),
-                C_th=np.asarray(C_th),
-                C_emp=np.asarray(C_emp),
+                "Phi": np.asarray(Phi),
+                "Phi_unit": np.asarray(Phi_unit),
+                "mode_names": np.asarray(mode_names),
+                "mode_freqs": np.asarray(mode_freqs),
+                "mode_types": np.asarray(mode_types),
+                # compact operator/theory objects
+                "G": np.asarray(G),
+                "H": np.asarray(H),
+                "C": np.asarray(C),
+                "Lambda_n": np.asarray(Lambda_n),
+                "lambda_by_k": np.asarray(lambda_by_k),
+                "lambda_n_diag": np.asarray(lambda_n_diag),
+                "g0": np.asarray([g0]),
+                # compact preconditioner objects
+                "M_th": np.asarray(M_th),
+                "M_emp": np.asarray(M_emp),
+                "C_th": np.asarray(C_th),
+                "C_emp": np.asarray(C_emp),
                 # diagnostics
-                C_vs_Lambda_max=np.asarray(C_vs_Lambda["max"]),
-                C_vs_Lambda_fro=np.asarray(C_vs_Lambda["fro"]),
-                M_th_vs_emp_max=np.asarray(M_th_vs_emp["max"]),
-                M_th_vs_emp_fro=np.asarray(M_th_vs_emp["fro"]),
-                P_th_vs_emp_max=np.asarray(P_th_vs_emp["max"]),
-                P_th_vs_emp_fro=np.asarray(P_th_vs_emp["fro"]),
-                B_th_vs_emp_max=np.asarray(B_th_vs_emp["max"]),
-                B_th_vs_emp_fro=np.asarray(B_th_vs_emp["fro"]),
-                C_th_vs_emp_max=np.asarray(C_th_vs_emp["max"]),
-                C_th_vs_emp_fro=np.asarray(C_th_vs_emp["fro"]),
+                "C_vs_Lambda_max": np.asarray(C_vs_Lambda["max"]),
+                "C_vs_Lambda_fro": np.asarray(C_vs_Lambda["fro"]),
+                "M_th_vs_emp_max": np.asarray(M_th_vs_emp["max"]),
+                "M_th_vs_emp_fro": np.asarray(M_th_vs_emp["fro"]),
+                "P_th_vs_emp_max": np.asarray(P_th_vs_emp["max"]),
+                "P_th_vs_emp_fro": np.asarray(P_th_vs_emp["fro"]),
+                "B_th_vs_emp_max": np.asarray(B_th_vs_emp["max"]),
+                "B_th_vs_emp_fro": np.asarray(B_th_vs_emp["fro"]),
+                "C_th_vs_emp_max": np.asarray(C_th_vs_emp["max"]),
+                "C_th_vs_emp_fro": np.asarray(C_th_vs_emp["fro"]),
                 # dynamics
-                eta=np.asarray([eta]),
-                loss_base=np.asarray(out_base["loss"]),
-                loss_th=np.asarray(out_th["loss"]),
-                loss_emp=np.asarray(out_emp["loss"]),
-                r_train_base=np.asarray(out_base["r_train"]),
-                r_train_th=np.asarray(out_th["r_train"]),
-                r_train_emp=np.asarray(out_emp["r_train"]),
+                "eta": np.asarray([eta]),
+                "loss_base": np.asarray(out_base["loss"]),
+                "loss_th": np.asarray(out_th["loss"]),
+                "loss_emp": np.asarray(out_emp["loss"]),
                 # mode projections and normalized mode curves
-                mode_proj_base=np.asarray(mode_proj_base),
-                mode_proj_th=np.asarray(mode_proj_th),
-                mode_proj_emp=np.asarray(mode_proj_emp),
-                mode_curves_base=np.asarray(mode_curves_base),
-                mode_curves_th=np.asarray(mode_curves_th),
-                mode_curves_emp=np.asarray(mode_curves_emp),
+                "mode_proj_base": np.asarray(mode_proj_base),
+                "mode_proj_th": np.asarray(mode_proj_th),
+                "mode_proj_emp": np.asarray(mode_proj_emp),
+                "mode_curves_base": np.asarray(mode_curves_base),
+                "mode_curves_th": np.asarray(mode_curves_th),
+                "mode_curves_emp": np.asarray(mode_curves_emp),
                 # dense probe predictions
-                y_pred_probe_base_final=np.asarray(y_pred_probe_base_final),
-                y_pred_probe_th_final=np.asarray(y_pred_probe_th_final),
-                y_pred_probe_emp_final=np.asarray(y_pred_probe_emp_final),
-            )
+                "y_pred_probe_base_final": np.asarray(y_pred_probe_base_final),
+                "y_pred_probe_th_final": np.asarray(y_pred_probe_th_final),
+                "y_pred_probe_emp_final": np.asarray(y_pred_probe_emp_final),
+            }
+
+            if save_profile == "full":
+                arrays_to_save.update(
+                    {
+                        # large dense operators
+                        "A": np.asarray(A),
+                        "P_th": np.asarray(P_th),
+                        "P_emp": np.asarray(P_emp),
+                        "B_th": np.asarray(B_th),
+                        "B_emp": np.asarray(B_emp),
+                        # full train residual trajectories
+                        "r_train_base": np.asarray(out_base["r_train"]),
+                        "r_train_th": np.asarray(out_th["r_train"]),
+                        "r_train_emp": np.asarray(out_emp["r_train"]),
+                    }
+                )
+
+            save_npz(run_path, **arrays_to_save)
 
             runs_manifest[run_key] = f"runs/{run_key}.npz"
 
@@ -471,6 +488,8 @@ def run(config_path: str):
             "target_phases": target_cfg["phases"],
             "noise_std": noise_std,
             "mode_compare": mode_compare,
+            "save_profile": save_profile,
+            "large_dense_keys_saved": save_profile == "full",
         },
         "runtime_sec": round(time.time() - t0, 2),
     }

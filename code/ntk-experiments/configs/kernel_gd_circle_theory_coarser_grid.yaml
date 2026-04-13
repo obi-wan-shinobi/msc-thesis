@@ -1,0 +1,25 @@
+experiment:
+  name: kernel_gd_circle_theory_coarser_grid
+  save_dir: results
+  seed: 0
+
+data:
+  n_train: [16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
+
+target:
+  Ks: [0, 1, 2, 3]
+  amps: [1, 0.9, 0.5, 0.35]
+  phases: [0.0, 0.0, 0.0, 0.0]
+
+kernel:
+  name: bias
+  init: zero
+
+train:
+  steps: 1000
+  eta: null
+  eta_scale: 0.05
+
+analysis:
+  compare_first_k: 40
+  fourier_modes: [0, 1, 2, 3, 4, 8]

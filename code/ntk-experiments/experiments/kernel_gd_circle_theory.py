@@ -4,7 +4,6 @@
 
 import sys
 import time
-from pathlib import Path
 
 import jax
 import numpy as np
@@ -22,8 +21,22 @@ from core.kernel_dynamics import gp_init_from_gamma, run_kernel_gd, zero_init_fr
 from utils.artifacts import make_run_dir, save_json, save_npz, write_config_copy
 
 
+def _resolve_n_trains(n_train_cfg) -> list[int]:
+    if isinstance(n_train_cfg, (list, tuple)):
+        n_trains = [int(n) for n in n_train_cfg]
+    else:
+        n_trains = [int(n_train_cfg)]
+
+    if len(n_trains) == 0:
+        raise ValueError("data.n_train must provide at least one value.")
+    if any(n <= 0 for n in n_trains):
+        raise ValueError(f"All n_train values must be positive, got {n_trains}.")
+    return n_trains
+
+
 def run(config_path: str):
-    cfg = yaml.safe_load(open(config_path))
+    with open(config_path, "r") as f:
+        cfg = yaml.safe_load(f)
 
     exp_cfg = cfg["experiment"]
     data_cfg = cfg["data"]
@@ -33,7 +46,7 @@ def run(config_path: str):
     analysis_cfg = cfg["analysis"]
 
     seed = int(exp_cfg["seed"])
-    n_train = int(data_cfg["n_train"])
+    n_trains = _resolve_n_trains(data_cfg["n_train"])
 
     Ks = np.array(target_cfg["Ks"], dtype=float)
     amps = np.array(target_cfg["amps"], dtype=float)
@@ -56,126 +69,162 @@ def run(config_path: str):
     print(f"Saving results to: {save_dir}\n")
     t0 = time.time()
 
-    # ------------------------------------------------------------
-    # Evenly spaced circle grid
-    # ------------------------------------------------------------
-    gamma_train, X_train, _ = make_probe_circle(n_train)
-
     ft = FourierTarget(Ks=Ks, amps=amps, phases=phases)
-    y_train = f_star_gamma(gamma_train, ft)
+    runs_manifest = {}
+    single_layout = len(n_trains) == 1
 
-    save_npz(
-        save_dir / "training_task.npz",
-        gamma_train=np.asarray(gamma_train),
-        X_train=np.asarray(X_train),
-        y_train=np.asarray(y_train),
-    )
+    for n_train in n_trains:
+        print(f"=== n_train = {n_train} ===")
 
-    # ------------------------------------------------------------
-    # Kernel matrix + eigendecomposition
-    # ------------------------------------------------------------
-    theta_xx = kernel_matrix_from_gamma(gamma_train, kernel=kernel_name)
-    evals_emp, evecs = kernel_eigendecomposition(theta_xx)
+        run_key = f"size_{n_train}"
+        run_dir = save_dir if single_layout else save_dir / "runs" / run_key
 
-    # For theory validation on the bias kernel, compare discrete eigenvalues
-    # against n * lambda_k(cont)
-    continuum_payload = {}
-    if kernel_name == "bias":
-        ks_compare = np.arange(compare_first_k + 1)
-        lambda_cont = np.asarray(continuum_fourier_eigenvalues_bias(ks_compare))
-        lambda_disc_pred = n_train * lambda_cont
-
-        continuum_payload = {
-            "ks_compare": ks_compare,
-            "lambda_cont": lambda_cont,
-            "lambda_disc_pred": lambda_disc_pred,
-        }
+        # ------------------------------------------------------------
+        # Evenly spaced circle grid
+        # ------------------------------------------------------------
+        gamma_train, X_train, _ = make_probe_circle(n_train)
+        y_train = f_star_gamma(gamma_train, ft)
 
         save_npz(
-            save_dir / "continuum_spectrum.npz",
-            **continuum_payload,
+            run_dir / "training_task.npz",
+            gamma_train=np.asarray(gamma_train),
+            X_train=np.asarray(X_train),
+            y_train=np.asarray(y_train),
         )
 
-    # ------------------------------------------------------------
-    # Step size
-    # ------------------------------------------------------------
-    lam_max = float(np.asarray(evals_emp[0]))
-    eta = float(eta_cfg) if eta_cfg is not None else float(eta_scale / lam_max)
+        # ------------------------------------------------------------
+        # Kernel matrix + eigendecomposition
+        # ------------------------------------------------------------
+        theta_xx = kernel_matrix_from_gamma(gamma_train, kernel=kernel_name)
+        evals_emp, evecs = kernel_eigendecomposition(theta_xx)
 
-    # ------------------------------------------------------------
-    # Initialization
-    # ------------------------------------------------------------
-    if init_name == "zero":
-        y_pred_0 = zero_init_from_gamma(gamma_train)
-    elif init_name == "gp":
-        y_pred_0 = gp_init_from_gamma(jax.random.PRNGKey(seed), gamma_train)
-    else:
-        raise ValueError(f"Unknown init='{init_name}'. Expected 'zero' or 'gp'.")
+        # For theory validation on the bias kernel, compare discrete eigenvalues
+        # against n * lambda_k(cont)
+        has_continuum_spectrum = False
+        if kernel_name == "bias":
+            ks_compare = np.arange(compare_first_k + 1)
+            lambda_cont = np.asarray(continuum_fourier_eigenvalues_bias(ks_compare))
+            lambda_disc_pred = n_train * lambda_cont
 
-    # ------------------------------------------------------------
-    # Kernel GD
-    # ------------------------------------------------------------
-    out = run_kernel_gd(
-        gamma=gamma_train,
-        y=y_train,
-        eta=eta,
-        steps=steps,
-        kernel=kernel_name,
-        y_pred_0=y_pred_0,
-    )
+            save_npz(
+                run_dir / "continuum_spectrum.npz",
+                ks_compare=ks_compare,
+                lambda_cont=lambda_cont,
+                lambda_disc_pred=lambda_disc_pred,
+            )
+            has_continuum_spectrum = True
 
-    save_npz(
-        save_dir / "kernel_objects.npz",
-        theta_xx=np.asarray(theta_xx),
-        evals_emp=np.asarray(evals_emp),
-        evecs=np.asarray(evecs),
-    )
+        # ------------------------------------------------------------
+        # Step size
+        # ------------------------------------------------------------
+        lam_max = float(np.asarray(evals_emp[0]))
+        eta = float(eta_cfg) if eta_cfg is not None else float(eta_scale / lam_max)
 
-    save_npz(
-        save_dir / "kernel_dynamics.npz",
-        y_pred=np.asarray(out["y_pred"]),
-        r=np.asarray(out["r"]),
-        loss=np.asarray(out["loss"]),
-        eta=np.asarray([eta]),
-    )
+        # ------------------------------------------------------------
+        # Initialization
+        # ------------------------------------------------------------
+        if init_name == "zero":
+            y_pred_0 = zero_init_from_gamma(gamma_train)
+        elif init_name == "gp":
+            y_pred_0 = gp_init_from_gamma(jax.random.PRNGKey(seed), gamma_train)
+        else:
+            raise ValueError(f"Unknown init='{init_name}'. Expected 'zero' or 'gp'.")
 
-    # ------------------------------------------------------------
-    # Mode projections
-    # ------------------------------------------------------------
-    eig_coeffs = project_residuals_onto_eigenvectors(out["r"], evecs)
-    fourier_proj = project_residuals_onto_fourier_modes(
-        out["r"],
-        gamma_train,
-        ks=fourier_modes,
-    )
+        # ------------------------------------------------------------
+        # Kernel GD
+        # ------------------------------------------------------------
+        out = run_kernel_gd(
+            gamma=gamma_train,
+            y=y_train,
+            eta=eta,
+            steps=steps,
+            kernel=kernel_name,
+            y_pred_0=y_pred_0,
+        )
 
-    mode_payload = {
-        "eig_coeffs": np.asarray(eig_coeffs),
-    }
-    for name, values in fourier_proj.items():
-        mode_payload[name] = np.asarray(values)
+        save_npz(
+            run_dir / "kernel_objects.npz",
+            theta_xx=np.asarray(theta_xx),
+            evals_emp=np.asarray(evals_emp),
+            evecs=np.asarray(evecs),
+        )
 
-    save_npz(
-        save_dir / "mode_projections.npz",
-        **mode_payload,
-    )
+        save_npz(
+            run_dir / "kernel_dynamics.npz",
+            y_pred=np.asarray(out["y_pred"]),
+            r=np.asarray(out["r"]),
+            loss=np.asarray(out["loss"]),
+            eta=np.asarray([eta]),
+        )
+
+        # ------------------------------------------------------------
+        # Mode projections
+        # ------------------------------------------------------------
+        eig_coeffs = project_residuals_onto_eigenvectors(out["r"], evecs)
+        fourier_proj = project_residuals_onto_fourier_modes(
+            out["r"],
+            gamma_train,
+            ks=fourier_modes,
+        )
+
+        mode_payload = {
+            "eig_coeffs": np.asarray(eig_coeffs),
+        }
+        for name, values in fourier_proj.items():
+            mode_payload[name] = np.asarray(values)
+
+        save_npz(
+            run_dir / "mode_projections.npz",
+            **mode_payload,
+        )
+
+        if single_layout:
+            training_task_rel = "training_task.npz"
+            kernel_objects_rel = "kernel_objects.npz"
+            kernel_dynamics_rel = "kernel_dynamics.npz"
+            mode_projections_rel = "mode_projections.npz"
+            continuum_spectrum_rel = "continuum_spectrum.npz"
+        else:
+            training_task_rel = f"runs/{run_key}/training_task.npz"
+            kernel_objects_rel = f"runs/{run_key}/kernel_objects.npz"
+            kernel_dynamics_rel = f"runs/{run_key}/kernel_dynamics.npz"
+            mode_projections_rel = f"runs/{run_key}/mode_projections.npz"
+            continuum_spectrum_rel = f"runs/{run_key}/continuum_spectrum.npz"
+
+        runs_manifest[run_key] = {
+            "training_task": training_task_rel,
+            "kernel_objects": kernel_objects_rel,
+            "kernel_dynamics": kernel_dynamics_rel,
+            "mode_projections": mode_projections_rel,
+            "meta": {
+                "kernel": kernel_name,
+                "init": init_name,
+                "n_train": n_train,
+                "steps": steps,
+                "eta": eta,
+                "eta_scale": eta_scale,
+                "lambda_max_emp": lam_max,
+                "target_Ks": target_cfg["Ks"],
+                "target_amps": target_cfg["amps"],
+                "target_phases": target_cfg["phases"],
+                "fourier_modes": fourier_modes,
+            },
+        }
+        if has_continuum_spectrum:
+            runs_manifest[run_key]["continuum_spectrum"] = continuum_spectrum_rel
 
     # ------------------------------------------------------------
     # Manifest
     # ------------------------------------------------------------
     manifest = {
-        "training_task": "training_task.npz",
-        "kernel_objects": "kernel_objects.npz",
-        "kernel_dynamics": "kernel_dynamics.npz",
-        "mode_projections": "mode_projections.npz",
+        "runs": runs_manifest,
         "meta": {
             "kernel": kernel_name,
             "init": init_name,
-            "n_train": n_train,
+            "n_trains": n_trains,
             "steps": steps,
-            "eta": eta,
+            "eta_config": eta_cfg,
             "eta_scale": eta_scale,
-            "lambda_max_emp": lam_max,
             "target_Ks": target_cfg["Ks"],
             "target_amps": target_cfg["amps"],
             "target_phases": target_cfg["phases"],
@@ -184,8 +233,21 @@ def run(config_path: str):
         "runtime_sec": round(time.time() - t0, 2),
     }
 
-    if kernel_name == "bias":
-        manifest["continuum_spectrum"] = "continuum_spectrum.npz"
+    # Backward-compatible top-level keys when there is a single n_train.
+    if single_layout:
+        single_key = f"size_{n_trains[0]}"
+        single = runs_manifest[single_key]
+        manifest["training_task"] = single["training_task"]
+        manifest["kernel_objects"] = single["kernel_objects"]
+        manifest["kernel_dynamics"] = single["kernel_dynamics"]
+        manifest["mode_projections"] = single["mode_projections"]
+        if "continuum_spectrum" in single:
+            manifest["continuum_spectrum"] = single["continuum_spectrum"]
+
+        manifest["meta"] = {
+            **single["meta"],
+            "n_trains": n_trains,
+        }
 
     save_json(save_dir / "manifest.json", manifest)
 

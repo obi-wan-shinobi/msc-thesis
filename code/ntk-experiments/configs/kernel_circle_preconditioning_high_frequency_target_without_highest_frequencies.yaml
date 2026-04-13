@@ -4,7 +4,7 @@ experiment:
   seed: 0
 
 data:
-  n_trains: [2048, 4096]
+  n_trains: [1024, 2048, 4096, 8192, 16384, 32768]
   noise_std: 0.0
 
 basis:

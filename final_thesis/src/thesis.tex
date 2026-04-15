@@ -7,8 +7,20 @@
 \usepackage{preamble/lipsum} % standard filler text, only needed for demo
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{amsthm}
 
-\newtheorem{definition}{Definition}
+% \newtheorem{definition}{Definition}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
 
 % %% The package 'algorithm' is useful, but incompatible with memoir.
 % %% Cor-Paul Bezemer / http://homes.esat.kuleuven.be/~dvherten/esatthesis.html
@@ -56,7 +68,7 @@
 %                     Options                                         %    
 %---------------------------------------------------------------------%
 
-\title{Training and Generalization in Overparameterized Neural Networks}
+\title{Training Dynamics of Overparameterized Neural Networks: A Study of Spectral Bias on $S^1$}
 \subtitle{Version of \today}
 % The final version of your thesis should typically use a different
 % subtitle without the current date, for example
@@ -94,12 +106,13 @@
 
 % thesis committee:
 \chair{Dr. D. M. J. Tax, Faculty EEMCS, TU Delft}
-\supervisor{Dr. F. Bartolucci, Faculty EEMCS, TU Delft}
+\supervisor{Dr. A. Heinlein, Faculty EEMCS, TU Delft}
 \dailysupervisor{Dr. A. Heinlein, Faculty EEMCS, TU Delft}
+% \supervisor{Dr. F. Bartolucci, Faculty EEMCS, TU Delft}
 % The following two are optional for LaTeX (current university
 % regulations state that at least one of them should be assigned)
 % \externalsupervisor{Drs. E.X. Ternal, Some Company}
-\committeemember{Dr. S.T.A.F.F. Member, Faculty EEMCS, TU Delft}
+\committeemember{Dr. A. Papapanteleon, Faculty EEMCS, TU Delft}
 
 
 \setcounter{tocdepth}{1}
@@ -119,17 +132,18 @@
 \cleardoublepage\mainmatter
 
 \include{chapters/introduction}
-% \include{chapters/chapter}
 \include{chapters/related_work}
-\include{chapters/preliminary_experiments}
+\include{chapters/methodology}
+\include{chapters/results}
+% \include{chapters/preliminary_experiments}
 % \include{chapters/conclusions_and_future_work}
 
 \bibliographystyle{apalike}
 \bibliography{../bibliography/thesis}
 
-% \appendix
-% \def\chaptername{Appendix}
-% \include{appendix/appendix}
+\appendix
+\def\chaptername{Appendix}
+\include{appendix/appendix}
 % \include{requirements}
 
 

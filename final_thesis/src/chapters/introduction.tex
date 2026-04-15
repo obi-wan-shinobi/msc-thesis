@@ -38,13 +38,38 @@ limits, where training dynamics can be analyzed more precisely.
 
 \section{Problem setup}
 
+\paragraph{The Statistical learning framework}
+The fundamental objective in supervised learning is to identify a functional
+relationship between an input space $\mathcal{X} \subseteq \mathbb{R}^{d}$ and
+a target space $\mathcal{Y}$. We assume the existence of a joint probability distribution
+$\rho$ over  $\mathcal{X} \times \mathcal{Y}$. Ideally, one seeks a measurable function
+$f: \mathcal{X} \to \mathcal{Y}$, that minimizes the expected risk (or population risk):
+\begin{equation}
+	\mathcal{L}_{\rho}(f) = \mathbb{E}_{\rho}\ell(f(x),y)
+	\label{eq:pop-risk}
+\end{equation}
+where $\ell: \mathcal{Y} \times \mathcal{Y} \to [0, \infty]$ is a loss function quantifying
+the discrepancy between the prediction and the true target.
+In practice, two fundamental constraints prevent the direct minimization of the
+equation \eqref{eq:pop-risk}. First, searching over the space of all possible
+measurable functions is computationally and analytically intractable, so we
+usually restrict our search to a specific hypothesis class which is a family a
+functions $f_\theta$ parameterized by a vector $\theta \in \mathbb{R}^p$. Second, the
+underlying distribution $\rho$ is unknown; we only have access to a finite
+training dataset $\mathcal{D} = \{(x_i, y_i)\}_{i=1}^n$ of $n$ samples drawn
+i.i.d from $\rho$.
+
 \paragraph{Empirical risk minimization.}
-A standard way to formalize supervised learning is through the principle of
-empirical risk minimization (ERM). Given a training dataset $\{(x_i,
-	y_i)\}_{i=1}^n$, a parametric model $f_\theta$, and a loss function
-$\ell(\cdot,\cdot)$, ERM seeks parameters \begin{equation} \theta^\star \in
+The second constraint leads us to the principle of
+empirical risk minimization (ERM). Given a training dataset $\mathcal{D} = \{(x_i,
+	y_i)\}_{i=1}^n$, a measurable function $f_\theta$ parameterized by $\theta$, and a loss function
+$\ell(\cdot,\cdot)$, ERM seeks parameters that minimize the empirical risk,
+\begin{equation}
+	\theta^\star \in
 	\arg\min_{\theta} \; \frac{1}{n} \sum_{i=1}^n \ell\!\left(f_\theta(x_i),\,
-	y_i\right). \end{equation} This formulation isolates the key ingredients that
+	y_i\right).
+\end{equation}
+This formulation isolates the key ingredients that
 determine the behavior of learning algorithms: the function class induced by
 the parameterization $\theta \mapsto f_\theta$, the geometry of the loss
 landscape, and the optimization procedure used to minimize the empirical risk.
@@ -54,13 +79,15 @@ space whose properties depend intricately on both the model architecture and
 the chosen loss function.
 
 \paragraph{Linear models and gradient descent.}
-To build intuition, consider the least-squares empirical risk minimization
-problem with a one layer linear model $f_w(x)=x^\top w$, $w \in \mathbb{R}^d$. Given a dataset
-$\{(x_i,y_i)\}_{i=1}^n$, let $X\in\mathbb{R}^{d\times n}$ denote the data
+To build intuition, we first consider the case of linear models.
+We define a function $f_w(x): \mathbb{R}^d \to \mathbb{R}$, parameterized by $w \in \mathbb{R}^d$
+with the prescription $f_w(x) = x^\top w$. We specialize the loss function to the squared
+error, $\ell(f(x), y) =  \frac{1}{2}(f_w(x) - y)^2$.
+Let $X\in\mathbb{R}^{d\times n}$ denote the data
 matrix whose columns are $x_i$, and let $y\in\mathbb{R}^n$ denote the vector
-of labels. The empirical risk is
+of targets. With slight abuse of notation, the ERM problem simplifies to a least-squares objective:
 \begin{equation}
-	\mathcal{L}(w)=\frac{1}{2}\,\|X^\top w-y\|_2^2.
+	\arg\min_w \; \mathcal{L}(w)= \frac{1}{2} \sum_{i=1}^{n}(f_w(x_i) - y_i)^2 = \frac{1}{2}\,\|X^\top w-y\|_2^2.
 \end{equation}
 This objective is convex and differentiable, with gradient
 \begin{equation}
@@ -168,11 +195,20 @@ denote the residual vector. The gradients of $\mathcal{L}$ are given by
 	\qquad
 	\nabla_W \mathcal{L} = v (X r)^\top .
 \end{equation}
-Under continuous-time gradient flow, the parameters therefore evolve according to
+Similar to the linear case, the parameters of this model are updated
+iteratively using gradient descent with step size $\eta > 0$
+\begin{equation*}
+	v_{k+1} = v_k - \eta \nabla_v \mathcal{L}(v_k, W_k), \qquad
+	W_{k+1} = W_k - \eta \nabla_W \mathcal{L}(v_k, W_k).
+\end{equation*}
+The analysis of learning dynamics is often simplified by considering the infinitesimal
+learning rate limit ($\eta \to 0$). In this regime, the discrete updates
+converge to a system of coupled ordinary differential equations (ODEs) known as
+gradient flow.
 \begin{equation}
 	\dot v_t = -\nabla_v \mathcal{L}(v_t,W_t)
 	= W_t X \bigl(y - X^\top W_t^\top v_t\bigr),
-	\qquad
+	\quad
 	\dot W_t = -\nabla_W \mathcal{L}(v_t,W_t)
 	= v_t \bigl(y - X^\top W_t^\top v_t\bigr)^\top X^\top .
 \end{equation}
@@ -196,17 +232,35 @@ activation functions are introduced. Consider again a two-layer network of the f
 	f_{v,W}(x) = v^\top \phi(Wx),
 \]
 where $\phi:\mathbb{R}\to\mathbb{R}$ is a continuously differentiable activation
-function applied elementwise. For the least-squares objective, the
-corresponding gradient flow equations involve both the activations $\phi(Wx)$
+function applied elementwise. For the least-squares objective, the continuous-time evolution of the parameters is governed by the gradient flow system:
+\begin{equation}
+	\dot v_t = \phi(W_tX)(y - \phi(W_tX)^\top v_t),
+	\qquad
+	\dot W_t = \left( \phi(W_tX) \odot \left( v_t (y - \phi(W_tX)^\top)^\top \right) \right)X^\top,
+\end{equation}
+where $\odot$ denotes the Hadamard (elementwise) product.
+The gradient flow equations involve both the activations $\phi(Wx)$
 and their derivatives $\phi'(Wx)$. In particular, the evolution of the
 parameters mixes standard matrix products with elementwise nonlinear
 operations. As a consequence, the training dynamics of nonlinear networks do not admit a
-simple closed-form or spectral description in general. This motivates the study
-of simplified regimes in which the dynamics become tractable, either by
-linearizing the network around its initialization or by considering suitable
-large-width limits. Two prominent examples of such approaches are the neural
-tangent kernel and mean-field formulations, which provide complementary
-perspectives on the behavior of wide neural networks during training.
+simple closed-form or spectral description in general.
+
+\paragraph{Thesis motivation.}
+At a high level, this thesis is motivated by the question of how these networks'
+training dynamics can be studied in a mathematically tractable setting without
+discarding the phenomena one ultimately seeks to understand. The objective is
+not to provide a complete description of neural network training in full
+generality, but rather to identify a setting in which the dynamics can be
+analyzed explicitly while still retaining features that remain meaningful for
+finite networks and finite datasets.
+
+This motivates the study of analytical regimes in which the dynamics become
+tractable. Although such regimes necessarily involve simplifications like
+taking large-width limits, they can still provide useful insight into mechanisms that
+are otherwise difficult to access in the full non-linear parameter dynamics.
+Two prominent examples of such approaches are the neural tangent kernel and mean-field
+formulations, which offer complementary perspectives on the behavior of wide
+neural networks during training.
 
 % \section{Research Question(s)}
 %

@@ -1,10 +1,969 @@
-\chapter{\label{cha:glossary}Glossary}
+\chapter{\label{cha:mean-field-appendix}Mean-Field Viewpoint}
+\section{\label{app:mf-detailed}Detailed derivation of the mean-field representation}
 
-In this appendix we give an overview of frequently used terms and
-abbreviations.
+\subsection{\label{app:mf-empirical-measure}Parameter space and empirical measure}
 
-\begin{description}
-\item[foo:] \ldots
-\item [bar:] \ldots
-\end{description}
+Let $\Omega := \mathbb{R} \times \mathbb{R}^d$
+denote the parameter space, and let $\mathcal{F}$ be its Borel $\sigma$-algebra.
+For each neuron $\alpha$, define the Dirac measure $\delta_{\theta_\alpha}$ on
+$(\Omega,\mathcal{F})$, i.e. if $A \in \mathcal{F}$ then,
+\[
+	\delta_{\theta_\alpha}(A)
+	=
+	\begin{cases}
+		1, & \theta_\alpha \in A, \\
+		0, & \text{otherwise}.
+	\end{cases}
+\]
+Define the empirical neuronal measure
+\begin{equation}
+	\mu_m := \frac{1}{m}\sum_{\alpha=1}^m \delta_{\theta_\alpha}.
+	\label{eq:app-empirical-measure}
+\end{equation}
+By construction, $\mu_m \ge 0$ and  $\mu_m(\Omega)=1$, hence $\mu_m \in
+	\mathcal P(\Omega)$ where $\mathcal P(\Omega)$ is the space of Borel
+probability measures on $\Omega$.
 
+\paragraph{Integration against Dirac measures.}
+Let $\chi_A$ denote the indicator function of a measurable set $A \subset \Omega$.
+Then, for any $\theta_\alpha \in \Omega$,
+\[
+	\int_\Omega \chi_A(\theta)\,d\delta_{\theta_\alpha}(\theta)
+	=
+	\delta_{\theta_\alpha}(A)
+	=
+	\chi_A(\theta_\alpha).
+\]
+More generally, if $s(\theta) = \sum_{k=1}^r c_k \chi_{A_k}(\theta)$ is a simple
+function, then
+\[
+	\int_\Omega s(\theta)\,d\delta_{\theta_\alpha}(\theta)
+	=
+	\sum_{k=1}^r c_k \chi_{A_k}(\theta_\alpha)
+	=
+	s(\theta_\alpha).
+\]
+Any nonnegative measurable function $g : \Omega \to \mathbb{R}$ can be approximated by
+a sequence of simple functions, $\{s_n\}_{n\ge 0}$. If $s_n \uparrow g$ and each $s_n \ge 0$ then
+by the Monotone Convergence Theorem,
+\begin{equation}
+	\int_\Omega g\,d\delta_{\theta_\alpha}
+	= \int_\Omega \lim_{n \to \infty} s_n\,d\delta_{\theta_\alpha}
+	=  \lim_{n \to \infty} \int_\Omega s_n\,d\delta_{\theta_\alpha}
+	=  \lim_{n \to \infty} s_n(\theta_\alpha)
+	= g(\theta_\alpha).
+	\label{eq:dirac-integration}
+\end{equation}
+
+\paragraph{Integral representation of the network.}
+Consider now the integral of $g$ with respect to the empirical measure $\mu_m$:
+\[
+	\int_\Omega g\,d\mu_m
+	=
+	\int_\Omega g\,d\left(\frac{1}{m}\sum_{\alpha=1}^m \delta_{\theta_\alpha}\right)
+	=
+	\frac{1}{m}\sum_{\alpha=1}^m g(\theta_\alpha).
+\]
+Define
+\[
+	g(\theta_\alpha) = g(v_\alpha,w_\alpha) := v_\alpha\,\varphi(w_\alpha^\top x).
+\]
+Then
+\begin{equation}
+	\int_\Omega g\,d\mu_m
+	=
+	\frac{1}{m}\sum_{\alpha=1}^m v_\alpha\,\varphi(w_\alpha^\top x)
+	=
+	f_\theta(x),
+	\label{eq:app-mf-integral-form}
+\end{equation}
+recovering the finite-width network.
+
+\subsection{\label{app:mf-weak-convergence}Initialization and weak convergence}
+
+Assume that the parameters $\{\theta_\alpha(0)\}_{\alpha=1}^m$ are initialized
+i.i.d.\ according to a probability measure $\mu_0$ on $\Omega$.
+Define the empirical measure at initialization
+\[
+	\mu_{m,0}
+	:=
+	\frac1m\sum_{\alpha=1}^m \delta_{\theta_\alpha(0)} .
+\]
+Then $\mu_{m,0}$ converges weakly to $\mu_0$ almost surely as $m\to\infty$.
+Indeed, for any bounded continuous test function $\psi:\Omega\to\mathbb R$,
+\[
+	\int_\Omega \psi\,d\mu_{m,0}
+	=
+	\frac1m\sum_{\alpha=1}^m \psi(\theta_\alpha(0))
+	\;\xrightarrow[m \to \infty]{\text{a.s.}}\;
+	\mathbb E_{\theta\sim\mu_0}[\psi(\theta)]
+	=
+	\int_\Omega \psi\,d\mu_0,
+\]
+where the convergence follows from the strong law of large numbers applied to
+the i.i.d.\ random variables $\psi(\theta_\alpha(0))$.
+Since this holds for all bounded continuous $\psi$, we conclude that
+$\mu_{m,0} \to \mu_0$ \citep{vadaranjan1958convergenceofprobabilitydistribution}.
+As a consequence, the network output at initialization converges pointwise to
+the deterministic limit
+\[
+	f_{\mu_0}(x)
+	:=
+	\int_\Omega v\,\varphi(w^\top x)\,d\mu_0(v,w).
+\]
+For instance, under i.i.d.\ Gaussian initialization of the parameters, i.e.
+$v_0 \sim \mathcal{N}(0,I_m)\; W_0 \sim \mathcal{N}(0, I_m \otimes I_d)$, the
+limiting initial measure $\mu_0 = \mathcal{N}(0, I_{d+1})$ is a Gaussian
+measure on a $d+1$-dimensional space.
+
+\subsection{\label{app:mf-particle-dynamics}Training dynamics and evolution of the empirical measure}
+
+Let $X=(x_1,\dots,x_n)\in\mathbb R^{d\times n}$ and
+$y=(y_1,\ldots,y_n)\in\mathbb R^n$ denote the training set, and consider the
+squared loss
+\[
+	L(v,W)
+	=
+	\frac12\sum_{i=1}^n\bigl(f_{v,W}(x_i)-y_i\bigr)^2
+	=
+	\frac12\|f_{v,W}(X)-y\|_2^2,
+\]
+where $f_{v,W}(X):=(f_{v,W}(x_i))_{i=1}^n$.
+
+We study continuous-time gradient flow for a finite-width network with $m$
+neurons and learning rate $\eta>0$,
+\[
+	\dot v_{t,\alpha}
+	=
+	-\eta\,\nabla_{v_\alpha}L(v_t,W_t),
+	\qquad
+	\dot w_{t,\alpha}
+	=
+	-\eta\,\nabla_{w_\alpha}L(v_t,W_t),
+	\qquad
+	\alpha\in\{1,\dots,m\}.
+\]
+
+A direct computation yields, for each $\alpha$,
+\begin{align}
+	\dot v_{t, \alpha}
+	 & =
+	\frac{\eta}{m}\,
+	\varphi(X^\top w_{t,\alpha})^\top
+	\bigl(y-f_{v_t,W_t}(X)\bigr),
+	\label{eq:mf-ode-v-app} \\
+	\dot w_{t,\alpha}
+	 & =
+	\frac{\eta}{m}\,
+	X\Bigl(
+	\varphi'(X^\top w_{t,\alpha})
+	\odot
+	\bigl(y-f_{v_t,W_t}(X)\bigr)
+	\Bigr)v_{t,\alpha},
+	\label{eq:mf-ode-w-app}
+\end{align}
+where $\odot$ denotes elementwise (Hadamard) multiplication.
+
+As seen in \eqref{eq:mf-ode-v-app}--\eqref{eq:mf-ode-w-app}, evolution of
+each neuron depends on the parameters only through the current empirical
+measure $\mu_{m,t}$ via $f_{v_t,W_t}(X)$. Thus, the particle system
+\eqref{eq:mf-ode-v-app}--\eqref{eq:mf-ode-w-app} induces an evolution of the
+empirical measure in parameter space \citep{Mei2018meanfieldview,Rotskoff_2022}.
+
+Hence, the particle system \eqref{eq:mf-ode-v-app}--\eqref{eq:mf-ode-w-app}
+can be viewed as an interacting particle system driven by a measure-dependent
+velocity field. For any $\theta=(v,w)\in\Omega$ and any $\mu\in\mathcal
+	P(\Omega)$, define
+\[
+	b((v,w);\mu)
+	:=
+	\begin{pmatrix}
+		\varphi(X^\top w)^\top\bigl(y-f_\mu(X)\bigr) \\[2mm]
+		X\Bigl(\varphi'(X^\top w)\odot\bigl(y-f_\mu(X)\bigr)\Bigr)\,v
+	\end{pmatrix},
+\]
+where
+\[
+	f_\mu(x):=\int_\Omega v\,\varphi(w^\top x)\,d\mu(v,w),
+	\qquad
+	f_\mu(X):=\bigl(f_\mu(x_i)\bigr)_{i=1}^n.
+\]
+Then the gradient-flow dynamics can be written compactly as
+\[
+	\dot\theta_{t,\alpha}
+	=
+	\frac{\eta}{m}\,b(\theta_{t,\alpha};\mu_{m,t}),
+	\qquad \alpha=1,\dots,m.
+\]
+In particular, each particle interacts with the rest of the system only through the
+current empirical measure $\mu_{m,t}$ (via $f_{\mu_{m,t}}(X)$).
+
+\subsection{\label{app:mf-continuity-equation}Continuity equation and push-forward formulation}
+
+Equivalently, $\mu_{m,t}$ solves the continuity equation
+\begin{equation}
+	\partial_t\mu_{m,t}
+	+
+	\nabla_\theta\!\cdot\!\Bigl(\mu_{m,t}\,\frac{\eta}{m}\,b(\cdot;\mu_{m,t})\Bigr)
+	=
+	0,
+	\label{eq:mf-continuity-compact-app}
+\end{equation}
+in the sense of distributions, i.e.\ for every test function
+$\psi\in C_c^\infty(\Omega)$,
+\[
+	\frac{d}{dt}\int_\Omega \psi(\theta)\,d\mu_{m,t}(\theta)
+	=
+	\frac{\eta}{m}\int_\Omega \nabla_\theta\psi(\theta)\cdot b(\theta;\mu_{m,t})\,d\mu_{m,t}(\theta).
+\]
+
+Choosing the mean-field scaling $\eta=m$ yields a nontrivial $\mathcal O(1)$
+evolution in time and, as $m\to\infty$, one expects $\mu_{m,t} \to \mu_t$,
+where the limit $\mu_t$ satisfies
+\begin{equation}
+	\partial_t\mu_t+\nabla_\theta\!\cdot\bigl(\mu_t\,b(\cdot;\mu_t)\bigr)=0,
+	\qquad \mu_0=\mathcal N (0,I_{d+1}).
+	\label{eq:mf-continuity-with-initial-conditions-app}
+\end{equation}
+
+\paragraph{Push-forward formulation.}
+Recall that if $g:\mathcal X\to\mathcal Z$ is measurable and $\mu\in\mathcal P(\mathcal X)$, then the
+\emph{push-forward} of $\mu$ by $g$ is the measure $g_*\mu\in\mathcal P(\mathcal Z)$ defined by
+\[
+	(g_*\mu)(A):=\mu\bigl(g^{-1}(A)\bigr),
+	\qquad A\subset\mathcal Z \text{ measurable}.
+\]
+Let $\Phi_t:\Omega\to\Omega$ denote the flow map associated with the velocity field
+$\frac{\eta}{m}\,b(\cdot;\mu_{m,t})$. Then the empirical measure is transported by this flow:
+\[
+	\mu_{m,t} = (\Phi_t)_*\mu_{m,0}.
+\]
+In particular, for any measurable observable $h:\Omega\to\mathbb R$,
+\[
+	\int_\Omega h(\theta)\,d\mu_{m,t}(\theta)
+	=
+	\int_\Omega h\!\left(\Phi_t(\theta)\right)\,d\mu_{m,0}(\theta),
+\]
+so evaluating the network at time $t$ is obtained by taking
+$h_x(\theta):=v\,\varphi(w^\top x)$ and writing
+\[
+	f_{\mu_{m,t}}(x)
+	=
+	\int_\Omega v\,\varphi(w^\top x)\,d\mu_{m,t}(v,w)
+	=
+	\int_\Omega v\,\varphi(w^\top x)\,d\bigl((\Phi_t)_*\mu_{m,0}\bigr)(v,w).
+\]
+
+\chapter{Derivation of the limiting kernel on \(S^1\)}
+\label{app:continuum-kernel}
+
+This appendix derives the explicit form of the limiting neural tangent kernel on the circle
+for the model introduced in Chapter~\ref{cha:methodology}, and computes the corresponding
+Fourier eigenvalues of the integral operator \(T\). These derivations justify
+Proposition~\ref{prop:results-continuum-ntk} and
+Theorem~\ref{thm:results-continuum-spectrum}.
+
+\section{Decomposition of the empirical neural tangent kernel}
+\label{sec:app-ntk-decomposition}
+
+Recall the network
+\[
+	f(x;\theta)=\frac{1}{\sqrt m}\sum_{i=1}^m a_i \sigma(w_i^\top x+b_i),
+\]
+where \(x\in S^1\subset\mathbb R^2\), \(\sigma(t)=t_+\), and
+\(\theta=\{(a_i,w_i,b_i)\}_{i=1}^m\). For \(x,y\in S^1\), the empirical neural tangent kernel is
+\begin{equation}
+	\Theta_m(x,y)
+	=
+	\bigl\langle \nabla_\theta f(x;\theta),\nabla_\theta f(y;\theta)\bigr\rangle.
+	\label{eq:app-empirical-ntk}
+\end{equation}
+
+For each hidden unit \(i\), define
+\[
+	u_i:=w_i^\top x+b_i,
+	\qquad
+	v_i:=w_i^\top y+b_i.
+\]
+Then
+\[
+	\frac{\partial f(x;\theta)}{\partial a_i}
+	=
+	\frac{1}{\sqrt m}\sigma(u_i),
+	\qquad
+	\frac{\partial f(x;\theta)}{\partial w_i}
+	=
+	\frac{1}{\sqrt m}a_i\sigma'(u_i)\,x,
+	\qquad
+	\frac{\partial f(x;\theta)}{\partial b_i}
+	=
+	\frac{1}{\sqrt m}a_i\sigma'(u_i).
+\]
+Substituting into \eqref{eq:app-empirical-ntk} yields
+\begin{equation}
+	\Theta_m(x,y)
+	=
+	\Theta_m^{(a)}(x,y)+\Theta_m^{(w)}(x,y)+\Theta_m^{(b)}(x,y),
+	\label{eq:app-ntk-decomposition}
+\end{equation}
+where
+\begin{align*}
+	\Theta_m^{(a)}(x,y)
+	 & =
+	\frac1m\sum_{i=1}^m \sigma(u_i)\sigma(v_i),                   \\
+	\Theta_m^{(w)}(x,y)
+	 & =
+	\frac1m\sum_{i=1}^m a_i^2 \sigma'(u_i)\sigma'(v_i)\,x^\top y, \\
+	\Theta_m^{(b)}(x,y)
+	 & =
+	\frac1m\sum_{i=1}^m a_i^2 \sigma'(u_i)\sigma'(v_i).
+\end{align*}
+
+\section{Infinite-width limit}
+\label{sec:app-ntk-limit}
+
+At initialization, the parameters satisfy
+\[
+	a_i\sim \mathcal N(0,1),
+	\qquad
+	w_i\sim \mathcal N(0,I_2),
+	\qquad
+	b_i(0)=0,
+\]
+independently across \(i\). Since the hidden units are independent and identically distributed,
+the law of large numbers implies that \(\Theta_m(x,y)\) converges almost surely, as
+\(m\to\infty\), to a deterministic kernel \(\Theta(x,y)\).
+
+Because \(b_i(0)=0\), the limiting kernel is
+\begin{equation}
+	\Theta(x,y)
+	=
+	\mathbb E\bigl[\sigma(u)\sigma(v)\bigr]
+	+
+	\bigl(x^\top y+1\bigr)\mathbb E\bigl[\sigma'(u)\sigma'(v)\bigr],
+	\label{eq:app-limit-kernel-general}
+\end{equation}
+where
+\[
+	u=w^\top x,
+	\qquad
+	v=w^\top y,
+	\qquad
+	w\sim \mathcal N(0,I_2).
+\]
+We write
+\[
+	K_0(x,y):=\mathbb E\bigl[\sigma(u)\sigma(v)\bigr],
+	\qquad
+	K_1(x,y):=\mathbb E\bigl[\sigma'(u)\sigma'(v)\bigr],
+\]
+so that
+\[
+	\Theta(x,y)=K_0(x,y)+\bigl(x^\top y+1\bigr)K_1(x,y).
+\]
+
+\section{Restriction to the circle}
+\label{sec:app-kernel-on-circle}
+
+Write
+\[
+	x(\varphi)=(\cos\varphi,\sin\varphi),
+	\qquad
+	x(\psi)=(\cos\psi,\sin\psi),
+\]
+and let \(\delta\in[0,\pi]\) denote the angle between \(x(\varphi)\) and \(x(\psi)\), so that
+\[
+	x(\varphi)^\top x(\psi)=\cos\delta.
+\]
+By rotational invariance of the Gaussian measure, the kernel depends only on \(\delta\). We
+therefore write \(\Theta(\delta)\), \(K_0(\delta)\), and \(K_1(\delta)\).
+
+To compute these quantities, we rotate coordinates so that
+\[
+	x=(1,0),
+	\qquad
+	y=(\cos\delta,\sin\delta).
+\]
+If \(w=(Z_1,Z_2)\) with \(Z_1,Z_2\overset{\mathrm{iid}}{\sim}\mathcal N(0,1)\), then
+\[
+	u=Z_1,
+	\qquad
+	v=Z_1\cos\delta+Z_2\sin\delta.
+\]
+
+\begin{lemma}
+	\label{lem:app-K1}
+	For \(\delta\in[0,\pi]\),
+	\begin{equation}
+		K_1(\delta)=\mathbb P(u>0,v>0)=\frac{\pi-\delta}{2\pi}.
+		\label{eq:app-K1-explicit}
+	\end{equation}
+\end{lemma}
+
+\begin{proof}
+	Since \((u,v)\) is a centered bivariate Gaussian with correlation \(\cos\delta\), the
+	probability that both coordinates are positive is the standard Gaussian quadrant probability,
+	which equals \((\pi-\delta)/(2\pi)\).
+\end{proof}
+
+\begin{lemma}
+	\label{lem:app-K0}
+	For \(\delta\in[0,\pi]\),
+	\begin{equation}
+		K_0(\delta)=\mathbb E[\sigma(u)\sigma(v)]
+		=
+		\frac{1}{2\pi}\Bigl(\sin\delta+(\pi-\delta)\cos\delta\Bigr).
+		\label{eq:app-K0-explicit}
+	\end{equation}
+\end{lemma}
+
+\begin{proof}
+	This is the standard arc-cosine covariance formula for ReLU features in two dimensions.
+\end{proof}
+
+\begin{proof}[Proof of Proposition~\ref{prop:results-continuum-ntk}]
+	Using \eqref{eq:app-limit-kernel-general}, \eqref{eq:app-K1-explicit}, and
+	\eqref{eq:app-K0-explicit}, we obtain
+	\begin{align}
+		\Theta(\delta)
+		 & =
+		\frac{1}{2\pi}\Bigl(\sin\delta+(\pi-\delta)\cos\delta\Bigr)
+		+
+		\frac{1+\cos\delta}{2\pi}(\pi-\delta) \notag \\
+		 & =
+		\frac{1}{2\pi}
+		\Bigl(
+		\sin\delta+2(\pi-\delta)\cos\delta+(\pi-\delta)
+		\Bigr).
+		\label{eq:app-Theta-explicit}
+	\end{align}
+	This is exactly \eqref{eq:results-continuum-ntk}. The convolution form of the operator
+	follows from the fact that \(\Theta\) depends only on the angular difference.
+\end{proof}
+
+\section{Fourier coefficients of the limiting kernel}
+\label{sec:app-fourier-coefficients}
+
+Because the operator \(T\) is a convolution operator, it is diagonalized by the real Fourier
+basis. If \(\lambda_k\) denotes the eigenvalue associated with frequency \(k\), then
+\begin{equation}
+	\lambda_k
+	=
+	\frac{1}{\pi}\int_0^\pi \Theta(\delta)\cos(k\delta)\,d\delta,
+	\qquad
+	k\ge 0.
+	\label{eq:app-lambda-k}
+\end{equation}
+Substituting \eqref{eq:app-Theta-explicit} gives
+\[
+	\lambda_k
+	=
+	\frac{1}{2\pi^2}
+	\int_0^\pi
+	\Bigl(
+	\sin\delta+2(\pi-\delta)\cos\delta+(\pi-\delta)
+	\Bigr)\cos(k\delta)\,d\delta.
+\]
+
+We first record a basic integration lemma.
+
+\begin{lemma}
+	\label{lem:app-Im}
+	For every integer \(m\ge 1\),
+	\begin{equation}
+		I_m:=\int_0^\pi (\pi-\delta)\cos(m\delta)\,d\delta
+		=
+		\frac{1-(-1)^m}{m^2}.
+		\label{eq:app-Im}
+	\end{equation}
+\end{lemma}
+
+\begin{proof}
+	Integrating by parts gives
+	\[
+		I_m
+		=
+		\left[(\pi-\delta)\frac{\sin(m\delta)}{m}\right]_0^\pi
+		+
+		\frac1m\int_0^\pi \sin(m\delta)\,d\delta.
+	\]
+	The boundary term vanishes, and
+	\[
+		\frac1m\int_0^\pi \sin(m\delta)\,d\delta
+		=
+		\frac1m\left[-\frac{\cos(m\delta)}{m}\right]_0^\pi
+		=
+		\frac{1-(-1)^m}{m^2}.
+	\]
+\end{proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:results-continuum-spectrum}]
+	For \(k\ge 2\), write
+	\[
+		\lambda_k=\frac{1}{2\pi^2}(A_k+B_k+C_k),
+	\]
+	where
+	\begin{align*}
+		A_k & :=\int_0^\pi \sin\delta\,\cos(k\delta)\,d\delta,            \\
+		B_k & :=\int_0^\pi 2(\pi-\delta)\cos\delta\cos(k\delta)\,d\delta, \\
+		C_k & :=\int_0^\pi (\pi-\delta)\cos(k\delta)\,d\delta.
+	\end{align*}
+
+	Using
+	\[
+		\sin\delta\cos(k\delta)
+		=
+		\frac12\bigl(\sin((k+1)\delta)-\sin((k-1)\delta)\bigr),
+	\]
+	we obtain
+	\[
+		A_k
+		=
+		\frac12\left(
+		\frac{1-(-1)^{k+1}}{k+1}
+		-
+		\frac{1-(-1)^{k-1}}{k-1}
+		\right).
+	\]
+	Using
+	\[
+		2\cos\delta\cos(k\delta)=\cos((k+1)\delta)+\cos((k-1)\delta),
+	\]
+	together with Lemma~\ref{lem:app-Im}, we obtain
+	\[
+		B_k
+		=
+		\frac{1-(-1)^{k+1}}{(k+1)^2}
+		+
+		\frac{1-(-1)^{k-1}}{(k-1)^2},
+		\qquad
+		C_k
+		=
+		\frac{1-(-1)^k}{k^2}.
+	\]
+
+	If \(k\ge 3\) is odd, then \(k\pm1\) are even, so \(A_k=B_k=0\), while
+	\(C_k=2/k^2\). Hence
+	\begin{equation}
+		\lambda_k=\frac{1}{\pi^2 k^2},
+		\qquad
+		k\ge 3 \text{ odd}.
+		\label{eq:app-lambda-odd}
+	\end{equation}
+
+	If \(k\ge 2\) is even, then \(k\pm1\) are odd, so \(C_k=0\), and
+	\[
+		A_k
+		=
+		-\frac{2}{k^2-1},
+		\qquad
+		B_k
+		=
+		\frac{4(k^2+1)}{(k^2-1)^2}.
+	\]
+	Therefore
+	\[
+		A_k+B_k
+		=
+		\frac{2(k^2+3)}{(k^2-1)^2},
+	\]
+	and so
+	\begin{equation}
+		\lambda_k
+		=
+		\frac{k^2+3}{\pi^2 (k^2-1)^2},
+		\qquad
+		k\ge 2 \text{ even}.
+		\label{eq:app-lambda-even}
+	\end{equation}
+
+	It remains to compute \(k=0\) and \(k=1\) directly. For \(k=0\),
+	\[
+		\lambda_0
+		=
+		\frac{1}{2\pi^2}
+		\left(
+		\int_0^\pi \sin\delta\,d\delta
+		+
+		2\int_0^\pi (\pi-\delta)\cos\delta\,d\delta
+		+
+		\int_0^\pi (\pi-\delta)\,d\delta
+		\right)
+		=
+		\frac14+\frac{3}{\pi^2}.
+	\]
+	For \(k=1\),
+	\[
+		\lambda_1
+		=
+		\frac{1}{2\pi^2}
+		\left(
+		\int_0^\pi \sin\delta\cos\delta\,d\delta
+		+
+		2\int_0^\pi (\pi-\delta)\cos^2\delta\,d\delta
+		+
+		\int_0^\pi (\pi-\delta)\cos\delta\,d\delta
+		\right)
+		=
+		\frac14+\frac{1}{\pi^2}.
+	\]
+	This proves \eqref{eq:results-lambda-0-1} and \eqref{eq:results-lambda-k}.
+\end{proof}
+
+\section{Effect of the bias contribution}
+\label{sec:app-bias-contribution}
+
+We conclude by isolating the contribution of the trainable bias. From
+\eqref{eq:app-ntk-decomposition}, the bias term contributes
+\[
+	\Theta^{(b)}(x,y)=\mathbb E\bigl[\sigma'(u)\sigma'(v)\bigr].
+\]
+On the circle, this gives the term \((\pi-\delta)/(2\pi)\). In the Fourier coefficients, this is
+precisely the term responsible for the nonzero odd eigenvalues. If the trainable bias is
+removed, then \(\Theta^{(b)}\) disappears and the odd frequencies no longer contribute to the
+fixed-kernel dynamics, which proves Remark~\ref{rem:results-bias}.
+
+\chapter{Proofs of the finite-sample estimates}
+\label{app:finite-sample-proofs}
+
+This appendix proves the finite-sample results from
+Section~\ref{sec:results-finite-sample}. We work with the truncated Fourier subspace
+\(H_K\), the feature matrix \(\Phi\), the sampled kernel matrix \(A\), the Gram matrix
+\(G\), and the matrix \(H\) defined in
+\eqref{eq:method-feature-matrix}--\eqref{eq:method-compressed-operator}.
+
+\section{Preliminaries}
+\label{sec:app-preliminaries}
+
+For each basis function in
+\eqref{eq:method-fourier-basis-phi0}--\eqref{eq:method-fourier-basis-modes},
+\begin{equation}
+	|\phi_p(\varphi)|\le \sqrt2
+	\qquad
+	\text{for all }\varphi\in[0,2\pi),\quad 1\le p\le d.
+	\label{eq:app-basis-bound}
+\end{equation}
+We also write
+\begin{equation}
+	\kappa:=\sup_{\theta\in[0,2\pi)}|\Theta(\theta)|<\infty.
+	\label{eq:app-kappa}
+\end{equation}
+
+For each basis index \(p\), let \(\lambda_p\) denote the eigenvalue of the operator \(T\)
+associated with \(\phi_p\), so that
+\[
+	T\phi_p=\lambda_p \phi_p.
+\]
+Define the finite-sample corrected eigenvalues by
+\begin{equation}
+	\lambda_p^{(n)}
+	=
+	\left(1-\frac{1}{n}\right)\lambda_p+\frac{\Theta(0)}{n},
+	\label{eq:app-finite-sample-corrected-eigs}
+\end{equation}
+and let
+\[
+	\Lambda^{(n)}=\operatorname{diag}(\lambda_p^{(n)}).
+\]
+
+\section{Expectation of \(H\)}
+\label{sec:app-expected-H}
+
+\begin{proof}[Proof of Proposition~\ref{prop:results-expectation-H}]
+	By definition,
+	\begin{equation}
+		H_{pq}
+		=
+		\frac{1}{n^2}\sum_{i=1}^n\sum_{j=1}^n
+		\phi_p(\varphi_i)\Theta(\varphi_i-\varphi_j)\phi_q(\varphi_j).
+		\label{eq:app-H-entry}
+	\end{equation}
+	Split the sum into the cases \(i\neq j\) and \(i=j\):
+	\[
+		H_{pq}
+		=
+		\frac{1}{n^2}\sum_{i\neq j}
+		\phi_p(\varphi_i)\Theta(\varphi_i-\varphi_j)\phi_q(\varphi_j)
+		+
+		\frac{1}{n^2}\sum_{i=1}^n
+		\phi_p(\varphi_i)\Theta(0)\phi_q(\varphi_i).
+	\]
+
+	For the diagonal terms,
+	\[
+		\mathbb E\!\left[
+			\frac{1}{n^2}\sum_{i=1}^n
+			\phi_p(\varphi_i)\Theta(0)\phi_q(\varphi_i)
+			\right]
+		=
+		\frac{\Theta(0)}{n}\delta_{pq}.
+	\]
+
+	For the off-diagonal terms, independence of \(\varphi_i\) and \(\varphi_j\) gives
+	\begin{align*}
+		\mathbb E\!\left[
+			\phi_p(\varphi_i)\Theta(\varphi_i-\varphi_j)\phi_q(\varphi_j)
+			\right]
+		 & =
+		\int_0^{2\pi}\phi_p(\varphi)
+		\left(
+		\int_0^{2\pi}\Theta(\varphi-\psi)\phi_q(\psi)\,d\mu(\psi)
+		\right)
+		d\mu(\varphi) \\
+		 & =
+		\int_0^{2\pi}\phi_p(\varphi)(T\phi_q)(\varphi)\,d\mu(\varphi)
+		=
+		\lambda_q\delta_{pq}.
+	\end{align*}
+	Since there are \(n(n-1)\) off-diagonal pairs, we conclude that
+	\[
+		\mathbb E[H_{pq}]
+		=
+		\left(1-\frac{1}{n}\right)\lambda_q\delta_{pq}
+		+
+		\frac{\Theta(0)}{n}\delta_{pq}
+		=
+		\lambda_q^{(n)}\delta_{pq}.
+	\]
+	Therefore \(\mathbb E[H]=\Lambda^{(n)}\).
+\end{proof}
+
+\section{Concentration of the Gram matrix}
+\label{sec:app-gram-proof}
+
+\begin{proof}[Proof of \eqref{eq:results-gram-concentration}]
+	For fixed \(p,q\),
+	\[
+		G_{pq}
+		=
+		\frac{1}{n}\sum_{i=1}^n Z_i,
+		\qquad
+		Z_i:=\phi_p(\varphi_i)\phi_q(\varphi_i).
+	\]
+	The variables \(Z_i\) are independent and identically distributed, with
+	\[
+		\mathbb E[Z_i]=\delta_{pq}
+	\]
+	by orthonormality of the Fourier basis. By \eqref{eq:app-basis-bound},
+	\[
+		|Z_i|\le 2,
+	\]
+	so each \(Z_i\) takes values in an interval of length \(4\). Hoeffding's inequality gives
+	\[
+		\mathbb P\!\left(|G_{pq}-\delta_{pq}|\ge \varepsilon\right)
+		\le
+		2\exp\!\left(-\frac{n\varepsilon^2}{8}\right).
+	\]
+	Taking a union bound over all \(d^2\) entries yields
+	\[
+		\mathbb P\!\left(\|G-I_d\|_{\max}\ge \varepsilon\right)
+		\le
+		2d^2\exp\!\left(-\frac{n\varepsilon^2}{8}\right).
+	\]
+\end{proof}
+
+\section{Concentration of \(H\)}
+\label{sec:app-H-proof}
+
+\begin{proof}[Proof of \eqref{eq:results-H-concentration}]
+	Fix \(p,q\), and write \(H_{pq}=F(\varphi_1,\dots,\varphi_n)\), where
+	\[
+		F(\varphi_1,\dots,\varphi_n)
+		=
+		\frac{1}{n^2}\sum_{i=1}^n\sum_{j=1}^n
+		\phi_p(\varphi_i)\Theta(\varphi_i-\varphi_j)\phi_q(\varphi_j).
+	\]
+	We apply McDiarmid's inequality. If only one coordinate, say \(\varphi_s\), is changed, then
+	only the terms with \(i=s\) or \(j=s\) can change. There are at most \(2n\) such terms. By
+	\eqref{eq:app-basis-bound} and \eqref{eq:app-kappa}, each summand has absolute value at most
+	\[
+		|\phi_p(\cdot)\Theta(\cdot)\phi_q(\cdot)|\le \sqrt2\,\kappa\,\sqrt2=2\kappa,
+	\]
+	so one summand changes by at most \(4\kappa\). Therefore
+	\[
+		|F(\varphi_1,\dots,\varphi_s,\dots,\varphi_n)
+		-
+		F(\varphi_1,\dots,\varphi_s',\dots,\varphi_n)|
+		\le
+		\frac{8\kappa}{n}.
+	\]
+	McDiarmid's inequality then gives
+	\[
+		\mathbb P\!\left(|H_{pq}-\mathbb E[H_{pq}]|\ge \varepsilon\right)
+		\le
+		2\exp\!\left(-\frac{n\varepsilon^2}{32\kappa^2}\right).
+	\]
+	A union bound over all \(d^2\) entries yields
+	\[
+		\mathbb P\!\left(\|H-\Lambda^{(n)}\|_{\max}\ge \varepsilon\right)
+		\le
+		2d^2\exp\!\left(-\frac{n\varepsilon^2}{32\kappa^2}\right).
+	\]
+\end{proof}
+
+\section{Control of the difference \(A\Phi-\Phi\Lambda^{(n)}\)}
+\label{sec:app-APhi-proof}
+
+\begin{proof}[Proof of \eqref{eq:results-APhi-concentration}]
+	Fix \(i,p\). By definition,
+	\[
+		(A\Phi)_{i,p}
+		=
+		\frac{1}{n}\sum_{j=1}^n \Theta(\varphi_i-\varphi_j)\phi_p(\varphi_j).
+	\]
+	Split off the diagonal term \(j=i\):
+	\[
+		(A\Phi)_{i,p}
+		=
+		\frac{\Theta(0)}{n}\phi_p(\varphi_i)
+		+
+		\frac{1}{n}\sum_{j\neq i}\Theta(\varphi_i-\varphi_j)\phi_p(\varphi_j).
+	\]
+	Condition on \(\varphi_i\). For \(j\neq i\), define
+	\[
+		X_j:=\Theta(\varphi_i-\varphi_j)\phi_p(\varphi_j).
+	\]
+	Then \(X_j\) are conditionally independent and identically distributed, and
+	\[
+		|X_j|\le \kappa\sqrt2
+	\]
+	by \eqref{eq:app-basis-bound} and \eqref{eq:app-kappa}. Moreover,
+	\[
+		\mathbb E[X_j\mid \varphi_i]
+		=
+		\int_0^{2\pi}\Theta(\varphi_i-\psi)\phi_p(\psi)\,d\mu(\psi)
+		=
+		(T\phi_p)(\varphi_i)
+		=
+		\lambda_p\phi_p(\varphi_i).
+	\]
+	Therefore
+	\[
+		\mathbb E[(A\Phi)_{i,p}\mid \varphi_i]
+		=
+		\lambda_p^{(n)}\phi_p(\varphi_i).
+	\]
+
+	Apply Hoeffding's inequality to the average of the \(n-1\) variables \(X_j\). Since they lie
+	in an interval of length \(2\kappa\sqrt2\), we obtain
+	\[
+		\mathbb P\!\left(
+		\left|
+		(A\Phi)_{i,p}-\lambda_p^{(n)}\phi_p(\varphi_i)
+		\right|
+		\ge \varepsilon
+		\;\middle|\;
+		\varphi_i
+		\right)
+		\le
+		2\exp\!\left(-\frac{n\varepsilon^2}{4\kappa^2}\right),
+	\]
+	where we used \(n\ge 2\) to simplify the constant. Removing the conditioning and taking a union
+	bound over the \(nd\) entries yields
+	\[
+		\mathbb P\!\left(\|A\Phi-\Phi\Lambda^{(n)}\|_{\max}\ge \varepsilon\right)
+		\le
+		2nd\exp\!\left(-\frac{n\varepsilon^2}{4\kappa^2}\right).
+	\]
+\end{proof}
+
+\section{Proof of the simultaneous high-probability bound}
+\label{sec:app-simultaneous-proof}
+
+\begin{proof}[Proof of Theorem~\ref{thm:results-simultaneous-control}]
+	Set
+	\[
+		\alpha_{n,d,\delta}
+		=
+		\sqrt{\frac{8}{n}\log\!\left(\frac{6d^2}{\delta}\right)},
+		\qquad
+		\beta_{n,d,\delta}
+		=
+		\kappa\sqrt{\frac{32}{n}\log\!\left(\frac{6d^2}{\delta}\right)},
+		\qquad
+		\gamma_{n,d,\delta}
+		=
+		\kappa\sqrt{\frac{4}{n}\log\!\left(\frac{6nd}{\delta}\right)}.
+	\]
+	By the bounds proved in Sections~\ref{sec:app-gram-proof}--\ref{sec:app-APhi-proof},
+	\[
+		\mathbb P\!\left(\|G-I_d\|_{\max}\ge \alpha_{n,d,\delta}\right)\le \frac{\delta}{3},
+	\]
+	\[
+		\mathbb P\!\left(\|H-\Lambda^{(n)}\|_{\max}\ge \beta_{n,d,\delta}\right)\le \frac{\delta}{3},
+	\]
+	and
+	\[
+		\mathbb P\!\left(\|A\Phi-\Phi\Lambda^{(n)}\|_{\max}\ge \gamma_{n,d,\delta}\right)\le \frac{\delta}{3}.
+	\]
+	A union bound gives the result.
+\end{proof}
+
+\section{Proof of the corollary on the restricted sampled operator}
+\label{sec:app-corollary-proof}
+
+\begin{proof}[Proof of Corollary~\ref{cor:results-restricted-operator}]
+	Recall that
+	\[
+		C:=G^{-1}H.
+	\]
+	On the event of Theorem~\ref{thm:results-simultaneous-control},
+	\begin{equation}
+		\|G-I_d\|_{\infty}\le d\,\alpha_{n,d,\delta},
+		\qquad
+		\|H-\Lambda^{(n)}\|_{\infty}\le d\,\beta_{n,d,\delta},
+		\label{eq:app-norm-conversion}
+	\end{equation}
+	since \(\|M\|_\infty\le d\|M\|_{\max}\) for every \(d\times d\) matrix \(M\).
+
+	If \(d\,\alpha_{n,d,\delta}<1\), then \(G\) is invertible and
+	\begin{equation}
+		\|G^{-1}\|_\infty
+		\le
+		\frac{1}{1-d\,\alpha_{n,d,\delta}}
+		\label{eq:app-G-inverse-bound}
+	\end{equation}
+	by the Neumann-series estimate.
+
+	Using
+	\begin{equation}
+		C-\Lambda^{(n)}
+		=
+		G^{-1}\bigl((H-\Lambda^{(n)})-(G-I_d)\Lambda^{(n)}\bigr),
+		\label{eq:app-C-minus-Lambda}
+	\end{equation}
+	we obtain
+	\[
+		\|C-\Lambda^{(n)}\|_\infty
+		\le
+		\|G^{-1}\|_\infty
+		\left(
+		\|H-\Lambda^{(n)}\|_\infty
+		+
+		\|G-I_d\|_\infty \,\|\Lambda^{(n)}\|_\infty
+		\right).
+	\]
+	Since \(|\lambda_p|\le \kappa\) and \(|\Theta(0)|\le \kappa\), the definition of
+	\(\lambda_p^{(n)}\) implies
+	\[
+		\|\Lambda^{(n)}\|_\infty\le \kappa.
+	\]
+	Substituting \eqref{eq:app-norm-conversion} and \eqref{eq:app-G-inverse-bound} gives
+	\[
+		\|C-\Lambda^{(n)}\|_\infty
+		\le
+		\frac{d\,\beta_{n,d,\delta}+d\,\kappa\,\alpha_{n,d,\delta}}
+		{1-d\,\alpha_{n,d,\delta}},
+	\]
+	which is exactly \eqref{eq:results-restricted-operator-bound}.
+\end{proof}
+% \chapter{\label{cha:glossary}Glossary}
+%
+% In this appendix we give an overview of frequently used terms and
+% abbreviations.
+%
+% \begin{description}
+% 	\item[foo:] \ldots
+% 	\item [bar:] \ldots
+% \end{description}
+%

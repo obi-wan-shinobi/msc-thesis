@@ -50,16 +50,13 @@ the tangent feature space.
 
 \subsection{Training dynamics induced by the NTK}
 
-We consider training with the squared loss
+We consider training with the squared loss using gradient descent with step size $\eta>0$,
 \[
-	L(\theta) = \frac{1}{2}\sum_{i=1}^n \bigl(f(x_i;\theta) - y_i\bigr)^2
-\]
-using gradient descent with step size $\eta>0$,
-\[
-	\theta_{t+1} = \theta_t - \eta \nabla_\theta L(\theta_t),
+	L(\theta) = \frac{1}{2}\sum_{i=1}^n \bigl(f(x_i;\theta) - y_i\bigr)^2,
+	\qquad \theta_{t+1} = \theta_t - \eta \nabla_\theta L(\theta_t),
 	\qquad t = 0,1,2,\dots
 \]
-Let $f_t(x_i) := f(x_i;\theta_t)$ the gradient of the loss is
+Define $f_t(x) := f(x;\theta_t)$. The gradient of the loss is
 \[
 	\nabla_\theta L(\theta_t)
 	=
@@ -188,7 +185,7 @@ This argument extends to deep fully connected networks, where both the forward
 covariance kernel and the NTK satisfy recursive layerwise equations in the
 infinite-width limit \citep{jacot2018ntk, lee2020wide}.
 
-\subsection{Constant-kernel regime and spectral dynamics}
+\subsection{Constant-kernel regime and spectral dynamics}\label{sec:ntk-spectral-dynamics}
 
 In the infinite-width limit, the NTK remains constant throughout training,
 $\Theta_t \equiv \bar\Theta$. Equation~\eqref{eq:ntk-vector-dynamics} then reduces
@@ -298,6 +295,7 @@ approximation, which motivates studying regimes where kernel evolution and
 feature learning play an explicit role.
 
 \section{Mean-field representation of a two-layer network}
+
 While the neural tangent kernel provides a linearized description of training
 dynamics around initialization, it does not capture regimes in which features
 evolve significantly during optimization. An alternative and complementary
@@ -306,26 +304,32 @@ neural networks by viewing their parameters as interacting particles and
 describing training as the evolution of a probability distribution over
 parameter space.
 
-As the network width tends to infinity under appropriate scalings, the discrete
-training dynamics induced by stochastic gradient descent converge to a
-deterministic evolution equation for the parameter distribution. This viewpoint
-was first formalized for two-layer networks by \citet{Mei2018meanfieldview}, who derived a
-nonlinear partial differential equation governing the evolution of the parameter
-measure. Related interacting particle system formulations and convergence
-results were developed by \citet{Rotskoff_2022}, while extensions to multilayer
-networks were proposed by \citet{nguyen2019meanfieldlimitlearning}. From an
-optimization perspective, \citet{chizat2018globalconvergencegradientdescent} showed that, under
-suitable initialization and in the many-particle limit, training dynamics can
-be interpreted as a Wasserstein gradient flow on the space of probability
-measures, and that this flow converges to global minimizers despite the
-non-convexity of the finite-dimensional parameterization.
+As the network width tends to infinity under appropriate scalings, the training
+dynamics induced by gradient descent converge to a deterministic evolution
+equation for the parameter distribution. This viewpoint was first formalized
+for two-layer networks by \citet{Mei2018meanfieldview}, who derived a nonlinear
+partial differential equation governing the evolution of the parameter measure.
+Related interacting particle system formulations and convergence results were
+developed by \citet{Rotskoff_2022}, while extensions to multilayer networks
+were proposed by \citet{nguyen2019meanfieldlimitlearning}. From an
+optimization perspective, \citet{chizat2018globalconvergencegradientdescent}
+showed that, under suitable initialization and in the many-particle limit,
+training dynamics can be interpreted as a Wasserstein gradient flow on the
+space of probability measures.  Informally, this means that instead of tracking
+individual neurons, one tracks how their overall distribution moves over
+parameter space during training. The evolution is governed by a transport
+equation, so learning is viewed as a continuous redistribution of mass that
+decreases the loss. In this formulation, the evolution
+of the network is described directly at the level of measures, and the flow
+converges to global minimizers despite the non-convexity of the
+finite-dimensional parameterization.
 
-In the following, we adopt this mean-field viewpoint and reformulate a two-layer
-network as a linear functional of an empirical measure on parameter space, which
-serves as the starting point for distributional descriptions of training
-dynamics.
+A detailed measure-theoretic derivation of the mean-field representation is out
+of the scope of this thesis and is deferred to
+Appendix~\ref{cha:mean-field-appendix}. Here we only record the aspects that are
+relevant for contrasting the mean-field viewpoint with the NTK regime.
 
-Consider a two-layer neural network of the form
+Consider the two-layer neural network from \eqref{eq:1hl-network} with modified scaling of $\frac{1}{m}$
 \begin{equation}
 	f_\theta(x)
 	=
@@ -334,141 +338,60 @@ Consider a two-layer neural network of the form
 	v_\alpha\,\varphi(w_\alpha^\top x),
 	\qquad
 	v_\alpha \in \mathbb{R}, \;
-	w_\alpha, x \in \mathbb{R}^d, \;
+	w_\alpha, x \in \mathbb{R}^d,
 	\label{eq:mf-finite-network}
 \end{equation}
 where each neuron is parameterized by
 \(
 \theta_\alpha = (v_\alpha, w_\alpha)
-\), $\alpha \in \{1,\ldots,m\}$
+\), $\alpha \in \{1,\ldots,m\}$.
 
-\subsection{Parameter space and empirical measure.}
-Let $\Omega := \mathbb{R} \times \mathbb{R}^d$
-denote the parameter space, and let $\mathcal{F}$ be its Borel $\sigma$-algebra.
-For each neuron $\alpha$, define the Dirac measure $\delta_{\theta_\alpha}$ on
-$(\Omega,\mathcal{F})$, i.e. if $A \in \mathcal{F}$ then,
-\[
-	\delta_{\theta_\alpha}(A)
-	=
-	\begin{cases}
-		1, & \theta_\alpha \in A, \\
-		0, & \text{otherwise}.
-	\end{cases}
-\]
-Define the empirical neuronal measure
+\subsection{Integral representation and empirical measure}
+
+Let $\Omega := \mathbb{R} \times \mathbb{R}^d$ denote the parameter space, and define
+the empirical neuronal measure
 \begin{equation}
-	\mu_m := \frac{1}{m}\sum_{\alpha=1}^m \delta_{\theta_\alpha}.
+	\mu_m := \frac{1}{m}\sum_{\alpha=1}^m \delta_{(v_\alpha,w_\alpha)}.
 	\label{eq:empirical-measure}
 \end{equation}
-By construction, $\mu_m \ge 0$ and  $\mu_m(\Omega)=1$, hence $\mu_m \in
-	\mathcal P(\Omega)$ where $\mathcal P(\Omega)$ is the space of Borel
-probability measures on $\Omega$.
+Then $\mu_m \in \mathcal P(\Omega)$, where $\mathcal P(\Omega)$ is the space of
+Borel probability measures on $\Omega$. A detailed derivation is given in
+Appendix~\ref{app:mf-empirical-measure}.
 
-\paragraph{Integration against Dirac measures.}
-Let $\chi_A$ denote the indicator function of a measurable set $A \subset \Omega$.
-Then, for any $\theta_\alpha \in \Omega$,
-\[
-	\int_\Omega \chi_A(\theta)\,d\delta_{\theta_\alpha}(\theta)
-	=
-	\delta_{\theta_\alpha}(A)
-	=
-	\chi_A(\theta_\alpha).
-\]
-More generally, if $s(\theta) = \sum_{k=1}^r c_k \chi_{A_k}(\theta)$ is a simple
-function, then
-\[
-	\int_\Omega s(\theta)\,d\delta_{\theta_\alpha}(\theta)
-	=
-	\sum_{k=1}^r c_k \chi_{A_k}(\theta_\alpha)
-	=
-	s(\theta_\alpha).
-\]
-Any nonnegative measurable function $g : \Omega \to \mathbb{R}$ can be approximated by
-a sequence of simple functions,$\{s_n\}_{n\ge 0}$. If $s_n \uparrow g$ and each $s_n \ge 0$ then
-by Monotone Convergence Theorem,
+With this notation, the network output can be written as
 \begin{equation}
-	\int_\Omega g\,d\delta_{\theta_\alpha}
-	= \int_\Omega \lim_{n \to \infty} s_n\,d\delta_{\theta_\alpha}
-	=  \lim_{n \to \infty} \int_\Omega s_n\,d\delta_{\theta_\alpha}
-	=  \lim_{n \to \infty} s_n(\theta_\alpha)
-	= g(\theta_\alpha).
-	\label{eq:dirac-integration}
-\end{equation}
-
-\paragraph{Integral representation of the network.}
-Consider now the integral of $g$ with respect to the empirical measure $\mu_m$:
-\[
-	\int_\Omega g\,d\mu_m
+	f_\theta(x)
 	=
-	\int_\Omega g\,d\left(\frac{1}{m}\sum_{\alpha=1}^m \delta_{\theta_\alpha}\right)
-	=
-	\frac{1}{m}\sum_{\alpha=1}^m g(\theta_\alpha).
-\]
-Define
-\[
-	g(\theta_\alpha) = g(v_\alpha,w_\alpha) := v_\alpha\,\varphi(w_\alpha^\top x).
-\]
-Then
-\begin{equation}
-	\int_\Omega g\,d\mu_m
-	=
-	\frac{1}{m}\sum_{\alpha=1}^m v_\alpha\,\varphi(w_\alpha^\top x)
-	=
-	f_\theta(x),
+	\int_{\Omega} v\,\varphi(w^\top x)\,d\mu_m(v,w).
 	\label{eq:mf-integral-form}
 \end{equation}
-recovering the finite-width network \eqref{eq:mf-finite-network}.
+Thus, under the mean-field parameterization, the network depends on its
+parameters only through their empirical distribution.
 
 \paragraph{Mean-field viewpoint.}
-Equation~\eqref{eq:mf-integral-form} shows that the network output can be written
-as a linear functional of the empirical measure $\mu_m$.
-This representation is only possible because we scale the output by $1/m$ and
-because the hidden neurons are permutation
-invariant. This implies that the model depends on the
-parameters $\{\theta_\alpha\}_{\alpha=1}^m$ only through their empirical
-distribution.
-Such observations motivate the mean-field viewpoint, in which the empirical
-measure $\mu_m$ is regarded as the fundamental state variable describing the
-network \citep{Mei2018meanfieldview,chizat2018globalconvergencegradientdescent}.
+Equation~\eqref{eq:mf-integral-form} shows that the network output can be
+written as a linear functional of the empirical measure $\mu_m$. This
+representation is only possible because we scale the output by $1/m$ and
+because the hidden neurons are permutation invariant. Such observations
+motivate the mean-field viewpoint, in which the empirical measure $\mu_m$ is
+regarded as the fundamental state variable describing the network
+\citep{Mei2018meanfieldview,chizat2018globalconvergencegradientdescent}.
 
-\paragraph{Initialization and weak convergence.}
+\paragraph{Initialization and limiting representation.}
 Assume that the parameters $\{\theta_\alpha(0)\}_{\alpha=1}^m$ are initialized
-i.i.d.\ according to a probability measure $\mu_0$ on $\Omega$.
-Define the empirical measure at initialization
-\[
-	\mu_{m,0}
-	:=
-	\frac1m\sum_{\alpha=1}^m \delta_{\theta_\alpha(0)} .
-\]
-Then $\mu_{m,0}$ converges weakly to $\mu_0$ almost surely as $m\to\infty$.
-Indeed, for any bounded continuous test function $\psi:\Omega\to\mathbb R$,
-\[
-	\int_\Omega \psi\,d\mu_{m,0}
-	=
-	\frac1m\sum_{\alpha=1}^m \psi(\theta_\alpha(0))
-	\;\xrightarrow[m \to \infty]{\text{a.s.}}\;
-	\mathbb E_{\theta\sim\mu_0}[\psi(\theta)]
-	=
-	\int_\Omega \psi\,d\mu_0,
-\]
-where the convergence follows from the strong law of large numbers applied to
-the i.i.d.\ random variables $\psi(\theta_\alpha(0))$.
-Since this holds for all bounded continuous $\psi$, we conclude that
-$\mu_{m,0} \to \mu_0$ \citep{vadaranjan1958convergenceofprobabilitydistribution}.
-As a consequence, the network output at initialization converges pointwise to
-the deterministic limit
+i.i.d.\ according to a probability measure $\mu_0$ on $\Omega$. Then the
+empirical measure at initialization converges weakly to $\mu_0$ almost surely
+as $m\to\infty$. Consequently, the network output at initialization converges
+pointwise to the deterministic limit
 \[
 	f_{\mu_0}(x)
 	:=
 	\int_\Omega v\,\varphi(w^\top x)\,d\mu_0(v,w).
 \]
-For instance, under i.i.d.\ Gaussian initialization of the parameters, i.e.
-$v_0 \sim \mathcal{N}(0,I_m)\; W_0 \sim \mathcal{N}(0, I_m \otimes I_d)$, the
-limiting initial measure $\mu_0 = \mathcal{N}(0, I_{d+1})$ is a Gaussian
-measure on a $d+1$-dimensional space.
+For instance, under i.i.d.\ Gaussian initialization of the parameters, the
+limiting initial measure $\mu_0$ is Gaussian on $\Omega$.
 
-
-\subsection{Training dynamics and evolution of the empirical measure}
+\subsection{Training dynamics and evolving kernel}
 
 Let $X=(x_1,\dots,x_n)\in\mathbb R^{d\times n}$ and
 $y=(y_1,\ldots,y_n)\in\mathbb R^n$ denote the training set, and consider the
@@ -476,127 +399,60 @@ squared loss
 \[
 	L(v,W)
 	=
-	\frac12\sum_{i=1}^n\bigl(f_{v,W}(x_i)-y_i\bigr)^2
-	=
-	\frac12\|f_{v,W}(X)-y\|_2^2,
+	\frac12\sum_{i=1}^n\bigl(f_{v,W}(x_i)-y_i\bigr)^2.
 \]
-where $f_{v,W}(X):=(f_{v,W}(x_i))_{i=1}^n$.
-
-We study continuous-time gradient flow for a finite-width network with $m$
-neurons and learning rate $\eta>0$,
-\[
-	\dot v_{t,\alpha}
-	=
-	-\eta\,\nabla_{v_\alpha}L(v_t,W_t),
-	\qquad
-	\dot w_{t,\alpha}
-	=
-	-\eta\,\nabla_{w_\alpha}L(v_t,W_t),
-	\qquad
-	\alpha\in\{1,\dots,m\}.
-\]
-
-A direct computation yields, for each $\alpha$,
-\begin{align}
-	\dot v_{t, \alpha}
-	 & =
-	\frac{\eta}{m}\,
-	\varphi(X^\top w_{t,\alpha})^\top
-	\bigl(y-f_{v_t,W_t}(X)\bigr),
-	\label{eq:mf-ode-v} \\
-	\dot w_{t,\alpha}
-	 & =
-	\frac{\eta}{m}\,
-	X\Bigl(
-	\varphi'(X^\top w_{t,\alpha})
-	\odot
-	\bigl(y-f_{v_t,W_t}(X)\bigr)
-	\Bigr)v_{t,\alpha},
-	\label{eq:mf-ode-w}
-\end{align}
-where $\odot$ denotes elementwise (Hadamard) multiplication.
-
-As seen in \eqref{eq:mf-ode-v}--\eqref{eq:mf-ode-w}, evolution of
-each neuron depends on the
-parameters only through the current empirical measure $\mu_{m,t}$ via $f_{v_t, W_t}(X)$.
-Thus, the particle system \eqref{eq:mf-ode-v}--\eqref{eq:mf-ode-w} induces an
-evolution of the empirical measure in parameter space
-\citep{Mei2018meanfieldview,Rotskoff_2022}.
-
-Hence, the particle system \eqref{eq:mf-ode-v}--\eqref{eq:mf-ode-w} can be viewed as
-an interacting particle system driven by a measure-dependent velocity field.
-For any $\theta=(v,w)\in\Omega$ and any $\mu\in\mathcal P(\Omega)$, define
+Under gradient flow, the particle system induces an evolution of the empirical
+measure $\mu_{m,t}$ in parameter space. More precisely, there is an explicit
+measure-dependent velocity field
 \[
 	b((v,w);\mu)
 	:=
 	\begin{pmatrix}
 		\varphi(X^\top w)^\top\bigl(y-f_\mu(X)\bigr) \\[2mm]
 		X\Bigl(\varphi'(X^\top w)\odot\bigl(y-f_\mu(X)\bigr)\Bigr)\,v
-	\end{pmatrix}
+	\end{pmatrix},
 \]
-Then the gradient-flow dynamics can be written compactly as
+where
+\[
+	f_\mu(x):=\int_\Omega v\,\varphi(w^\top x)\,d\mu(v,w),
+	\qquad
+	f_\mu(X):=\bigl(f_\mu(x_i)\bigr)_{i=1}^n,
+\]
+such that the particle dynamics can be written as
 \[
 	\dot\theta_{t,\alpha}
 	=
 	\frac{\eta}{m}\,b(\theta_{t,\alpha};\mu_{m,t}),
 	\qquad \alpha=1,\dots,m.
 \]
-In particular, each particle interacts with the rest of the system only through the
-current empirical measure $\mu_{m,t}$ (via $f_{\mu_{m,t}}(X)$).
+A direct derivation of this system is given in
+Appendix~\ref{app:mf-particle-dynamics}.
 
-Equivalently, $\mu_{m,t}$ solves the continuity equation
-\citep{Rotskoff_2022,chizat2018globalconvergencegradientdescent}.
+Equivalently, the empirical measure solves the continuity equation
 \begin{equation}
 	\partial_t\mu_{m,t}
 	+
 	\nabla_\theta\!\cdot\!\Bigl(\mu_{m,t}\,\frac{\eta}{m}\,b(\cdot;\mu_{m,t})\Bigr)
 	=
-	0,
+	0.
 	\label{eq:mf-continuity-compact}
 \end{equation}
-in the sense of distributions, i.e.\ for every test function $\psi\in C_c^\infty(\Omega)$,
-\[
-	\frac{d}{dt}\int_\Omega \psi(\theta)\,d\mu_{m,t}(\theta)
-	=
-	\frac{\eta}{m}\int_\Omega \nabla_\theta\psi(\theta)\cdot b(\theta;\mu_{m,t})\,d\mu_{m,t}(\theta).
-\]
-Choosing the mean-field scaling $\eta=m$ yields a nontrivial $\mathcal O(1)$ evolution in time and,
-as $m\to\infty$, one expects $\mu_{m,t} \to \mu_t$, where the limit $\mu_t$ satisfies
-\citep{Mei2018meanfieldview,Rotskoff_2022,golikov2025deepneuralnetworkslargewidthbehavior,chizat2018globalconvergencegradientdescent}.
+A weak formulation and the associated push-forward representation are given in
+Appendix~\ref{app:mf-continuity-equation}.
+
+Choosing the mean-field scaling $\eta=m$ yields a nontrivial $\mathcal O(1)$
+evolution in time and, as $m\to\infty$, one expects $\mu_{m,t}\to\mu_t$, where
+the limit $\mu_t$ satisfies
 \begin{equation}
-	\partial_t\mu_t+\nabla_\theta\!\cdot\bigl(\mu_t\,b(\cdot;\mu_t)\bigr)=0,
-	\qquad \mu_0=\mathcal N (0,I_{d+1}),
+	\partial_t\mu_t+\nabla_\theta\!\cdot\bigl(\mu_t\,b(\cdot;\mu_t)\bigr)=0.
 	\label{eq:mf-continuity-with-initial-conditions}
 \end{equation}
 
-\paragraph{Push-forward formulation.}
-Recall that if $g:\mathcal X\to\mathcal Z$ is measurable and $\mu\in\mathcal P(\mathcal X)$, then the
-\emph{push-forward} of $\mu$ by $g$ is the measure $g_*\mu\in\mathcal P(\mathcal Z)$ defined by
-\[
-	(g_*\mu)(A):=\mu\bigl(g^{-1}(A)\bigr),
-	\qquad A\subset\mathcal Z \text{ measurable}.
-\]
-Let $\Phi_t:\Omega\to\Omega$ denote the flow map associated with the velocity field
-$\frac{\eta}{m}\,b(\cdot;\mu_{m,t})$. Then the empirical measure is transported by this flow:
-\[
-	\mu_{m,t} = (\Phi_t)_*\mu_{m,0}.
-\]
-In particular, for any measurable observable $h:\Omega\to\mathbb R$,
-\[
-	\int_\Omega h(\theta)\,d\mu_{m,t}(\theta)
-	=
-	\int_\Omega h\!\left(\Phi_t(\theta)\right)\,d\mu_{m,0}(\theta),
-\]
-so evaluating the network at time $t$ is obtained by taking $h_{x}(\theta):=v\,\varphi(w^\top x)$ and writing
-\[
-	f_{\mu_{m,t}}(x)=\int_\Omega v\,\varphi(w^\top x)\,d\mu_{m,t}(v,w)
-	=\int_\Omega v\,\varphi(w^\top x)\,d\bigl((\Phi_t)_*\mu_{m,0}\bigr)(v,w).
-\]
-
 \paragraph{Advantages over the NTK limit.}
-Recall the finite-width NTK expression \eqref{eq:ntk-1hl-finite}. In the mean-field
-parameterization $f(x)=\frac1m\sum_{\alpha=1}^m v_\alpha\varphi(w_\alpha^\top x)$, the empirical tangent
-kernel is
+Recall the finite-width NTK expression \eqref{eq:ntk-1hl-finite}. In the
+mean-field parameterization
+$f(x)=\frac1m\sum_{\alpha=1}^m v_\alpha\varphi(w_\alpha^\top x)$, the empirical
+tangent kernel is
 \begin{equation}
 	\Theta^{(m)}_t(x,x')
 	=
@@ -608,17 +464,9 @@ kernel is
 	\Bigr).
 	\label{eq:mf-ntk-equation}
 \end{equation}
-Assuming the weights remain $\mathcal O(1)$ as $m\to\infty$, each coordinate of $\nabla_\theta f_t(x)$ is
-$\mathcal O(1/m)$, so $\Theta^{(m)}_t(x,x')=\langle\nabla_\theta f_t(x),\nabla_\theta f_t(x')\rangle$ is a sum
-of $m$ terms of size $\mathcal O(m^{-2})$, hence $\Theta^{(m)}_t(x,x')=\mathcal O(m^{-1})$.
-Moreover, for the squared loss, differentiating the predictions along gradient flow yields
-\[
-	\partial_t f_t(X)
-	=
-	-\eta\,\Theta^{(m)}_t(X,X)\bigl(f_t(X)-y\bigr),
-\]
-so the effective operator driving learning is the \emph{scaled} kernel $\eta\,\Theta^{(m)}_t$. The mean-field
-time scaling $\eta=m$ therefore produces an $\mathcal O(1)$ evolution and yields a finite kernel limit:
+Since $\Theta_t^{(m)}=\mathcal O(m^{-1})$, the effective operator driving
+learning is the scaled kernel $\eta\,\Theta_t^{(m)}$. Under the mean-field
+scaling $\eta=m$, this quantity has a finite limit:
 \[
 	\lim_{m\to\infty}\bigl(\eta\,\Theta^{(m)}_t(x,x')\bigr)
 	=
@@ -629,26 +477,23 @@ time scaling $\eta=m$ therefore produces an $\mathcal O(1)$ evolution and yields
 	v^2\,\varphi'(w^\top x)\,\varphi'(w^\top x')\,x^\top x'
 	\Bigr)\,d\mu_t(v,w).
 \]
-As $\mu_t$ evolves according to the mean-field transport equation, this limiting kernel also evolves in time,
-capturing feature learning beyond the frozen-kernel NTK regime \citep{golikov2025deepneuralnetworkslargewidthbehavior}.
+As $\mu_t$ evolves according to the mean-field transport equation, this
+limiting kernel also evolves in time. In contrast to the frozen-kernel NTK
+regime, the mean-field viewpoint therefore captures feature learning through an
+explicitly time-dependent limiting representation.
 
 \paragraph{Disadvantages.}
-The mean-field scaling $\eta=m$ yields a deterministic measure-valued evolution
-$(\mu_t)_{t\ge 0}$ as $m\to\infty$, governed by the nonlinear continuity
-equation \eqref{eq:mf-continuity-with-initial-conditions}. However, its
-long-time behavior is generally difficult to characterize: it is not clear in
-general whether $\mu_t$ converges as $t\to\infty$, nor which minimizer (if any)
-is selected at the level of measures. Nevertheless, when the dynamics is
-interpreted as a Wasserstein gradient flow, there exist results proving global
-convergence of the loss $L$ under suitable assumptions
-\citep{Mei2018meanfieldview,chizat2018globalconvergencegradientdescent}.
-Moreover, unlike the NTK limit, extending the above measure-evolution
-construction beyond two-layer networks is not straightforward. The main
-difficulty is that for deep networks the hidden units are no longer
-permutation-invariant in a way that yields a simple empirical measure on a
-fixed parameter space. Several multilayer mean-field-type constructions have
-been proposed to address this, but they are typically more involved than the
-two-layer case \citep{nguyen2019meanfieldlimitlearning,araujo2019meanfieldlimitcertaindeep,
+The mean-field scaling yields a deterministic measure-valued evolution
+$(\mu_t)_{t\ge 0}$ as $m\to\infty$, but its long-time behavior is generally
+difficult to characterize. In particular, it is not clear in general whether
+$\mu_t$ converges as $t\to\infty$, nor which minimizer is selected at the level
+of measures. Moreover, unlike the NTK limit, extending the above
+measure-evolution construction beyond two-layer networks is not straightforward,
+since deeper architectures do not admit the same simple permutation-invariant
+description in terms of an empirical measure on a fixed parameter space.
+Several multilayer mean-field-type constructions have been proposed to address
+this difficulty
+\citep{nguyen2019meanfieldlimitlearning,araujo2019meanfieldlimitcertaindeep,
 	sirignano2019meanfieldanalysisneural,nguyen2023rigorousframeworkmeanfield}.
 
 
@@ -858,127 +703,49 @@ mean-field viewpoints.
 
 \section{Research gap}\label{sec:research-gap}
 
-Existing theory provides a clear explanation of spectral bias in idealized
-settings. In the infinite-width NTK regime, training dynamics are governed by a
-fixed kernel operator, and learning rates are determined by its spectrum
-\citep{cao2020understandingspectralbiasdeep}. On symmetric domains such as $S^1$
-under uniform sampling, this operator reduces to a convolution, yielding an
-explicit Fourier-mode description of spectral bias
-(Section~\ref{sec:spectral-bias}). Recent work further shows that this bias can
-persist beyond the training set when predictions are compared to population-level
-kernel dynamics \citep{bowman2022spectralbiasoutsidetraining}.
+The preceding discussion shows that spectral bias is well understood in idealized kernel
+settings. In the infinite-width NTK regime, training is governed by a fixed operator whose
+spectrum determines the decay rates of the corresponding components of the residual
+\citep{jacot2018ntk, rahaman2019spectralbiasneuralnetworks, cao2020understandingspectralbiasdeep}.
+On \(S^1\) with the uniform measure, this operator becomes a convolution and is diagonalized
+by the Fourier basis. There is also substantial work on kernel convergence, finite-width
+corrections, and kernel evolution beyond the strict NTK regime
+\citep{golikov2022neuraltangentkernelsurvey, bordelon2023dynamicsfinitewidthkernel,
+	vyas2022limitationsntkunderstandinggeneralization}.
 
-In practice, however, networks are trained at finite width and on finitely many
-samples. While kernel drift and feature learning have been studied in various
-regimes, there is no precise characterization of how finite width and finite
-sample size perturb the operator governing training dynamics in settings where
-the infinite-width NTK is analytically tractable. In particular, it remains
-unclear how these perturbations affect mode-wise residual dynamics, such as
-independence, monotonicity, and ordering of Fourier-mode decay.
-
-Preliminary experiments in Chapter~\ref{cha:prelim} indicate that finite-width
-networks can exhibit non-monotone residual behavior, slow transients, and
-apparent mode coupling, even when the NTK remains close to its initial value in
-norm. Whether these effects arise primarily from finite sampling, finite width,
-or their interaction is not well understood.
-
-This thesis addresses this gap by studying spectral bias through controlled
-perturbations of the convolutional NTK model. Focusing on regression on $S^1$
-under uniform sampling, we aim to isolate and analyze finite-sample and
-finite-width effects via their impact on mode-wise residual dynamics.
+What is still missing is a perturbative analysis carried out within a single setting in which
+the continuum operator, its spectrum, and its eigenfunctions are all explicit. In
+particular, the existing theory does not yet provide a unified account of how the Fourier
+description on \(S^1\) is altered first by replacing the continuum measure with finitely many
+uniform samples, and then by replacing the infinite-width kernel with the kernel induced by
+a finite-width network.
 
 \section{Research questions}\label{sec:rq}
 
-On symmetric domains such as $S^1$ under uniform sampling, the infinite-width
-neural tangent kernel (NTK) induces a convolution operator whose eigenfunctions
-are the Fourier modes. In this idealized setting, gradient-based training
-dynamics admit a closed-form spectral description: residual components along
-distinct Fourier modes evolve independently at rates determined by the kernel
-spectrum. The preliminary experiments in Chapter~\ref{cha:prelim} reproduce this
-frequency ordering, but also exhibit systematic deviations at finite width and
-finite sample size, including non-monotone mode amplitudes and slow transients
-that persist even when global kernel drift appears small. These observations
-suggest that spectral bias in practice cannot be fully explained by the ideal
-convolutional NTK model and motivate a perturbative analysis beyond this limit.
+This thesis studies spectral bias on \(S^1\) by comparing the residual dynamics induced by
+the continuum infinite-width NTK operator with those induced by its finite-sample and
+finite-width counterparts.
 
 \paragraph{Main research question.}
-How does spectral bias in finite-width ReLU networks trained on uniformly sampled
-inputs on $S^1$ deviate from the convolutional NTK prediction, and how can these
-deviations be characterized through finite-sample and finite-width perturbations
-of the kernel operator governing training dynamics?
+To what extent does the spectral decomposition of the continuum infinite-width NTK operator
+on \(S^1\) persist under finite-sample and finite-width perturbations?
 
 \paragraph{Subquestions.}
 \begin{enumerate}
-	\item[(Q1)] \textbf{Empirical separation of finite-width and finite-sample effects.}
-	      How do mode-wise residual dynamics change when network width and sample size are
-	      varied independently in Fourier-mixture regression on $S^1$?
+	\item[(Q1)] \textbf{Finite-sample perturbation of the continuum operator.}
+	      In the infinite-width regime, how does replacing the uniform measure on \(S^1\) by
+	      \(n\) i.i.d.\ sampled points affect the action of the continuum NTK operator on a fixed
+	      low-frequency Fourier subspace?
 
-	      This question aims to identify which deviations from ideal Fourier-mode decay
-	      persist as width increases at fixed sample size and which vanish as the number
-	      of uniformly sampled training points increases at fixed large width.
+	      More precisely, how does the sampled operator differ from the continuum convolution
+	      operator on this subspace, and what are the consequences for the associated residual
+	      dynamics?
 
-	\item[(Q2)] \textbf{Finite-sample perturbation of the convolutional NTK.}
-	      At infinite width, how does replacing the population convolution operator on
-	      $S^1$ by its empirical discretization based on $n$ uniformly sampled points
-	      perturb its Fourier eigenvalues and eigenfunctions?
+	\item[(Q2)] \textbf{Finite-width perturbation in the continuum setting.}
+	      With the continuum measure on \(S^1\) kept fixed, how does finite width perturb the
+	      limiting NTK operator and the associated residual dynamics?
 
-	      More precisely, this question targets bounds or asymptotic estimates for the
-	      deviation between the population NTK integral operator $T$ and its empirical
-	      counterpart $T_n$, and an analysis of how these perturbations induce coupling
-
-	      \emph{Idea:} Start from the infinite-width convolution operator whose action on
-	      Fourier modes is known exactly, replace the integral by a finite sum over $n$
-	      uniform samples, and study how this discretization alters the decay rates and
-	      introduces mixing between different Fourier modes.      between Fourier modes as a function of sample size and frequency.
-
-	\item[(Q3)] \textbf{Finite-width perturbation of the NTK operator.}
-	      In the infinite-population setting (uniform measure on $S^1$), how does finite
-	      width perturb the spectrum and eigenspaces of the NTK operator at initialization
-	      and during early training?
-
-	      This question focuses on treating the finite-width NTK as a random perturbation
-	      of the deterministic convolutional operator and on characterizing eigenspace
-	      rotation or instability as potential mechanisms behind non-monotone residual
-	      dynamics and slow transients observed in practice.
-
-	      \emph{Idea:} Treat the finite-width NTK as a noisy version of the ideal
-	      convolution operator obtained by averaging over finitely many neurons, and
-	      analyze how this randomness affects Fourier-mode behavior, including possible
-	      rotation of eigenspaces and non-monotone residual decay.
+	      More precisely, how does the kernel induced by a finite-width network differ from the
+	      continuum convolution operator, and how do these differences affect its spectrum, its
+	      Fourier eigenspaces, and the decay of residual components during training?
 \end{enumerate}
-
-\paragraph{Planned schedule (February--May).}
-The project is structured to ensure that empirical results are obtained early
-and used to guide the theoretical analysis, while reserving sufficient time for
-rigorous derivations and writing.
-
-\begin{itemize}
-	\item \textbf{February 2 -- February 23: Empirical analysis (Q1).}
-	      Extend the existing experimental setup to independently vary network width and
-	      sample size (e.g.\ $n = 250, 500, 1000, 5000$) for Fourier-mixture regression on
-	      $S^1$. Produce mode-wise residual decay plots and kernel eigenspace diagnostics
-	      to empirically separate finite-width and finite-sample effects.
-
-	\item \textbf{February 24 -- March 24: Finite-sample theory (Q2).}
-	      Formalize the convolutional NTK integral operator on $S^1$ and its empirical
-	      discretization based on finitely many uniformly sampled points. Derive bounds
-	      or asymptotic estimates for eigenvalue and eigenfunction perturbations, and
-	      relate these results to the empirical Fourier-mode mixing observed in Q1.
-
-	\item \textbf{March 25 -- April 21: Finite-width analysis (Q3).}
-	      Study finite-width fluctuations of the NTK under the uniform population measure.
-	      Treat the finite-width NTK as a random perturbation of the convolutional
-	      operator and investigate eigenspace rotation or instability as potential
-	      mechanisms behind non-monotone residual dynamics and slow transients.
-
-	\item \textbf{April 22 -- May 15: Synthesis and writing.}
-	      Integrate empirical findings and theoretical results, refine conjectures where
-	      full proofs are not tractable, and finalize the thesis manuscript.
-\end{itemize}
-
-\paragraph{Risk mitigation.}
-The schedule prioritizes empirical analysis early in the project to ensure that
-all subsequent theoretical work is guided by robust observations. In cases
-where full theoretical proofs are not tractable within the available timeframe,
-we focus on partial results, asymptotic analyses, or well-supported conjectures
-validated by controlled experiments.

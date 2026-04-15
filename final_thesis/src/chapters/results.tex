@@ -1,0 +1,196 @@
+\chapter{\label{cha:results}Results}
+
+\section{Continuum kernel on \(S^1\)}
+
+We first state the explicit form of the limiting neural tangent kernel on the circle and the
+corresponding Fourier eigenvalues of the integral operator \(T\) introduced in
+Chapter~\ref{cha:methodology}. The derivation is deferred to Appendix~\ref{app:continuum-kernel}.
+
+\begin{proposition}[Limiting NTK on \(S^1\)]
+	\label{prop:results-continuum-ntk}
+	Let \(\Theta\) be the limiting NTK associated with the model
+	\eqref{eq:method-network-model}--\eqref{eq:method-network-initialization}. If
+	\(\delta\in[0,\pi]\) denotes the angular distance between two points on \(S^1\), then
+	\(\Theta\) depends only on \(\delta\) and is given by
+	\begin{equation}
+		\Theta(\delta)
+		=
+		\frac{1}{2\pi}
+		\Bigl(
+		\sin\delta + 2(\pi-\delta)\cos\delta + (\pi-\delta)
+		\Bigr).
+		\label{eq:results-continuum-ntk}
+	\end{equation}
+	Consequently, the operator \(T\) takes the convolution form
+	\begin{equation}
+		(Tf)(\varphi)
+		=
+		\int_0^{2\pi}\Theta(\varphi-\psi)f(\psi)\,d\mu(\psi).
+		\label{eq:results-continuum-operator}
+	\end{equation}
+\end{proposition}
+
+where \(\Theta(\varphi-\psi)\) denotes the even \(2\pi\)-periodic extension of
+\(\Theta(\delta)\).
+
+Since \(T\) is a convolution operator, it is diagonalized by the real Fourier basis
+introduced in \eqref{eq:method-fourier-basis-phi0}--\eqref{eq:method-fourier-basis-modes}.
+
+\begin{theorem}[Fourier eigenvalues of the limiting NTK]
+	\label{thm:results-continuum-spectrum}
+	Let \(\lambda_k\) denote the eigenvalue of \(T\) corresponding to the frequency \(k\). Then
+	\begin{equation}
+		\lambda_0=\frac{1}{4}+\frac{3}{\pi^2},
+		\qquad
+		\lambda_1=\frac{1}{4}+\frac{1}{\pi^2},
+		\label{eq:results-lambda-0-1}
+	\end{equation}
+	and for \(k\geq 2\),
+	\begin{equation}
+		\lambda_k=
+		\begin{cases}
+			\dfrac{k^2+3}{\pi^2(k^2-1)^2}, & k \ge 2 \text{ even}, \\[1em]
+			\dfrac{1}{\pi^2 k^2},          & k \ge 3 \text{ odd}.
+		\end{cases}
+		\label{eq:results-lambda-k}
+	\end{equation}
+	In particular, the decay rates of the Fourier components of the residual are determined by
+	these eigenvalues.
+\end{theorem}
+
+\begin{remark}[Role of trainable bias]
+	\label{rem:results-bias}
+	The trainable bias contributes an additional term to the limiting kernel and changes the
+	parity structure of the spectrum. In particular, in the present model the odd Fourier modes
+	have nonzero eigenvalues. By contrast, if the bias contribution is removed, the odd modes
+	disappear from the fixed-kernel dynamics.
+\end{remark}
+
+\section{Finite-sample control on a truncated Fourier subspace}
+\label{sec:results-finite-sample}
+
+For each basis index \(p\), let \(k(p)\) denote the frequency of the corresponding basis
+function \(\phi_p\), and write
+\[
+	\lambda_p:=\lambda_{k(p)}.
+\]
+
+We now turn to the sampled setting introduced in Chapter~\ref{cha:methodology}. Throughout,
+\(K\geq 1\) is fixed, \(d=2K+1\), and the truncated Fourier subspace \(H_K\) is given by
+\eqref{eq:method-low-frequency-subspace}. The matrices \(\Phi\), \(A\), \(G\), and \(H\) are
+defined in \eqref{eq:method-feature-matrix}--\eqref{eq:method-compressed-operator}.
+
+\begin{proposition}[Expectation of the restricted sampled operator]
+	\label{prop:results-expectation-H}
+	Let
+	\begin{equation}
+		\lambda_p^{(n)}
+		=
+		\left(1-\frac{1}{n}\right)\lambda_p+\frac{\Theta(0)}{n},
+		\label{eq:results-finite-sample-corrected-eigs}
+	\end{equation}
+	and let
+	\begin{equation}
+		\Lambda^{(n)}=\operatorname{diag}(\lambda_p^{(n)}).
+		\label{eq:results-finite-sample-eigenvalue-matrix}
+	\end{equation}
+	Then
+	\begin{equation}
+		\mathbb E[H]=\Lambda^{(n)}.
+		\label{eq:results-expected-H}
+	\end{equation}
+\end{proposition}
+
+The next theorem gives explicit concentration bounds for the three sampled quantities that
+appear in the methodology chapter.
+
+\begin{theorem}[Finite-sample concentration on the truncated Fourier subspace]
+	\label{thm:results-finite-sample-concentration}
+	Assume that
+	\begin{equation}
+		\kappa:=\sup_{\theta\in[0,2\pi)}|\Theta(\theta)|<\infty.
+		\label{eq:results-kappa}
+	\end{equation}
+	Then, for every \(\varepsilon>0\),
+	\begin{equation}
+		\mathbb P\!\left(\|G-I_d\|_{\max}\ge \varepsilon\right)
+		\le
+		2d^2\exp\!\left(-\frac{n\varepsilon^2}{8}\right),
+		\label{eq:results-gram-concentration}
+	\end{equation}
+	\begin{equation}
+		\mathbb P\!\left(\|H-\Lambda^{(n)}\|_{\max}\ge \varepsilon\right)
+		\le
+		2d^2\exp\!\left(-\frac{n\varepsilon^2}{32\kappa^2}\right),
+		\label{eq:results-H-concentration}
+	\end{equation}
+	and
+	\begin{equation}
+		\mathbb P\!\left(\|A\Phi-\Phi\Lambda^{(n)}\|_{\max}\ge \varepsilon\right)
+		\le
+		2nd\exp\!\left(-\frac{n\varepsilon^2}{4\kappa^2}\right).
+		\label{eq:results-APhi-concentration}
+	\end{equation}
+\end{theorem}
+
+\begin{corollary}[Simultaneous high-probability bounds]
+	\label{thm:results-simultaneous-control}
+	Let \(\delta\in(0,1)\), and define
+	\begin{equation}
+		\alpha_{n,d,\delta}
+		:=
+		\sqrt{\frac{8}{n}\log\!\left(\frac{6d^2}{\delta}\right)},
+		\label{eq:results-alpha}
+	\end{equation}
+	\begin{equation}
+		\beta_{n,d,\delta}
+		:=
+		\kappa\sqrt{\frac{32}{n}\log\!\left(\frac{6d^2}{\delta}\right)},
+		\label{eq:results-beta}
+	\end{equation}
+	and
+	\begin{equation}
+		\gamma_{n,d,\delta}
+		:=
+		\kappa\sqrt{\frac{4}{n}\log\!\left(\frac{6nd}{\delta}\right)}.
+		\label{eq:results-gamma}
+	\end{equation}
+	Then, with probability at least \(1-\delta\),
+	\begin{equation}
+		\|G-I_d\|_{\max}\le \alpha_{n,d,\delta},
+		\qquad
+		\|H-\Lambda^{(n)}\|_{\max}\le \beta_{n,d,\delta},
+		\qquad
+		\|A\Phi-\Phi\Lambda^{(n)}\|_{\max}\le \gamma_{n,d,\delta}.
+		\label{eq:results-simultaneous-bounds}
+	\end{equation}
+\end{corollary}
+
+The previous theorem shows that the sampled operator remains close to the continuum Fourier
+decomposition on the truncated subspace \(H_K\). To express this directly at the level of the
+induced matrix on coefficients, define
+\begin{equation}
+	C:=G^{-1}H,
+	\label{eq:results-restricted-operator}
+\end{equation}
+whenever \(G\) is invertible.
+
+\begin{corollary}[Restricted sampled operator]
+	\label{cor:results-restricted-operator}
+	Assume that \(d\,\alpha_{n,d,\delta}<1\). Then, on the event
+	\eqref{eq:results-simultaneous-bounds}, the matrix \(G\) is invertible and
+	\begin{equation}
+		\|C-\Lambda^{(n)}\|_{\infty}
+		\le
+		\frac{d\,\beta_{n,d,\delta}+d\,\kappa\,\alpha_{n,d,\delta}}
+		{1-d\,\alpha_{n,d,\delta}}.
+		\label{eq:results-restricted-operator-bound}
+	\end{equation}
+	In particular, the sampled operator restricted to \(H_K\) remains close to the diagonal
+	Fourier operator predicted by the continuum theory.
+\end{corollary}
+
+Equations \eqref{eq:results-gram-concentration}--\eqref{eq:results-restricted-operator-bound}
+show that, on any fixed truncated Fourier subspace, the sampled operator is a controlled
+perturbation of the continuum operator. Thus the ordering of low Fourier modes predicted by
+the continuum kernel persists with high probability after sampling.

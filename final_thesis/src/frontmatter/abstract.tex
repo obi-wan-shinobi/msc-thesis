@@ -1,10 +1,17 @@
-This document describes the standard thesis style for the Software
-Engineering department at Delft University of Technology. The document
-and it's source are an example of the use of the standard \LaTeX{} style
-file. In addition the final appendix to this document contains a
-number of requirements and guidelines for writing a Software
-Engineering MSc thesis.
+This thesis studies the training dynamics of overparameterized neural networks through
+spectral bias, the tendency of gradient-based training to learn low-frequency components of
+a target function faster than high-frequency ones. The setting is regression on the unit
+circle using a one-hidden-layer ReLU network, with targets given by finite Fourier
+mixtures.
 
-Your thesis should either employ this style or follow it closely.
+The analysis begins in the infinite-width regime. In this limit, the operator governing the
+residual dynamics is the neural tangent kernel. Under the uniform measure on the circle,
+this operator is a convolution and is therefore diagonalized by the Fourier basis. This
+gives an explicit description of the residual dynamics and of the corresponding
+frequency-dependent learning rates.
 
-
+The main contribution of the current thesis is a finite-sample analysis of this continuum
+operator. On a fixed low-frequency Fourier subspace, non-asymptotic bounds are derived that
+show the sampled operator remains close to the continuum operator with high probability. The
+final part of the project, still in progress, studies the effect of finite width in the
+continuum setting.

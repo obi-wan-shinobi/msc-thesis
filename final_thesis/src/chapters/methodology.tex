@@ -1,0 +1,201 @@
+\chapter{\label{cha:methodology}Methodology}
+
+\section{Mathematical setting}
+
+\subsection{Domain and measure}
+
+We identify the unit circle \(S^1\) with the angular domain \(\Omega=[0,2\pi)\), equipped
+with the uniform probability measure
+\begin{equation}
+	d\mu(\varphi)=\frac{d\varphi}{2\pi}.
+	\label{eq:method-uniform-measure}
+\end{equation}
+This parametrization makes the rotational symmetry of the problem explicit and provides the
+natural Fourier basis for \(L^2(\mu)\).
+
+\subsection{Network model}
+
+We consider a one-hidden-layer ReLU network in NTK parameterization. For inputs
+\(x\in S^1\subset\mathbb{R}^2\),
+\begin{equation}
+	f(x;\theta)=\frac{1}{\sqrt m}\sum_{i=1}^m a_i \sigma(w_i^\top x+b_i),
+	\label{eq:method-network-model}
+\end{equation}
+where \(\theta=\{(a_i,w_i,b_i)\}_{i=1}^m\), \(\sigma(t)=t_+=\max\{t,0\}\), and the parameters are
+initialized according to
+\begin{equation}
+	a_i \sim \mathcal{N}(0,1),
+	\qquad
+	w_i \sim \mathcal{N}(0,I_2),
+	\qquad
+	b_i(0)=0,
+	\label{eq:method-network-initialization}
+\end{equation}
+independently across \(i=1,\dots,m\). The bias parameters are initialized at zero but remain
+trainable throughout.
+
+The analysis is carried out through the limiting neural tangent kernel in the
+infinite-width regime \(m\to\infty\). This model is simple enough to admit an explicit
+kernel calculation on \(S^1\), while still capturing the spectral structure relevant to the
+decay of Fourier components under training. The inclusion of trainable bias is part of this
+setup, since its contribution changes the Fourier spectrum of the limiting kernel.
+The derivation of the limiting kernel and the computation of its Fourier coefficients are
+deferred to Appendix~\ref{app:continuum-kernel}.
+
+\subsection{Residual dynamics and the kernel operator}
+
+We briefly recall the residual dynamics from
+Section~\ref{sec:ntk-spectral-dynamics}, reformulated in the continuum gradient-flow setting
+used here. Let \(y\in L^2(\mu)\) be the target function and let
+\(f_t(\varphi):=f(\varphi;\theta(t))\) denote the network output at training time \(t\). We
+consider the least-squares loss functional
+\begin{equation}
+	\mathcal{L}(\theta)
+	=
+	\frac{1}{2}\|f(\cdot;\theta)-y\|_{L^2(\mu)}^2
+	=
+	\frac{1}{2}\int_0^{2\pi}\bigl(f(\varphi;\theta)-y(\varphi)\bigr)^2\,d\mu(\varphi),
+	\label{eq:method-loss-functional}
+\end{equation}
+whose functional derivative with respect to the output function is
+\begin{equation}
+	\frac{\delta \mathcal{L}}{\delta f}(\varphi)
+	=
+	f(\varphi;\theta)-y(\varphi).
+	\label{eq:method-functional-derivative}
+\end{equation}
+Accordingly, we define the residual
+\begin{equation}
+	r_t(\varphi)=f_t(\varphi)-y(\varphi).
+	\label{eq:method-residual-function}
+\end{equation}
+
+Under gradient flow in the regime where the limiting kernel is fixed, the residual evolves according to
+\begin{equation}
+	\partial_t r_t(\varphi)
+	=
+	-\int_0^{2\pi}\Theta(\varphi,\psi)\,r_t(\psi)\,d\mu(\psi),
+	\label{eq:method-residual-flow}
+\end{equation}
+where \(\Theta\) denotes the limiting neural tangent kernel. This leads to the integral operator
+\(T:L^2(\mu)\to L^2(\mu)\) defined by
+\begin{equation}
+	(Tf)(\varphi)
+	=
+	\int_0^{2\pi}\Theta(\varphi,\psi)f(\psi)\,d\mu(\psi),
+	\label{eq:method-kernel-operator}
+\end{equation}
+so that \eqref{eq:method-residual-flow} can be written as
+\begin{equation}
+	\partial_t r_t=-Tr_t.
+	\label{eq:method-operator-residual-flow}
+\end{equation}
+Thus the decay of the residual is governed by the spectrum of \(T\).
+
+\section{Continuum reference model}
+
+\subsection{Translation invariance and Fourier diagonalization}
+
+The first object studied in the thesis is the limiting kernel operator on \(S^1\). Because the
+input distribution is uniform and the kernel is rotation-invariant, \(\Theta(\varphi,\psi)\)
+depends only on the angular difference. The operator \eqref{eq:method-kernel-operator}
+therefore takes the convolution form
+\begin{equation}
+	(Tf)(\varphi)=\int_0^{2\pi}\Theta(\varphi-\psi)f(\psi)\,d\mu(\psi),
+	\label{eq:method-continuum-operator}
+\end{equation}
+and is diagonalized by the real Fourier basis. Its eigenvalues determine the decay rates of
+the Fourier components of the residual.
+
+This continuum Fourier decomposition is the starting point for the rest of the analysis. The
+finite-sample theory asks how much of this diagonal structure survives after replacing the
+measure \(\mu\) by finitely many sampled points, while the later finite-width analysis asks
+how the behavior of the actual network departs from that of the limiting kernel.
+The explicit formula for the limiting kernel and the corresponding Fourier eigenvalues are
+stated in Chapter~\ref{cha:results}. Their derivation is deferred to
+Appendix~\ref{app:continuum-kernel}.
+
+\section{Finite-sample methodology}
+
+\subsection{Finite-sample question}
+
+We now replace the uniform measure on \(S^1\) by a finite sample
+\begin{equation}
+	\varphi_1,\dots,\varphi_n \overset{\mathrm{iid}}{\sim} \mathrm{Unif}[0,2\pi).
+	\label{eq:method-sampled-angles}
+\end{equation}
+The main question is whether the diagonal Fourier decomposition of the continuum operator
+remains approximately valid after this replacement.
+
+\subsection{Restriction to a low-frequency Fourier subspace}
+
+Since the continuum operator is diagonalized by Fourier modes, the natural
+finite-dimensional approximation is obtained by truncating the real Fourier basis. We define
+\begin{equation}
+	\phi_0(\varphi)=1,
+	\label{eq:method-fourier-basis-phi0}
+\end{equation}
+and for each \(k\geq 1\),
+\begin{equation}
+	\phi_{k,c}(\varphi)=\sqrt{2}\cos(k\varphi),
+	\qquad
+	\phi_{k,s}(\varphi)=\sqrt{2}\sin(k\varphi).
+	\label{eq:method-fourier-basis-modes}
+\end{equation}
+These functions form the standard real Fourier basis of \(L^2(\mu)\).
+
+For a fixed cutoff \(K\geq 1\), we consider the truncated subspace
+\begin{equation}
+	H_K=\operatorname{span}\{\phi_0,\phi_{k,c},\phi_{k,s}:1\leq k\leq K\},
+	\label{eq:method-low-frequency-subspace}
+\end{equation}
+with dimension
+\begin{equation}
+	d=2K+1.
+	\label{eq:method-block-dimension}
+\end{equation}
+This subspace isolates the low-frequency part of the spectrum and turns the comparison
+between the continuum and sampled operators into a finite-dimensional problem.
+
+\subsection{Sampled objects}
+
+To study the sampled operator on \(H_K\), we introduce the feature matrix
+\(\Phi\in\mathbb{R}^{n\times d}\),
+\begin{equation}
+	\Phi_{i,p}=\phi_p(\varphi_i),
+	\qquad
+	1\leq i\leq n,\quad 1\leq p\leq d,
+	\label{eq:method-feature-matrix}
+\end{equation}
+and the normalized sampled kernel matrix
+\begin{equation}
+	A_{ij}=\frac{1}{n}\Theta(\varphi_i-\varphi_j).
+	\label{eq:method-empirical-operator}
+\end{equation}
+From these we form the Gram matrix
+\begin{equation}
+	G=\frac{1}{n}\Phi^\top\Phi,
+	\label{eq:method-gram-matrix}
+\end{equation}
+and the matrix representation of the sampled operator on the truncated Fourier basis,
+\begin{equation}
+	H=\frac{1}{n}\Phi^\top A\Phi.
+	\label{eq:method-compressed-operator}
+\end{equation}
+We also introduce the diagonal matrix
+\begin{equation}
+	\Lambda^{(n)}=\operatorname{diag}(\lambda_p^{(n)}),
+	\label{eq:method-finite-sample-eigenvalue-matrix}
+\end{equation}
+whose entries are the finite-sample corrected Fourier eigenvalues.
+
+\subsection{Quantities to be controlled}
+
+The finite-sample analysis is based on three comparisons: \(G\) with the identity, \(H\)
+with \(\Lambda^{(n)}\), and the difference
+\begin{equation}
+	A\Phi-\Phi\Lambda^{(n)}.
+	\label{eq:method-eigen-action-difference}
+\end{equation}
+Controlling these quantities shows that, on the truncated Fourier subspace, the sampled
+operator remains close to the continuum Fourier decomposition.

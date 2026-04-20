@@ -1,0 +1,25 @@
+experiment:
+  name: ntk_eigenspace_alignment_on_S1
+  save_dir: results
+  seed: 0
+
+data:
+  n_points: 2048
+
+model:
+  depth_hidden: 1
+  parameterization: ntk
+  b_std: 1.0
+
+fourier_basis:
+  max_frequency: 30
+
+sweep:
+  widths: [32, 64, 128, 256, 512, 1024]
+  seeds: 10
+
+analysis:
+  projector_fro_tol: 0.25
+
+artifacts:
+  save_aligned_eigvecs: true

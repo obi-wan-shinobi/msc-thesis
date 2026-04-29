@@ -1,0 +1,25 @@
+experiment:
+  name: kernel_gd_circle_theory_consistent_nobias_plus45
+  save_dir: results
+  seed: 0
+
+data:
+  n_train: 4096
+
+target:
+  Ks: [0, 1, 2, 3, 4, 5, 7, 10, 12, 15]
+  amps: [1.0, 0.9, 0.5, 0.35, 0.30, 0.28, 0.25, 0.10, 0.08, 0.04]
+  phases: [0.0, 0.0, 0.0, 1.5707, 0.0, 1.5707, 0.0, 1.5707, 0.0, 1.5707]
+
+kernel:
+  name: nobias
+  init: zero
+
+train:
+  steps: 2000
+  eta: null
+  eta_scale: 0.05
+
+analysis:
+  compare_first_k: 24
+  fourier_modes: [0, 1, 2, 3, 4, 5, 7, 10, 12, 15]

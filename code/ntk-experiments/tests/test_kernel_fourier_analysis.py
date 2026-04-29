@@ -6,6 +6,7 @@ from core.kernel_analysis import (
     compute_lemma_error_metrics,
     compute_lemma_objects,
     continuum_fourier_eigenvalues_bias,
+    continuum_fourier_eigenvalues_nobias,
     expand_frequency_eigenvalues_to_basis,
     finite_n_diagonal_benchmark,
     matrix_error_metrics,
@@ -158,3 +159,14 @@ def test_bias_continuum_eigenvalues_are_positive_for_first_modes():
     vals = continuum_fourier_eigenvalues_bias(ks)
 
     assert np.all(np.asarray(vals) > 0.0)
+
+
+def test_nobias_continuum_k1_is_one_quarter():
+    vals = continuum_fourier_eigenvalues_nobias(jnp.array([1]))
+    assert np.isclose(float(vals[0]), 0.25, atol=1e-8)
+
+
+def test_nobias_continuum_odd_modes_ge3_are_zero():
+    ks = jnp.array([3, 5, 7, 9, 11], dtype=jnp.int32)
+    vals = continuum_fourier_eigenvalues_nobias(ks)
+    np.testing.assert_allclose(np.asarray(vals), np.zeros(len(ks)), atol=1e-8, rtol=1e-8)

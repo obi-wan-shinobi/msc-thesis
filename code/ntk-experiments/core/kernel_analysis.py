@@ -41,6 +41,41 @@ def continuum_fourier_eigenvalues_bias(ks: jnp.ndarray) -> jnp.ndarray:
     return out
 
 
+def continuum_fourier_eigenvalues_nobias(ks: jnp.ndarray) -> jnp.ndarray:
+    """
+    Continuum Fourier eigenvalues for the no-bias NTK operator on S^1.
+
+    For the kernel
+        Theta_nobias(delta) = K0(delta) + cos(delta) * K1(delta),
+    the Fourier eigenvalues (under dgamma / 2pi normalization) are:
+
+        k = 0:  3 / pi^2
+        k = 1:  1 / 4
+        k >= 2 even: (k^2 + 3) / (pi^2 * (k^2 - 1)^2)
+        k >= 3 odd:  0
+
+    As in continuum_fourier_eigenvalues_bias, these are eigenvalues of the
+    continuum operator T, not of raw discrete Gram matrices.
+    """
+    ks = jnp.asarray(ks)
+    kf = ks.astype(jnp.float32)
+
+    out = jnp.zeros_like(kf)
+
+    out = jnp.where(ks == 0, 3.0 / (jnp.pi**2), out)
+    out = jnp.where(ks == 1, 0.25, out)
+
+    even_mask = (ks >= 2) & (ks % 2 == 0)
+    out = jnp.where(
+        even_mask,
+        (kf**2 + 3.0) / (jnp.pi**2 * (kf**2 - 1.0) ** 2),
+        out,
+    )
+
+    # k >= 3 odd modes remain zero by construction.
+    return out
+
+
 def kernel_eigendecomposition(
     theta_xx: jnp.ndarray,
 ) -> tuple[jnp.ndarray, jnp.ndarray]:

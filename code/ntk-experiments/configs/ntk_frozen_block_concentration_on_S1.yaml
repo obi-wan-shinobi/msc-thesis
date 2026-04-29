@@ -1,0 +1,28 @@
+experiment:
+  name: ntk_frozen_block_concentration_on_S1
+  save_dir: results
+  seed: 0
+
+data:
+  n_points: 4096
+
+model:
+  depth_hidden: 1
+  parameterization: ntk
+  b_std: 1.0
+
+fourier_basis:
+  max_frequency: 10
+
+sweep:
+  widths: [32, 64, 128, 256, 512, 1024]
+  seeds: 100
+
+analysis:
+  eps_grid: [0.01, 0.02, 0.05, 0.1]
+  c_grid: [0.05, 0.1, 0.2, 0.5, 1.0]
+  subexp_L: 32.0
+  compute_one_neuron_stats: true
+
+artifacts:
+  save_full_blocks: true

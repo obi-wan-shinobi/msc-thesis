@@ -12,6 +12,7 @@ import yaml
 from core.data import FourierTarget, f_star_gamma, make_probe_circle
 from core.kernel_analysis import (
     continuum_fourier_eigenvalues_bias,
+    continuum_fourier_eigenvalues_nobias,
     kernel_eigendecomposition,
     project_residuals_onto_eigenvectors,
     project_residuals_onto_fourier_modes,
@@ -32,6 +33,14 @@ def _resolve_n_trains(n_train_cfg) -> list[int]:
     if any(n <= 0 for n in n_trains):
         raise ValueError(f"All n_train values must be positive, got {n_trains}.")
     return n_trains
+
+
+def _continuum_lambda_by_k(kernel_name: str, ks_compare: np.ndarray) -> np.ndarray:
+    if kernel_name == "bias":
+        return np.asarray(continuum_fourier_eigenvalues_bias(ks_compare))
+    if kernel_name == "nobias":
+        return np.asarray(continuum_fourier_eigenvalues_nobias(ks_compare))
+    raise ValueError(f"Unknown kernel='{kernel_name}'. Expected 'bias' or 'nobias'.")
 
 
 def run(config_path: str):
@@ -98,12 +107,12 @@ def run(config_path: str):
         theta_xx = kernel_matrix_from_gamma(gamma_train, kernel=kernel_name)
         evals_emp, evecs = kernel_eigendecomposition(theta_xx)
 
-        # For theory validation on the bias kernel, compare discrete eigenvalues
-        # against n * lambda_k(cont)
+        # For theory validation on analytic circle kernels, compare discrete
+        # eigenvalues against n * lambda_k(cont).
         has_continuum_spectrum = False
-        if kernel_name == "bias":
+        if kernel_name in {"bias", "nobias"}:
             ks_compare = np.arange(compare_first_k + 1)
-            lambda_cont = np.asarray(continuum_fourier_eigenvalues_bias(ks_compare))
+            lambda_cont = _continuum_lambda_by_k(kernel_name, ks_compare)
             lambda_disc_pred = n_train * lambda_cont
 
             save_npz(

@@ -17,6 +17,7 @@ from core.kernel_analysis import (
     compute_lemma_error_metrics,
     compute_lemma_objects,
     continuum_fourier_eigenvalues_bias,
+    continuum_fourier_eigenvalues_nobias,
     finite_n_diagonal_benchmark,
     per_mode_action_relative_errors,
 )
@@ -46,6 +47,15 @@ def _resolve_seed_list(seed_cfg, base_seed: int) -> list[int]:
 def _kernel_diag_value(kernel_name: str) -> float:
     g0 = kernel_matrix_from_gamma(jnp.array([0.0]), kernel=kernel_name)[0, 0]
     return float(np.asarray(g0))
+
+
+def _continuum_lambda_by_k(kernel_name: str, K_max: int) -> jnp.ndarray:
+    ks = jnp.arange(K_max + 1)
+    if kernel_name == "bias":
+        return continuum_fourier_eigenvalues_bias(ks)
+    if kernel_name == "nobias":
+        return continuum_fourier_eigenvalues_nobias(ks)
+    raise ValueError(f"Unknown kernel='{kernel_name}'. Expected 'bias' or 'nobias'.")
 
 
 def _build_mode_decay_reference(
@@ -81,7 +91,8 @@ def run(config_path: str):
     kernel_cfg = cfg["kernel"]
     train_cfg = cfg["train"]
     sweep_cfg = cfg["sweep"]
-    analysis_cfg = cfg["analysis"]
+    analysis_cfg = cfg.get("analysis", {})
+    artifacts_cfg = cfg.get("artifacts", {})
 
     base_seed = int(exp_cfg.get("seed", 0))
     n_trains = [int(n) for n in data_cfg["n_trains"]]
@@ -95,16 +106,14 @@ def run(config_path: str):
     phases = np.array(target_cfg["phases"], dtype=float)
 
     kernel_name = kernel_cfg["name"]
-    if kernel_name != "bias":
-        raise NotImplementedError(
-            "This lemma-validation experiment currently supports only kernel='bias', "
-            "because the continuum Fourier eigenvalue helper is implemented only for the bias kernel."
-        )
 
-    steps = int(train_cfg["steps"])
+    steps = int(train_cfg.get("steps", 0))
     eta_cfg = train_cfg.get("eta", None)
     eta_scale = float(train_cfg.get("eta_scale", 0.05))
     save_every = int(train_cfg.get("save_every", 100))
+    run_dynamics = bool(train_cfg.get("run_dynamics", True))
+
+    save_full_matrices = bool(artifacts_cfg.get("save_full_matrices", True))
 
     seed_list = _resolve_seed_list(sweep_cfg["seeds"], base_seed)
     mode_compare = list(analysis_cfg.get("mode_compare", [0, 1, 2, 3, 4, 5]))
@@ -114,6 +123,8 @@ def run(config_path: str):
 
     print("=== Kernel circle lemma-validation run ===")
     print(f"Saving results to: {save_dir}\n")
+    print(f"Run dynamics: {run_dynamics}")
+    print(f"Save full matrices: {save_full_matrices}\n")
     t0 = time.time()
 
     # ------------------------------------------------------------
@@ -144,12 +155,19 @@ def run(config_path: str):
 
             key = jr.PRNGKey(seed)
             gamma_train = _sample_uniform_gamma(key, n_train)
-            X_train = _circle_points_from_gamma(gamma_train)
 
-            y_train = f_star_gamma(gamma_train, ft)
-            if noise_std > 0:
-                noise = noise_std * jr.normal(jr.fold_in(key, 1), shape=y_train.shape)
-                y_train = y_train + noise
+            X_train = (
+                _circle_points_from_gamma(gamma_train) if save_full_matrices else None
+            )
+
+            y_train = None
+            if run_dynamics or save_full_matrices:
+                y_train = f_star_gamma(gamma_train, ft)
+                if noise_std > 0:
+                    noise = noise_std * jr.normal(
+                        jr.fold_in(key, 1), shape=y_train.shape
+                    )
+                    y_train = y_train + noise
 
             # ------------------------------------------------------------
             # Basis
@@ -167,7 +185,7 @@ def run(config_path: str):
             K = kernel_matrix_from_gamma(gamma_train, kernel=kernel_name)
             A = K / n_train
 
-            lambda_by_k = continuum_fourier_eigenvalues_bias(jnp.arange(K_max + 1))
+            lambda_by_k = _continuum_lambda_by_k(kernel_name, K_max)
             g0 = _kernel_diag_value(kernel_name)
             lambda_n_diag = finite_n_diagonal_benchmark(
                 mode_freqs=mode_freqs,
@@ -192,52 +210,64 @@ def run(config_path: str):
                 Phi,
             )
 
-            # ------------------------------------------------------------
-            # Step size on normalized operator scale
-            # ------------------------------------------------------------
-            evals_A = jnp.linalg.eigvalsh(A)
-            lambda_max_A = float(np.asarray(evals_A[-1]))
-            eta = (
-                float(eta_cfg)
-                if eta_cfg is not None
-                else float(eta_scale / lambda_max_A)
-            )
+            eta = None
+            lambda_max_A = None
+            out = None
+            mode_proj_train = None
+            mode_proj_train_ideal = None
 
-            # ------------------------------------------------------------
-            # Eval-train operator
-            # ------------------------------------------------------------
-            A_eval_train = (
-                kernel_cross_matrix_from_gamma(
-                    gamma_eval,
-                    gamma_train,
-                    kernel=kernel_name,
+            if run_dynamics:
+                if y_train is None:
+                    raise ValueError(
+                        "y_train must be available when train.run_dynamics=True."
+                    )
+
+                # ------------------------------------------------------------
+                # Step size on normalized operator scale
+                # ------------------------------------------------------------
+                evals_A = jnp.linalg.eigvalsh(A)
+                lambda_max_A = float(np.asarray(evals_A[-1]))
+                eta = (
+                    float(eta_cfg)
+                    if eta_cfg is not None
+                    else float(eta_scale / lambda_max_A)
                 )
-                / n_train
-            )
 
-            # ------------------------------------------------------------
-            # Zero-init operator GD
-            # ------------------------------------------------------------
-            out = run_operator_gd(
-                A_train=A,
-                y_train=y_train,
-                eta=eta,
-                steps=steps,
-                y_pred_train_0=jnp.zeros_like(y_train),
-                A_eval_train=A_eval_train,
-                y_pred_eval_0=jnp.zeros_like(y_eval),
-                save_every=save_every,
-            )
+                # ------------------------------------------------------------
+                # Eval-train operator
+                # ------------------------------------------------------------
+                A_eval_train = (
+                    kernel_cross_matrix_from_gamma(
+                        gamma_eval,
+                        gamma_train,
+                        kernel=kernel_name,
+                    )
+                    / n_train
+                )
 
-            # ------------------------------------------------------------
-            # Observed vs ideal sampled-mode decay
-            # ------------------------------------------------------------
-            mode_proj_train, mode_proj_train_ideal = _build_mode_decay_reference(
-                r_train=out["r_train"],
-                Phi_unit=Phi_unit,
-                lambda_n_diag=lambda_n_diag,
-                eta=eta,
-            )
+                # ------------------------------------------------------------
+                # Zero-init operator GD
+                # ------------------------------------------------------------
+                out = run_operator_gd(
+                    A_train=A,
+                    y_train=y_train,
+                    eta=eta,
+                    steps=steps,
+                    y_pred_train_0=jnp.zeros_like(y_train),
+                    A_eval_train=A_eval_train,
+                    y_pred_eval_0=jnp.zeros_like(y_eval),
+                    save_every=save_every,
+                )
+
+                # ------------------------------------------------------------
+                # Observed vs ideal sampled-mode decay
+                # ------------------------------------------------------------
+                mode_proj_train, mode_proj_train_ideal = _build_mode_decay_reference(
+                    r_train=out["r_train"],
+                    Phi_unit=Phi_unit,
+                    lambda_n_diag=lambda_n_diag,
+                    eta=eta,
+                )
 
             # ------------------------------------------------------------
             # Save per-run NPZ
@@ -245,45 +275,61 @@ def run(config_path: str):
             run_key = f"size_{n_train}_seed_{seed}"
             run_path = runs_dir / f"{run_key}.npz"
 
-            save_npz(
-                run_path,
-                # geometry
-                gamma_train=np.asarray(gamma_train),
-                X_train=np.asarray(X_train),
-                y_train=np.asarray(y_train),
-                # basis and operator objects
-                Phi=np.asarray(Phi),
-                A=np.asarray(A),
-                G=np.asarray(lemma_objs["G"]),
-                H=np.asarray(lemma_objs["H"]),
-                Lambda_n_diag=np.asarray(lambda_n_diag),
+            arrays_to_save = {
                 # lemma scalar metrics
-                gram_err_max=np.asarray(metrics["gram_err_max"]),
-                gram_err_fro=np.asarray(metrics["gram_err_fro"]),
-                comp_err_max=np.asarray(metrics["comp_err_max"]),
-                comp_err_fro=np.asarray(metrics["comp_err_fro"]),
-                action_err_max=np.asarray(metrics["action_err_max"]),
-                action_err_fro=np.asarray(metrics["action_err_fro"]),
+                "gram_err_max": np.asarray(metrics["gram_err_max"]),
+                "gram_err_fro": np.asarray(metrics["gram_err_fro"]),
+                "comp_err_max": np.asarray(metrics["comp_err_max"]),
+                "comp_err_fro": np.asarray(metrics["comp_err_fro"]),
+                "action_err_max": np.asarray(metrics["action_err_max"]),
+                "action_err_fro": np.asarray(metrics["action_err_fro"]),
                 # lemma vector metrics
-                per_mode_action_relerr=np.asarray(per_mode_relerr),
-                mode_names=np.asarray(mode_names),
-                mode_freqs=np.asarray(mode_freqs),
-                mode_types=np.asarray(mode_types),
-                # dynamics
-                y_pred_train=np.asarray(out["y_pred_train"]),
-                r_train=np.asarray(out["r_train"]),
-                loss=np.asarray(out["loss"]),
-                eta=np.asarray([eta]),
-                snapshot_steps=np.asarray(out["snapshot_steps"]),
-                y_pred_eval_snapshots=np.asarray(out["y_pred_eval_snapshots"]),
-                y_pred_eval_final=np.asarray(out["y_pred_eval_final"]),
-                # decay diagnostics
-                mode_proj_train=np.asarray(mode_proj_train),
-                mode_proj_train_ideal=np.asarray(mode_proj_train_ideal),
-                # useful metadata
-                g0=np.asarray([g0]),
-                lambda_max_A=np.asarray([lambda_max_A]),
-            )
+                "per_mode_action_relerr": np.asarray(per_mode_relerr),
+                "mode_names": np.asarray(mode_names),
+                "mode_freqs": np.asarray(mode_freqs),
+                "mode_types": np.asarray(mode_types),
+                # compact theory metadata
+                "Lambda_n_diag": np.asarray(lambda_n_diag),
+                "g0": np.asarray([g0]),
+            }
+
+            if save_full_matrices:
+                arrays_to_save.update(
+                    {
+                        # geometry
+                        "gamma_train": np.asarray(gamma_train),
+                        "X_train": np.asarray(X_train),
+                        "y_train": np.asarray(y_train),
+                        # basis and operator objects
+                        "Phi": np.asarray(Phi),
+                        "A": np.asarray(A),
+                        "G": np.asarray(lemma_objs["G"]),
+                        "H": np.asarray(lemma_objs["H"]),
+                    }
+                )
+
+            if run_dynamics:
+                arrays_to_save.update(
+                    {
+                        # dynamics
+                        "y_pred_train": np.asarray(out["y_pred_train"]),
+                        "r_train": np.asarray(out["r_train"]),
+                        "loss": np.asarray(out["loss"]),
+                        "eta": np.asarray([eta]),
+                        "snapshot_steps": np.asarray(out["snapshot_steps"]),
+                        "y_pred_eval_snapshots": np.asarray(
+                            out["y_pred_eval_snapshots"]
+                        ),
+                        "y_pred_eval_final": np.asarray(out["y_pred_eval_final"]),
+                        # decay diagnostics
+                        "mode_proj_train": np.asarray(mode_proj_train),
+                        "mode_proj_train_ideal": np.asarray(mode_proj_train_ideal),
+                        # useful metadata
+                        "lambda_max_A": np.asarray([lambda_max_A]),
+                    }
+                )
+
+            save_npz(run_path, **arrays_to_save)
 
             runs_manifest[run_key] = f"runs/{run_key}.npz"
 
@@ -298,6 +344,8 @@ def run(config_path: str):
             "seeds": seed_list,
             "K_max": K_max,
             "kernel": kernel_name,
+            "run_dynamics": run_dynamics,
+            "save_full_matrices": save_full_matrices,
             "steps": steps,
             "eta_config": eta_cfg,
             "eta_scale": eta_scale,

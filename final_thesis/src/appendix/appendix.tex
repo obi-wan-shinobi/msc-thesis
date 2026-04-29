@@ -613,15 +613,205 @@ We first record a basic integration lemma.
 \section{Effect of the bias contribution}
 \label{sec:app-bias-contribution}
 
-We conclude by isolating the contribution of the trainable bias. From
-\eqref{eq:app-ntk-decomposition}, the bias term contributes
+We now isolate the effect of the trainable hidden bias. From the NTK decomposition in
+\eqref{eq:app-ntk-decomposition}, the limiting kernel can be written as
 \[
-	\Theta^{(b)}(x,y)=\mathbb E\bigl[\sigma'(u)\sigma'(v)\bigr].
+	\Theta(x,y)
+	=
+	K_0(x,y)
+	+
+	x^\top y\,K_1(x,y)
+	+
+	K_1(x,y).
 \]
-On the circle, this gives the term \((\pi-\delta)/(2\pi)\). In the Fourier coefficients, this is
-precisely the term responsible for the nonzero odd eigenvalues. If the trainable bias is
-removed, then \(\Theta^{(b)}\) disappears and the odd frequencies no longer contribute to the
-fixed-kernel dynamics, which proves Remark~\ref{rem:results-bias}.
+The first two terms come from differentiating with respect to the output weights and input weights.
+The last term comes from differentiating with respect to the hidden biases. Thus, if the trainable
+hidden-bias contribution is removed, the limiting kernel becomes
+\[
+	\Theta^{(\mathrm{nb})}(x,y)
+	=
+	K_0(x,y)+x^\top y\,K_1(x,y).
+\]
+On the circle, \(x^\top y=\cos\delta\), so by \eqref{eq:app-K0-explicit} and
+\eqref{eq:app-K1-explicit},
+\begin{align}
+	\Theta^{(\mathrm{nb})}(\delta)
+	 & =
+	\frac{1}{2\pi}
+	\Bigl(
+	\sin\delta+(\pi-\delta)\cos\delta
+	\Bigr)
+	+
+	\cos\delta\,\frac{\pi-\delta}{2\pi} \notag \\
+	 & =
+	\frac{1}{2\pi}
+	\Bigl(
+	\sin\delta+2(\pi-\delta)\cos\delta
+	\Bigr).
+	\label{eq:app-no-bias-kernel}
+\end{align}
+
+The Fourier eigenvalues of this no-bias kernel are
+\[
+	\lambda_k^{(\mathrm{nb})}
+	=
+	\frac{1}{\pi}
+	\int_0^\pi
+	\Theta^{(\mathrm{nb})}(\delta)\cos(k\delta)\,d\delta.
+\]
+Using \eqref{eq:app-no-bias-kernel}, this becomes
+\[
+	\lambda_k^{(\mathrm{nb})}
+	=
+	\frac{1}{2\pi^2}
+	\int_0^\pi
+	\Bigl(
+	\sin\delta+2(\pi-\delta)\cos\delta
+	\Bigr)
+	\cos(k\delta)\,d\delta.
+\]
+In the notation of the proof of Theorem~\ref{thm:results-continuum-spectrum},
+\[
+	\lambda_k^{(\mathrm{nb})}
+	=
+	\frac{1}{2\pi^2}(A_k+B_k),
+\]
+whereas the full eigenvalue is
+\[
+	\lambda_k
+	=
+	\frac{1}{2\pi^2}(A_k+B_k+C_k).
+\]
+Thus the term \(C_k\), which comes from
+\[
+	\frac{1}{2\pi}(\pi-\delta),
+\]
+is precisely the trainable-bias contribution.
+
+For \(k=0\), direct integration gives
+\[
+	\lambda_0^{(\mathrm{nb})}
+	=
+	\frac{1}{2\pi^2}
+	\left(
+	\int_0^\pi \sin\delta\,d\delta
+	+
+	2\int_0^\pi(\pi-\delta)\cos\delta\,d\delta
+	\right).
+\]
+Since
+\[
+	\int_0^\pi \sin\delta\,d\delta=2,
+	\qquad
+	\int_0^\pi(\pi-\delta)\cos\delta\,d\delta=2,
+\]
+we obtain
+\[
+	\lambda_0^{(\mathrm{nb})}
+	=
+	\frac{1}{2\pi^2}(2+4)
+	=
+	\frac{3}{\pi^2}.
+\]
+
+For \(k=1\),
+\[
+	\lambda_1^{(\mathrm{nb})}
+	=
+	\frac{1}{2\pi^2}
+	\left(
+	\int_0^\pi \sin\delta\cos\delta\,d\delta
+	+
+	2\int_0^\pi(\pi-\delta)\cos^2\delta\,d\delta
+	\right).
+\]
+The first integral is zero. For the second, using
+\[
+	\cos^2\delta=\frac{1+\cos(2\delta)}{2},
+\]
+we get
+\[
+	2\int_0^\pi(\pi-\delta)\cos^2\delta\,d\delta
+	=
+	\int_0^\pi(\pi-\delta)\,d\delta
+	+
+	\int_0^\pi(\pi-\delta)\cos(2\delta)\,d\delta.
+\]
+The second term is zero by Lemma~\ref{lem:app-Im}, since \(2\) is even. Hence
+\[
+	2\int_0^\pi(\pi-\delta)\cos^2\delta\,d\delta
+	=
+	\frac{\pi^2}{2},
+\]
+and therefore
+\[
+	\lambda_1^{(\mathrm{nb})}
+	=
+	\frac14.
+\]
+
+For \(k\ge 2\), we use the values of \(A_k\) and \(B_k\) computed in the proof of
+Theorem~\ref{thm:results-continuum-spectrum}. If \(k\ge 3\) is odd, then \(k-1\) and \(k+1\)
+are even, so
+\[
+	A_k=0,
+	\qquad
+	B_k=0.
+\]
+Therefore
+\begin{equation}
+	\lambda_k^{(\mathrm{nb})}=0,
+	\qquad
+	k\ge 3 \text{ odd}.
+	\label{eq:app-no-bias-odd}
+\end{equation}
+If \(k\ge 2\) is even, then
+\[
+	A_k=-\frac{2}{k^2-1},
+	\qquad
+	B_k=\frac{4(k^2+1)}{(k^2-1)^2}.
+\]
+Thus
+\[
+	A_k+B_k
+	=
+	\frac{2(k^2+3)}{(k^2-1)^2},
+\]
+and hence
+\begin{equation}
+	\lambda_k^{(\mathrm{nb})}
+	=
+	\frac{k^2+3}{\pi^2(k^2-1)^2},
+	\qquad
+	k\ge 2 \text{ even}.
+	\label{eq:app-no-bias-even}
+\end{equation}
+
+This proves Corollary~\ref{cor:results-bias-spectrum}. Comparing the no-bias eigenvalues with
+the full eigenvalues in Theorem~\ref{thm:results-continuum-spectrum}, the trainable-bias
+contribution is
+\[
+	\lambda_0-\lambda_0^{(\mathrm{nb})}
+	=
+	\frac14,
+	\qquad
+	\lambda_1-\lambda_1^{(\mathrm{nb})}
+	=
+	\frac{1}{\pi^2},
+\]
+while for \(k\ge 2\),
+\[
+	\lambda_k-\lambda_k^{(\mathrm{nb})}
+	=
+	\begin{cases}
+		0,                   & k\ge 2 \text{ even}, \\[0.8em]
+		\dfrac{1}{\pi^2k^2}, & k\ge 3 \text{ odd}.
+	\end{cases}
+\]
+Thus the bias term does not change the even frequencies \(k\ge 2\), but it is exactly what makes
+the odd frequencies \(k\ge 3\) visible in the fixed-kernel dynamics. The frequency \(k=1\) is
+exceptional: it already has eigenvalue \(1/4\) without the bias, and the bias adds the additional
+\(1/\pi^2\) contribution.
 
 \chapter{Proofs of the finite-sample estimates}
 \label{app:finite-sample-proofs}
@@ -744,22 +934,98 @@ and let
 	\[
 		\mathbb E[Z_i]=\delta_{pq}
 	\]
-	by orthonormality of the Fourier basis. By \eqref{eq:app-basis-bound},
+	by orthonormality of the Fourier basis.
+
+	Set
 	\[
-		|Z_i|\le 2,
+		Y_i:=Z_i-\delta_{pq}.
 	\]
-	so each \(Z_i\) takes values in an interval of length \(4\). Hoeffding's inequality gives
+	Then \(\mathbb E[Y_i]=0\) and
+	\[
+		G_{pq}-\delta_{pq}=\frac{1}{n}\sum_{i=1}^n Y_i.
+	\]
+
+	By \eqref{eq:app-basis-bound},
+	\[
+		|Z_i|\le 2.
+	\]
+	If \(p\neq q\), then \(\delta_{pq}=0\), so \(|Y_i|=|Z_i|\le 2\). If \(p=q\), then
+	\[
+		Y_i=\phi_p(\varphi_i)^2-1,
+	\]
+	and since \(0\le \phi_p(\varphi_i)^2\le 2\), we have \(|Y_i|\le 1\le 2\). Thus
+	\[
+		|Y_i|\le 2
+	\]
+	for all \(i\).
+
+	Next,
+	\[
+		\mathrm{Var}(Y_i)\le \mathbb E[Y_i^2]\le \mathbb E[Z_i^2].
+	\]
+	Using again \eqref{eq:app-basis-bound},
+	\[
+		Z_i^2=\phi_p(\varphi_i)^2\phi_q(\varphi_i)^2\le 2\,\phi_p(\varphi_i)^2.
+	\]
+	Taking expectations and using orthonormality gives
+	\[
+		\mathbb E[Z_i^2]\le 2\int \phi_p(\varphi)^2\,d\mu(\varphi)=2.
+	\]
+	Hence
+	\[
+		\mathrm{Var}(Y_i)\le 2.
+	\]
+
+	We now apply Bernstein's inequality \cite{Vershynin_2018a} in the following form: if \(Y_1,\dots,Y_n\) are independent,
+	centered random variables such that
+	\[
+		|Y_i|\le M,
+		\qquad
+		\mathrm{Var}(Y_i)\le \sigma^2
+	\]
+	for every \(i\), then for every \(\varepsilon>0\),
+	\[
+		\mathbb P\!\left(
+		\left|\frac{1}{n}\sum_{i=1}^n Y_i\right|
+		\ge \varepsilon
+		\right)
+		\le
+		2\exp\!\left(
+		-\frac{n\varepsilon^2}{2\sigma^2+\frac{2}{3}M\varepsilon}
+		\right).
+	\]
+
+	In our case, we have already shown that \(\mathbb E[Y_i]=0\), \(|Y_i|\le 2\), and
+	\(\mathrm{Var}(Y_i)\le 2\). Thus we may take
+	\[
+		M=2,
+		\qquad
+		\sigma^2=2.
+	\]
+	Since
+	\[
+		G_{pq}-\delta_{pq}=\frac{1}{n}\sum_{i=1}^n Y_i,
+	\]
+
+	Bernstein's inequality for the sample mean yields
 	\[
 		\mathbb P\!\left(|G_{pq}-\delta_{pq}|\ge \varepsilon\right)
 		\le
-		2\exp\!\left(-\frac{n\varepsilon^2}{8}\right).
+		2\exp\!\left(
+		-\frac{n\varepsilon^2}{4+\frac43\varepsilon}
+		\right).
 	\]
-	Taking a union bound over all \(d^2\) entries yields
+
+	Since \(G-I_d\) is symmetric, it suffices to union bound over the \(d(d+1)/2\) entries in
+	the upper triangle. Therefore
 	\[
 		\mathbb P\!\left(\|G-I_d\|_{\max}\ge \varepsilon\right)
 		\le
-		2d^2\exp\!\left(-\frac{n\varepsilon^2}{8}\right).
+		d(d+1)\exp\!\left(
+		-\frac{n\varepsilon^2}{4+\frac43\varepsilon}
+		\right),
 	\]
+	which proves \eqref{eq:results-gram-concentration}.
 \end{proof}
 
 \section{Concentration of \(H\)}
@@ -773,33 +1039,82 @@ and let
 		\frac{1}{n^2}\sum_{i=1}^n\sum_{j=1}^n
 		\phi_p(\varphi_i)\Theta(\varphi_i-\varphi_j)\phi_q(\varphi_j).
 	\]
-	We apply McDiarmid's inequality. If only one coordinate, say \(\varphi_s\), is changed, then
-	only the terms with \(i=s\) or \(j=s\) can change. There are at most \(2n\) such terms. By
-	\eqref{eq:app-basis-bound} and \eqref{eq:app-kappa}, each summand has absolute value at most
+
+	We apply McDiarmid's inequality \citep{Vershynin_2018b} in the following form: if
+	\(X_1,\dots,X_n\) are independent and
+	\(F(X_1,\dots,X_n)\) satisfies the bounded-differences condition
 	\[
-		|\phi_p(\cdot)\Theta(\cdot)\phi_q(\cdot)|\le \sqrt2\,\kappa\,\sqrt2=2\kappa,
+		|F(x_1,\dots,x_s,\dots,x_n)-F(x_1,\dots,x_s',\dots,x_n)|\le c_s
 	\]
-	so one summand changes by at most \(4\kappa\). Therefore
+	for each \(s\), then for every \(\varepsilon>0\),
 	\[
-		|F(\varphi_1,\dots,\varphi_s,\dots,\varphi_n)
-		-
-		F(\varphi_1,\dots,\varphi_s',\dots,\varphi_n)|
+		\mathbb P\!\left(|F-\mathbb EF|\ge \varepsilon\right)
 		\le
-		\frac{8\kappa}{n}.
+		2\exp\!\left(-\frac{2\varepsilon^2}{\sum_{s=1}^n c_s^2}\right).
 	\]
-	McDiarmid's inequality then gives
+
+	It therefore remains to estimate the effect of changing a single sample point, say
+	\(\varphi_s\mapsto \varphi_s'\), while keeping all others fixed.
+	Only those summands in the double sum with \(i=s\) or \(j=s\) can change. There are at most
+	\(2n\) such summands.
+
+	By \eqref{eq:app-basis-bound} and \eqref{eq:app-kappa}, each summand satisfies
+	\[
+		|\phi_p(\cdot)\Theta(\cdot)\phi_q(\cdot)|
+		\le
+		\sqrt2\,\kappa\,\sqrt2
+		=
+		2\kappa.
+	\]
+	Hence, when \(\varphi_s\) is replaced by \(\varphi_s'\), a single summand can change by at most \(4\kappa\).
+
+	Because at most \(2n\) summands are affected, the total change in the double sum is bounded by
+	\[
+		(2n)\cdot (4\kappa)=8\kappa n.
+	\]
+	Finally, since \(F\) contains the prefactor \(1/n^2\), the change in \(F\) itself is bounded by
+	\[
+		\frac{8\kappa n}{n^2}=\frac{8\kappa}{n}.
+	\]
+	Thus we may take
+	\[
+		c_s=\frac{8\kappa}{n}
+		\qquad\text{for all } s=1,\dots,n.
+	\]
+
+	Therefore
+	\[
+		\sum_{s=1}^n c_s^2
+		=
+		n\left(\frac{8\kappa}{n}\right)^2
+		=
+		\frac{64\kappa^2}{n}.
+	\]
+	McDiarmid's inequality yields
 	\[
 		\mathbb P\!\left(|H_{pq}-\mathbb E[H_{pq}]|\ge \varepsilon\right)
 		\le
+		2\exp\!\left(
+		-\frac{2\varepsilon^2}{64\kappa^2/n}
+		\right)
+		=
 		2\exp\!\left(-\frac{n\varepsilon^2}{32\kappa^2}\right).
 	\]
-	A union bound over all \(d^2\) entries yields
+
+	A union bound over all \(d^2\) entries gives
 	\[
 		\mathbb P\!\left(\|H-\Lambda^{(n)}\|_{\max}\ge \varepsilon\right)
 		\le
-		2d^2\exp\!\left(-\frac{n\varepsilon^2}{32\kappa^2}\right).
+		2d^2\exp\!\left(-\frac{n\varepsilon^2}{32\kappa^2}\right),
 	\]
+	as claimed.
 \end{proof}
+\begin{remark}
+	The entry \(H_{pq}\) is a bounded second-order V-statistic, so Bernstein-type refinements are
+	in principle available through concentration inequalities for bounded U/V-statistics. Since the
+	McDiarmid bound already captures the correct \(n^{-1/2}\) concentration scale and is sufficient
+	for the results in this thesis, we do not pursue this refinement here.
+\end{remark}
 
 \section{Control of the difference \(A\Phi-\Phi\Lambda^{(n)}\)}
 \label{sec:app-APhi-proof}
@@ -819,15 +1134,14 @@ and let
 		+
 		\frac{1}{n}\sum_{j\neq i}\Theta(\varphi_i-\varphi_j)\phi_p(\varphi_j).
 	\]
+
 	Condition on \(\varphi_i\). For \(j\neq i\), define
 	\[
 		X_j:=\Theta(\varphi_i-\varphi_j)\phi_p(\varphi_j).
 	\]
-	Then \(X_j\) are conditionally independent and identically distributed, and
-	\[
-		|X_j|\le \kappa\sqrt2
-	\]
-	by \eqref{eq:app-basis-bound} and \eqref{eq:app-kappa}. Moreover,
+	Then \(\{X_j\}_{j\neq i}\) are conditionally independent and identically distributed.
+
+	Their conditional mean is
 	\[
 		\mathbb E[X_j\mid \varphi_i]
 		=
@@ -841,11 +1155,147 @@ and let
 	\[
 		\mathbb E[(A\Phi)_{i,p}\mid \varphi_i]
 		=
+		\frac{\Theta(0)}{n}\phi_p(\varphi_i)
+		+
+		\frac{n-1}{n}\lambda_p\phi_p(\varphi_i)
+		=
 		\lambda_p^{(n)}\phi_p(\varphi_i).
 	\]
 
-	Apply Hoeffding's inequality to the average of the \(n-1\) variables \(X_j\). Since they lie
-	in an interval of length \(2\kappa\sqrt2\), we obtain
+	Now set
+	\[
+		Y_j:=X_j-\mathbb E[X_j\mid \varphi_i].
+	\]
+	Conditional on \(\varphi_i\), the variables \(\{Y_j\}_{j\neq i}\) are independent,
+	centered, and identically distributed.
+
+	We apply Bernstein's inequality \citep{Vershynin_2018a} in the following form: if \(Y_1,\dots,Y_m\) are independent,
+	centered random variables such that
+	\[
+		|Y_j|\le M,
+		\qquad
+		\mathrm{Var}(Y_j)\le \sigma^2
+	\]
+	for all \(j\), then for every \(\eta>0\),
+	\[
+		\mathbb P\!\left(
+		\left|
+		\frac1m\sum_{j=1}^m Y_j
+		\right|
+		\ge \eta
+		\right)
+		\le
+		2\exp\!\left(
+		-\frac{m\eta^2}{2\sigma^2+\frac23 M\eta}
+		\right).
+	\]
+
+	We now verify the assumptions conditionally on \(\varphi_i\).
+
+	First, by \eqref{eq:app-basis-bound} and \eqref{eq:app-kappa},
+	\[
+		|X_j|
+		\le
+		\kappa \sqrt2
+		\le
+		2\kappa.
+	\]
+	Also,
+	\[
+		|\mathbb E[X_j\mid \varphi_i]|
+		=
+		\left|
+		\int_0^{2\pi}\Theta(\varphi_i-\psi)\phi_p(\psi)\,d\mu(\psi)
+		\right|
+		\le
+		\kappa \int_0^{2\pi}|\phi_p(\psi)|\,d\mu(\psi)
+		\le
+		\kappa \|\phi_p\|_{L^2(\mu)}
+		=
+		\kappa.
+	\]
+	Hence
+	\[
+		|Y_j|
+		=
+		|X_j-\mathbb E[X_j\mid \varphi_i]|
+		\le
+		2\kappa+\kappa
+		=
+		3\kappa.
+	\]
+
+	Next,
+	\[
+		\mathrm{Var}(Y_j\mid \varphi_i)
+		=
+		\mathrm{Var}(X_j\mid \varphi_i)
+		\le
+		\mathbb E[X_j^2\mid \varphi_i].
+	\]
+	Using again \eqref{eq:app-basis-bound} and \eqref{eq:app-kappa},
+	\[
+		\mathbb E[X_j^2\mid \varphi_i]
+		=
+		\int_0^{2\pi}\Theta(\varphi_i-\psi)^2\phi_p(\psi)^2\,d\mu(\psi)
+		\le
+		\kappa^2 \int_0^{2\pi}\phi_p(\psi)^2\,d\mu(\psi)
+		=
+		\kappa^2.
+	\]
+	Thus, conditionally on \(\varphi_i\), Bernstein's inequality applies with
+	\[
+		M=3\kappa,
+		\qquad
+		\sigma^2=\kappa^2.
+	\]
+
+	Let \(m:=n-1\). Applying Bernstein to the conditional sample mean
+	\[
+		\frac1m\sum_{j\neq i}Y_j
+		=
+		\frac1m\sum_{j\neq i}X_j-\lambda_p\phi_p(\varphi_i),
+	\]
+	we obtain
+	\[
+		\mathbb P\!\left(
+		\left|
+		\frac1m\sum_{j\neq i}X_j-\lambda_p\phi_p(\varphi_i)
+		\right|
+		\ge \eta
+		\;\middle|\;
+		\varphi_i
+		\right)
+		\le
+		2\exp\!\left(
+		-\frac{m\eta^2}{2\kappa^2+2\kappa\eta}
+		\right).
+	\]
+
+	Now
+	\[
+		(A\Phi)_{i,p}-\lambda_p^{(n)}\phi_p(\varphi_i)
+		=
+		\frac{m}{n}
+		\left(
+		\frac1m\sum_{j\neq i}X_j-\lambda_p\phi_p(\varphi_i)
+		\right).
+	\]
+	Thus the event
+	\[
+		\left|
+		(A\Phi)_{i,p}-\lambda_p^{(n)}\phi_p(\varphi_i)
+		\right|
+		\ge \varepsilon
+	\]
+	implies
+	\[
+		\left|
+		\frac1m\sum_{j\neq i}X_j-\lambda_p\phi_p(\varphi_i)
+		\right|
+		\ge \frac{n}{m}\varepsilon.
+	\]
+	Hence
 	\[
 		\mathbb P\!\left(
 		\left|
@@ -856,107 +1306,793 @@ and let
 		\varphi_i
 		\right)
 		\le
-		2\exp\!\left(-\frac{n\varepsilon^2}{4\kappa^2}\right),
+		2\exp\!\left(
+		-\frac{m\left(\frac{n}{m}\varepsilon\right)^2}
+		{2\kappa^2+2\kappa\left(\frac{n}{m}\varepsilon\right)}
+		\right).
 	\]
-	where we used \(n\ge 2\) to simplify the constant. Removing the conditioning and taking a union
-	bound over the \(nd\) entries yields
+	Removing the conditioning and simplifying gives
+	\[
+		\mathbb P\!\left(
+		\left|
+		(A\Phi)_{i,p}-\lambda_p^{(n)}\phi_p(\varphi_i)
+		\right|
+		\ge \varepsilon
+		\right)
+		\le
+		2\exp\!\left(
+		-\frac{n^2\varepsilon^2}{2\kappa^2(n-1)+2\kappa n\varepsilon}
+		\right).
+	\]
+	Since \(n-1\le n\), we obtain
+	\[
+		\mathbb P\!\left(
+		\left|
+		(A\Phi)_{i,p}-\lambda_p^{(n)}\phi_p(\varphi_i)
+		\right|
+		\ge \varepsilon
+		\right)
+		\le
+		2\exp\!\left(
+		-\frac{n\varepsilon^2}{2\kappa^2+2\kappa\varepsilon}
+		\right).
+	\]
+
+	Finally, taking a union bound over all \(nd\) pairs \((i,p)\) yields
 	\[
 		\mathbb P\!\left(\|A\Phi-\Phi\Lambda^{(n)}\|_{\max}\ge \varepsilon\right)
 		\le
-		2nd\exp\!\left(-\frac{n\varepsilon^2}{4\kappa^2}\right).
+		2nd\exp\!\left(-\frac{n\varepsilon^2}{2\kappa^2+2\kappa\varepsilon}\right),
 	\]
+	which proves \eqref{eq:results-APhi-concentration}.
 \end{proof}
 
 \section{Proof of the simultaneous high-probability bound}
 \label{sec:app-simultaneous-proof}
 
-\begin{proof}[Proof of Theorem~\ref{thm:results-simultaneous-control}]
+\begin{proof}[Proof of Corollary~\ref{cor:results-simultaneous-control}]
 	Set
+	\[
+		u_{n,d,\delta}^{(G)}
+		=
+		\log\!\left(\frac{3d(d+1)}{\delta}\right),
+		\qquad
+		u_{n,d,\delta}^{(H)}
+		=
+		\log\!\left(\frac{6d^2}{\delta}\right),
+		\qquad
+		u_{n,d,\delta}^{(A)}
+		=
+		\log\!\left(\frac{6nd}{\delta}\right).
+	\]
+	Define
 	\[
 		\alpha_{n,d,\delta}
 		=
-		\sqrt{\frac{8}{n}\log\!\left(\frac{6d^2}{\delta}\right)},
-		\qquad
+		2\sqrt{\frac{u_{n,d,\delta}^{(G)}}{n}}
+		+
+		\frac{2}{3}\frac{u_{n,d,\delta}^{(G)}}{n},
+	\]
+	\[
 		\beta_{n,d,\delta}
 		=
-		\kappa\sqrt{\frac{32}{n}\log\!\left(\frac{6d^2}{\delta}\right)},
+		\kappa\sqrt{\frac{32}{n}u_{n,d,\delta}^{(H)}},
 		\qquad
 		\gamma_{n,d,\delta}
 		=
-		\kappa\sqrt{\frac{4}{n}\log\!\left(\frac{6nd}{\delta}\right)}.
+		\kappa\sqrt{\frac{2}{n}u_{n,d,\delta}^{(A)}}
+		+
+		\kappa\frac{u_{n,d,\delta}^{(A)}}{n}.
 	\]
-	By the bounds proved in Sections~\ref{sec:app-gram-proof}--\ref{sec:app-APhi-proof},
+
+	We first recall the standard Bernstein inversion: if
 	\[
-		\mathbb P\!\left(\|G-I_d\|_{\max}\ge \alpha_{n,d,\delta}\right)\le \frac{\delta}{3},
+		\mathbb P\!\left(\left|\frac{1}{n}\sum_{i=1}^n Y_i\right|\ge t\right)
+		\le
+		2\exp\!\left(
+		-\frac{nt^2}{2\sigma^2+\frac{2}{3}Mt}
+		\right),
 	\]
+	then choosing
 	\[
-		\mathbb P\!\left(\|H-\Lambda^{(n)}\|_{\max}\ge \beta_{n,d,\delta}\right)\le \frac{\delta}{3},
+		t=\sqrt{\frac{2\sigma^2 u}{n}}+\frac{Mu}{3n}
 	\]
-	and
+	ensures
 	\[
-		\mathbb P\!\left(\|A\Phi-\Phi\Lambda^{(n)}\|_{\max}\ge \gamma_{n,d,\delta}\right)\le \frac{\delta}{3}.
+		\mathbb P\!\left(\left|\frac{1}{n}\sum_{i=1}^n Y_i\right|\ge t\right)\le 2e^{-u}.
 	\]
-	A union bound gives the result.
+
+	For the Gram matrix bound \eqref{eq:results-gram-concentration}, the Bernstein proof used
+	\[
+		\sigma^2=2,
+		\qquad
+		M=2.
+	\]
+	Thus, with
+	\[
+		u=u_{n,d,\delta}^{(G)},
+	\]
+	the choice
+	\[
+		\alpha_{n,d,\delta}
+		=
+		\sqrt{\frac{2\cdot 2\,u}{n}}+\frac{2u}{3n}
+		=
+		2\sqrt{\frac{u}{n}}+\frac{2u}{3n}
+	\]
+	yields
+	\[
+		\mathbb P\!\left(\|G-I_d\|_{\max}\ge \alpha_{n,d,\delta}\right)
+		\le
+		d(d+1)e^{-u_{n,d,\delta}^{(G)}}
+		=
+		\frac{\delta}{3}.
+	\]
+
+	For the compressed operator, the McDiarmid estimate \eqref{eq:results-H-concentration} gives
+	\[
+		\mathbb P\!\left(\|H-\Lambda^{(n)}\|_{\max}\ge \varepsilon\right)
+		\le
+		2d^2\exp\!\left(-\frac{n\varepsilon^2}{32\kappa^2}\right).
+	\]
+	Substituting \(\varepsilon=\beta_{n,d,\delta}\) gives
+	\[
+		\frac{n\beta_{n,d,\delta}^2}{32\kappa^2}
+		=
+		u_{n,d,\delta}^{(H)},
+	\]
+	and therefore
+	\[
+		\mathbb P\!\left(\|H-\Lambda^{(n)}\|_{\max}\ge \beta_{n,d,\delta}\right)
+		\le
+		2d^2e^{-u_{n,d,\delta}^{(H)}}
+		=
+		\frac{\delta}{3}.
+	\]
+
+	For the approximate eigen-action bound \eqref{eq:results-APhi-concentration}, the Bernstein proof
+	used
+	\[
+		\sigma^2=\kappa^2,
+		\qquad
+		M=3\kappa.
+	\]
+	Hence, with
+	\[
+		u=u_{n,d,\delta}^{(A)},
+	\]
+	the standard Bernstein inversion gives the threshold
+	\[
+		\sqrt{\frac{2\kappa^2 u}{n}}+\frac{3\kappa u}{3n}
+		=
+		\kappa\sqrt{\frac{2u}{n}}+\kappa\frac{u}{n},
+	\]
+	which is precisely \(\gamma_{n,d,\delta}\). Therefore
+	\[
+		\mathbb P\!\left(\|A\Phi-\Phi\Lambda^{(n)}\|_{\max}\ge \gamma_{n,d,\delta}\right)
+		\le
+		2nd\,e^{-u_{n,d,\delta}^{(A)}}
+		=
+		\frac{\delta}{3}.
+	\]
+
+	A final union bound gives
+	\[
+		\mathbb P\!\left(
+		\|G-I_d\|_{\max}\le \alpha_{n,d,\delta},\;
+		\|H-\Lambda^{(n)}\|_{\max}\le \beta_{n,d,\delta},\;
+		\|A\Phi-\Phi\Lambda^{(n)}\|_{\max}\le \gamma_{n,d,\delta}
+		\right)
+		\ge
+		1-\delta,
+	\]
+	which is exactly \eqref{eq:results-simultaneous-bounds}.
 \end{proof}
 
 \section{Proof of the corollary on the restricted sampled operator}
 \label{sec:app-corollary-proof}
 
-\begin{proof}[Proof of Corollary~\ref{cor:results-restricted-operator}]
-	Recall that
+% \begin{proof}[Proof of Corollary~\ref{cor:results-restricted-operator}]
+% 	Recall that
+% 	\[
+% 		C:=G^{-1}H.
+% 	\]
+% 	We work on the event of Corollary~\ref{cor:results-simultaneous-control}, namely
+% 	\[
+% 		\|G-I_d\|_{\max}\le \alpha_{n,d,\delta},
+% 		\qquad
+% 		\|H-\Lambda^{(n)}\|_{\max}\le \beta_{n,d,\delta}.
+% 	\]
+%
+% 	Passing from the entrywise max norm to the induced \(\ell^\infty\)-operator norm, we use
+% 	\[
+% 		\|M\|_\infty\le d\,\|M\|_{\max}
+% 	\]
+% 	for every \(d\times d\) matrix \(M\). Hence
+% 	\begin{equation}
+% 		\|G-I_d\|_\infty\le d\,\alpha_{n,d,\delta},
+% 		\qquad
+% 		\|H-\Lambda^{(n)}\|_\infty\le d\,\beta_{n,d,\delta}.
+% 		\label{eq:app-norm-conversion}
+% 	\end{equation}
+%
+% 	If \(d\,\alpha_{n,d,\delta}<1\), then \(G\) is invertible. Indeed,
+% 	\[
+% 		G = I_d - (I_d-G),
+% 	\]
+% 	and since \(\|I_d-G\|_\infty<1\), the Neumann-series argument gives
+% 	\begin{equation}
+% 		\|G^{-1}\|_\infty
+% 		\le
+% 		\frac{1}{1-\|I_d-G\|_\infty}
+% 		\le
+% 		\frac{1}{1-d\,\alpha_{n,d,\delta}}.
+% 		\label{eq:app-G-inverse-bound}
+% 	\end{equation}
+%
+% 	Using
+% 	\begin{equation}
+% 		C-\Lambda^{(n)}
+% 		=
+% 		G^{-1}H-\Lambda^{(n)}
+% 		=
+% 		G^{-1}\bigl(H-G\Lambda^{(n)}\bigr)
+% 		=
+% 		G^{-1}\bigl((H-\Lambda^{(n)})-(G-I_d)\Lambda^{(n)}\bigr),
+% 		\label{eq:app-C-minus-Lambda}
+% 	\end{equation}
+% 	we obtain
+% 	\[
+% 		\|C-\Lambda^{(n)}\|_\infty
+% 		\le
+% 		\|G^{-1}\|_\infty
+% 		\left(
+% 		\|H-\Lambda^{(n)}\|_\infty
+% 		+
+% 		\|G-I_d\|_\infty\,\|\Lambda^{(n)}\|_\infty
+% 		\right).
+% 	\]
+%
+% 	It remains to bound \(\|\Lambda^{(n)}\|_\infty\). Since \(\Lambda^{(n)}\) is diagonal,
+% 	\[
+% 		\|\Lambda^{(n)}\|_\infty
+% 		=
+% 		\max_p |\lambda_p^{(n)}|.
+% 	\]
+% 	Now
+% 	\[
+% 		\lambda_p^{(n)}
+% 		=
+% 		\left(1-\frac1n\right)\lambda_p+\frac1n\Theta(0),
+% 	\]
+% 	and both \(|\lambda_p|\le \kappa\) and \(|\Theta(0)|\le \kappa\). Therefore
+% 	\[
+% 		|\lambda_p^{(n)}|
+% 		\le
+% 		\left(1-\frac1n\right)\kappa+\frac1n\kappa
+% 		=
+% 		\kappa,
+% 	\]
+% 	so
+% 	\[
+% 		\|\Lambda^{(n)}\|_\infty\le \kappa.
+% 	\]
+%
+% 	Substituting \eqref{eq:app-norm-conversion} and \eqref{eq:app-G-inverse-bound} gives
+% 	\[
+% 		\|C-\Lambda^{(n)}\|_\infty
+% 		\le
+% 		\frac{d\,\beta_{n,d,\delta}+d\,\kappa\,\alpha_{n,d,\delta}}
+% 		{1-d\,\alpha_{n,d,\delta}},
+% 	\]
+% 	which is exactly \eqref{eq:results-restricted-operator-bound}.
+% \end{proof}
+
+\chapter{Proofs of the finite-width frozen-kernel estimates}
+\label{app:finite-width-frozen-proofs}
+
+This appendix proves the finite-width frozen-kernel results stated in
+Section~\ref{sec:results-finite-width-frozen}. We use the notation introduced in
+Chapter~\ref{cha:methodology}. In particular, \(T_0^{(m)}\) denotes the frozen finite-width
+tangent operator at initialization, \(T_\infty\) the infinite-width limiting operator,
+\(\mathcal H_K\) the truncated Fourier subspace, \(P_K\) the orthogonal projection onto
+\(\mathcal H_K\), and
+\[
+	B_m^{(K)}=P_KT_0^{(m)}P_K,
+	\qquad
+	\Lambda_K=P_KT_\infty P_K.
+\]
+Since the input space is the continuum \(S^1\), there is no sampling randomness in this
+appendix. The only randomness comes from the finite number of initialized neurons.
+
+\section{One-neuron tangent feature and kernel}
+\label{sec:app-finite-width-one-neuron}
+
+Fix one neuron \(r\), and write
+\[
+	u_r(\theta):=w_r^\top x(\theta)+b_r.
+\]
+At initialization, \(b_r=0\), so \(u_r(\theta)=w_r^\top x(\theta)\).
+
+We compute the tangent feature of the \(r\)-th neuron contribution
+\[
+	a_r\sigma(u_r(\theta))
+\]
+with respect to the parameter block \((a_r,w_r,b_r)\). First,
+\[
+	\partial_{a_r}\bigl(a_r\sigma(u_r(\theta))\bigr)
+	=
+	\sigma(u_r(\theta)).
+\]
+Next, by the chain rule,
+\[
+	\nabla_{w_r}\bigl(a_r\sigma(u_r(\theta))\bigr)
+	=
+	a_r\sigma'(u_r(\theta))\nabla_{w_r}u_r(\theta).
+\]
+Since
+\[
+	u_r(\theta)=w_r^\top x(\theta)+b_r,
+\]
+we have
+\[
+	\nabla_{w_r}u_r(\theta)=x(\theta).
+\]
+For ReLU,
+\[
+	\sigma'(z)=\mathbf 1_{\{z>0\}}
+\]
+away from \(z=0\), which is sufficient almost surely under the Gaussian initialization.
+Hence
+\[
+	\nabla_{w_r}\bigl(a_r\sigma(u_r(\theta))\bigr)
+	=
+	a_r\mathbf 1_{\{u_r(\theta)>0\}}x(\theta).
+\]
+Similarly,
+\[
+	\partial_{b_r}\bigl(a_r\sigma(u_r(\theta))\bigr)
+	=
+	a_r\sigma'(u_r(\theta))\partial_{b_r}u_r(\theta)
+	=
+	a_r\mathbf 1_{\{u_r(\theta)>0\}}.
+\]
+
+Thus the one-neuron tangent feature is
+\begin{equation}
+	\psi_r(\theta)
+	=
+	\begin{pmatrix}
+		\sigma(u_r(\theta))                        \\
+		a_r\mathbf 1_{\{u_r(\theta)>0\}}\cos\theta \\
+		a_r\mathbf 1_{\{u_r(\theta)>0\}}\sin\theta \\
+		a_r\mathbf 1_{\{u_r(\theta)>0\}}
+	\end{pmatrix}
+	\in\mathbb R^4.
+	\label{eq:app-finite-width-tangent-feature}
+\end{equation}
+
+The corresponding one-neuron kernel is
+\begin{equation}
+	\Theta^{(r)}(\theta,\eta)
+	=
+	\psi_r(\theta)^\top \psi_r(\eta).
+	\label{eq:app-finite-width-one-neuron-kernel}
+\end{equation}
+Substituting \eqref{eq:app-finite-width-tangent-feature} gives
+\begin{align}
+	\Theta^{(r)}(\theta,\eta)
+	 & =
+	\sigma(u_r(\theta))\sigma(u_r(\eta)) \notag \\
+	 & \quad
+	+
+	a_r^2
+	\mathbf 1_{\{u_r(\theta)>0\}}
+	\mathbf 1_{\{u_r(\eta)>0\}}
+	\bigl(
+	\cos\theta\cos\eta+\sin\theta\sin\eta+1
+	\bigr).
+	\label{eq:app-finite-width-kernel-expanded}
+\end{align}
+Using
+\[
+	\cos\theta\cos\eta+\sin\theta\sin\eta=\cos(\theta-\eta),
+\]
+we obtain
+\begin{equation}
+	\Theta^{(r)}(\theta,\eta)
+	=
+	\sigma(u_r(\theta))\sigma(u_r(\eta))
+	+
+	a_r^2
+	\mathbf 1_{\{u_r(\theta)>0\}}
+	\mathbf 1_{\{u_r(\eta)>0\}}
+	\bigl(\cos(\theta-\eta)+1\bigr).
+	\label{eq:app-finite-width-kernel-final}
+\end{equation}
+
+Let \(T^{(r)}\) denote the associated one-neuron integral operator,
+\begin{equation}
+	(T^{(r)}g)(\theta)
+	:=
+	\int_0^{2\pi}\Theta^{(r)}(\theta,\eta)g(\eta)\,d\mu(\eta).
+	\label{eq:app-finite-width-one-neuron-operator}
+\end{equation}
+Then, by \eqref{eq:method-finite-width-frozen-average},
+\[
+	T_0^{(m)}=\frac1m\sum_{r=1}^m T^{(r)}.
+\]
+
+\section{Projected one-neuron matrices}
+\label{sec:app-finite-width-projected-matrices}
+
+Using the ordered basis
+\[
+	(\phi_0,\phi_{1,c},\phi_{1,s},\dots,\phi_{K,c},\phi_{K,s})
+\]
+of \(\mathcal H_K\), the entries of \(B_m^{(K)}\) are
+\begin{equation}
+	(B_m^{(K)})_{pq}
+	=
+	\langle \phi_p,T_0^{(m)}\phi_q\rangle_{L^2(\mu)}.
+	\label{eq:app-finite-width-B-entry}
+\end{equation}
+Since \(T_0^{(m)}=\frac1m\sum_{r=1}^m T^{(r)}\),
+\[
+	(B_m^{(K)})_{pq}
+	=
+	\frac1m\sum_{r=1}^m
+	\langle \phi_p,T^{(r)}\phi_q\rangle.
+\]
+Define
+\begin{equation}
+	\xi_{r,pq}:=\langle \phi_p,T^{(r)}\phi_q\rangle.
+	\label{eq:app-finite-width-xi}
+\end{equation}
+Then
+\begin{equation}
+	(B_m^{(K)})_{pq}
+	=
+	\frac1m\sum_{r=1}^m \xi_{r,pq}.
+	\label{eq:app-finite-width-B-average-entry}
+\end{equation}
+
+Equivalently, if \(Z_r\) denotes the \(d\times d\) random matrix defined by
+\[
+	(Z_r)_{pq}:=\xi_{r,pq},
+\]
+then
+\begin{equation}
+	B_m^{(K)}
+	=
+	\frac1m\sum_{r=1}^m Z_r.
+	\label{eq:app-finite-width-B-average}
+\end{equation}
+Since the neurons are initialized independently and identically, the matrices
+\(Z_1,\dots,Z_m\) are i.i.d.
+
+\section{Expectation of the projected operator}
+\label{sec:app-finite-width-expectation}
+
+\begin{proof}[Proof of \eqref{eq:results-finite-width-mean}]
+	From \eqref{eq:app-finite-width-B-average},
 	\[
-		C:=G^{-1}H.
-	\]
-	On the event of Theorem~\ref{thm:results-simultaneous-control},
-	\begin{equation}
-		\|G-I_d\|_{\infty}\le d\,\alpha_{n,d,\delta},
-		\qquad
-		\|H-\Lambda^{(n)}\|_{\infty}\le d\,\beta_{n,d,\delta},
-		\label{eq:app-norm-conversion}
-	\end{equation}
-	since \(\|M\|_\infty\le d\|M\|_{\max}\) for every \(d\times d\) matrix \(M\).
-
-	If \(d\,\alpha_{n,d,\delta}<1\), then \(G\) is invertible and
-	\begin{equation}
-		\|G^{-1}\|_\infty
-		\le
-		\frac{1}{1-d\,\alpha_{n,d,\delta}}
-		\label{eq:app-G-inverse-bound}
-	\end{equation}
-	by the Neumann-series estimate.
-
-	Using
-	\begin{equation}
-		C-\Lambda^{(n)}
+		\mathbb E[B_m^{(K)}]
 		=
-		G^{-1}\bigl((H-\Lambda^{(n)})-(G-I_d)\Lambda^{(n)}\bigr),
-		\label{eq:app-C-minus-Lambda}
-	\end{equation}
-	we obtain
+		\frac1m\sum_{r=1}^m \mathbb E[Z_r]
+		=
+		\mathbb E[Z_1].
+	\]
+	The \((p,q)\)-entry is
 	\[
-		\|C-\Lambda^{(n)}\|_\infty
+		\mathbb E[(Z_1)_{pq}]
+		=
+		\mathbb E[\xi_{1,pq}]
+		=
+		\mathbb E[\langle \phi_p,T^{(1)}\phi_q\rangle].
+	\]
+	By linearity of expectation,
+	\[
+		\mathbb E[\xi_{1,pq}]
+		=
+		\langle \phi_p,\mathbb E[T^{(1)}]\phi_q\rangle
+		=
+		\langle \phi_p,T_\infty\phi_q\rangle.
+	\]
+	Since \(T_\infty\) is diagonal in the Fourier basis,
+	\[
+		\langle \phi_p,T_\infty\phi_q\rangle
+		=
+		\lambda_q\delta_{pq}.
+	\]
+	Therefore
+	\[
+		\mathbb E[B_m^{(K)}]=\Lambda_K.
+	\]
+\end{proof}
+
+\section{Sub-exponential bound for one projected entry}
+\label{sec:app-finite-width-subexp}
+
+We next control \(\xi_{r,pq}\). By definition,
+\begin{equation}
+	\xi_{r,pq}
+	=
+	\int_0^{2\pi}\int_0^{2\pi}
+	\phi_p(\theta)
+	\Theta^{(r)}(\theta,\eta)
+	\phi_q(\eta)
+	\,d\mu(\eta)\,d\mu(\theta).
+	\label{eq:app-finite-width-xi-integral}
+\end{equation}
+Taking absolute values gives
+\[
+	|\xi_{r,pq}|
+	\le
+	\int_0^{2\pi}\int_0^{2\pi}
+	|\phi_p(\theta)|
+	|\Theta^{(r)}(\theta,\eta)|
+	|\phi_q(\eta)|
+	\,d\mu(\eta)\,d\mu(\theta).
+\]
+Since every retained Fourier basis function satisfies
+\[
+	\|\phi_p\|_\infty\le \sqrt2,
+\]
+we obtain
+\[
+	|\xi_{r,pq}|
+	\le
+	2
+	\int_0^{2\pi}\int_0^{2\pi}
+	|\Theta^{(r)}(\theta,\eta)|
+	\,d\mu(\eta)\,d\mu(\theta).
+\]
+
+We now bound the kernel. Since
+\[
+	u_r(\theta)=w_r^\top x(\theta),
+	\qquad
+	\|x(\theta)\|=1,
+\]
+Cauchy--Schwarz gives
+\[
+	|u_r(\theta)|\le \|w_r\|.
+\]
+Therefore
+\[
+	0\le \sigma(u_r(\theta))\le |u_r(\theta)|\le \|w_r\|,
+\]
+and hence
+\[
+	0\le \sigma(u_r(\theta))\sigma(u_r(\eta))\le \|w_r\|^2.
+\]
+For the derivative and bias term, we use
+\[
+	\mathbf 1_{\{u_r(\theta)>0\}}\mathbf 1_{\{u_r(\eta)>0\}}\le 1
+\]
+and
+\[
+	0\le \cos(\theta-\eta)+1\le 2.
+\]
+Thus
+\[
+	a_r^2
+	\mathbf 1_{\{u_r(\theta)>0\}}
+	\mathbf 1_{\{u_r(\eta)>0\}}
+	(\cos(\theta-\eta)+1)
+	\le
+	2a_r^2.
+\]
+Using \eqref{eq:app-finite-width-kernel-final}, we conclude that
+\[
+	|\Theta^{(r)}(\theta,\eta)|
+	\le
+	\|w_r\|^2+2a_r^2.
+\]
+Since \(\mu\) is a probability measure,
+\[
+	\int\!\!\int
+	(\|w_r\|^2+2a_r^2)\,d\mu(\eta)d\mu(\theta)
+	=
+	\|w_r\|^2+2a_r^2.
+\]
+Therefore
+\begin{equation}
+	|\xi_{r,pq}|
+	\le
+	2\|w_r\|^2+4a_r^2.
+	\label{eq:app-finite-width-xi-bound}
+\end{equation}
+
+Define
+\[
+	Y_r:=2\|w_r\|^2+4a_r^2.
+\]
+Then
+\[
+	|\xi_{r,pq}|\le Y_r
+	\qquad\text{for all }p,q.
+\]
+
+We now show that \(Y_r\) is sub-exponential with an explicit parameter. Since
+\(w_r\sim \mathcal N(0,I_2)\), its squared Euclidean norm is the sum of two independent
+standard Gaussian squares, and therefore \(w_r\) follows a chi-squared distribution
+with two degrees of freedom \(\|w_r\|^2\sim \chi^2_2\).
+
+Similarly, since \(a_r\sim \mathcal N(0,1)\), its square follows a chi-squared distribution
+with one degree of freedom \(a_r^2\sim \chi^2_1\) and these variables are independent, for \(t<1/8\),
+\[
+	\mathbb E[e^{tY_r}]
+	=
+	\mathbb E[e^{2t\|w_r\|^2}]
+	\mathbb E[e^{4ta_r^2}].
+\]
+If \(X\sim\chi^2_\nu\), then
+\[
+	\mathbb E[e^{sX}]=(1-2s)^{-\nu/2},
+	\qquad s<1/2.
+\]
+Hence
+\[
+	\mathbb E[e^{2t\|w_r\|^2}]=(1-4t)^{-1},
+	\qquad
+	\mathbb E[e^{4ta_r^2}]=(1-8t)^{-1/2}.
+\]
+Thus
+\begin{equation}
+	\mathbb E[e^{tY_r}]
+	=
+	(1-4t)^{-1}(1-8t)^{-1/2},
+	\qquad t<1/8.
+	\label{eq:app-finite-width-Y-mgf}
+\end{equation}
+
+Choosing \(t=1/16\), we obtain
+\[
+	\mathbb E[e^{Y_r/16}]
+	=
+	\left(\frac34\right)^{-1}
+	\left(\frac12\right)^{-1/2}
+	=
+	\frac43\sqrt2
+	<2.
+\]
+Therefore, by the standard definition of the \(\psi_1\)-norm,
+\begin{equation}
+	\|Y_r\|_{\psi_1}\le 16.
+	\label{eq:app-finite-width-Y-psi1}
+\end{equation}
+Since \(|\xi_{r,pq}|\le Y_r\),
+\[
+	\|\xi_{r,pq}\|_{\psi_1}\le 16.
+\]
+Finally,
+\[
+	\|\xi_{r,pq}-\mathbb E[\xi_{r,pq}]\|_{\psi_1}
+	\le
+	\|\xi_{r,pq}\|_{\psi_1}+|\mathbb E[\xi_{r,pq}]|.
+\]
+Using \(|\mathbb E[\xi_{r,pq}]|\le \mathbb E|\xi_{r,pq}|\) and
+\(\mathbb E|X|\le \|X\|_{\psi_1}\), we obtain
+\begin{equation}
+	\|\xi_{r,pq}-\mathbb E[\xi_{r,pq}]\|_{\psi_1}\le 32.
+	\label{eq:app-finite-width-centered-psi1}
+\end{equation}
+
+\section{Entrywise and blockwise concentration}
+\label{sec:app-finite-width-concentration}
+
+\begin{proof}[Proof of \eqref{eq:results-finite-width-max-bound}]
+	Fix \(p,q\), and define
+	\[
+		X_{r,pq}:=\xi_{r,pq}-\mathbb E[\xi_{r,pq}].
+	\]
+	Then \(X_{1,pq},\dots,X_{m,pq}\) are i.i.d., centered, and by
+	\eqref{eq:app-finite-width-centered-psi1},
+	\[
+		\|X_{r,pq}\|_{\psi_1}\le 32.
+	\]
+	Moreover,
+	\[
+		(B_m^{(K)})_{pq}-(\Lambda_K)_{pq}
+		=
+		\frac1m\sum_{r=1}^m X_{r,pq}.
+	\]
+
+	We apply the standard Bernstein inequality for centered i.i.d. sub-exponential random
+	variables: if \(X_1,\dots,X_m\) satisfy \(\|X_i\|_{\psi_1}\le L\), then there exists a
+	universal constant \(c>0\) such that
+	\[
+		\mathbb P\!\left(
+		\left|\frac1m\sum_{r=1}^m X_r\right|\ge \varepsilon
+		\right)
 		\le
-		\|G^{-1}\|_\infty
-		\left(
-		\|H-\Lambda^{(n)}\|_\infty
-		+
-		\|G-I_d\|_\infty \,\|\Lambda^{(n)}\|_\infty
+		2\exp\!\left(
+		-cm\min\!\left(\frac{\varepsilon^2}{L^2},\frac{\varepsilon}{L}\right)
 		\right).
 	\]
-	Since \(|\lambda_p|\le \kappa\) and \(|\Theta(0)|\le \kappa\), the definition of
-	\(\lambda_p^{(n)}\) implies
-	\[
-		\|\Lambda^{(n)}\|_\infty\le \kappa.
-	\]
-	Substituting \eqref{eq:app-norm-conversion} and \eqref{eq:app-G-inverse-bound} gives
-	\[
-		\|C-\Lambda^{(n)}\|_\infty
+	Applying this with \(L=32\), we obtain
+	\begin{equation}
+		\mathbb P\!\left(
+		\left|(B_m^{(K)})_{pq}-(\Lambda_K)_{pq}\right|
+		\ge \varepsilon
+		\right)
 		\le
-		\frac{d\,\beta_{n,d,\delta}+d\,\kappa\,\alpha_{n,d,\delta}}
-		{1-d\,\alpha_{n,d,\delta}},
+		2\exp\!\left(
+		-cm\min\!\left(\frac{\varepsilon^2}{32^2},\frac{\varepsilon}{32}\right)
+		\right).
+		\label{eq:app-finite-width-entry-concentration}
+	\end{equation}
+
+	There are \(d^2=(2K+1)^2\) entries. By the union bound,
+	\[
+		\mathbb P\!\left(
+		\|B_m^{(K)}-\Lambda_K\|_{\max}\ge \varepsilon
+		\right)
+		\le
+		\sum_{p,q=1}^d
+		\mathbb P\!\left(
+		\left|(B_m^{(K)})_{pq}-(\Lambda_K)_{pq}\right|
+		\ge \varepsilon
+		\right).
 	\]
-	which is exactly \eqref{eq:results-restricted-operator-bound}.
+	Using \eqref{eq:app-finite-width-entry-concentration},
+	\[
+		\mathbb P\!\left(
+		\|B_m^{(K)}-\Lambda_K\|_{\max}\ge \varepsilon
+		\right)
+		\le
+		2d^2
+		\exp\!\left(
+		-cm\min\!\left(\frac{\varepsilon^2}{32^2},\frac{\varepsilon}{32}\right)
+		\right).
+	\]
+	Since \(d=2K+1\), this proves \eqref{eq:results-finite-width-max-bound}.
 \end{proof}
+
+% \section{Operator-norm bound}
+% \label{sec:app-finite-width-op-proof}
+%
+% \begin{proof}[Proof of \eqref{eq:results-finite-width-op-bound}]
+% 	For every \(d\times d\) matrix \(M\),
+% 	\[
+% 		\|M\|_{\mathrm{op}}\le d\|M\|_{\max}.
+% 	\]
+% 	Therefore, if
+% 	\[
+% 		\|B_m^{(K)}-\Lambda_K\|_{\mathrm{op}}\ge \delta,
+% 	\]
+% 	then
+% 	\[
+% 		\|B_m^{(K)}-\Lambda_K\|_{\max}\ge \frac{\delta}{d}.
+% 	\]
+% 	Hence
+% 	\[
+% 		\mathbb P\!\left(
+% 		\|B_m^{(K)}-\Lambda_K\|_{\mathrm{op}}\ge \delta
+% 		\right)
+% 		\le
+% 		\mathbb P\!\left(
+% 		\|B_m^{(K)}-\Lambda_K\|_{\max}\ge \frac{\delta}{d}
+% 		\right).
+% 	\]
+% 	Applying \eqref{eq:results-finite-width-max-bound} with \(\varepsilon=\delta/d\) yields
+% 	\[
+% 		\mathbb P\!\left(
+% 		\|B_m^{(K)}-\Lambda_K\|_{\mathrm{op}}\ge \delta
+% 		\right)
+% 		\le
+% 		2d^2
+% 		\exp\!\left(
+% 		-cm\min\!\left(
+% 			\frac{\delta^2}{32^2d^2},
+% 			\frac{\delta}{32d}
+% 			\right)
+% 		\right).
+% 	\]
+% 	which proves \eqref{eq:results-finite-width-op-bound}.
+% \end{proof}
 % \chapter{\label{cha:glossary}Glossary}
 %
 % In this appendix we give an overview of frequently used terms and

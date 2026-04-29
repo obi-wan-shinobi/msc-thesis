@@ -4,7 +4,12 @@
 
 We first state the explicit form of the limiting neural tangent kernel on the circle and the
 corresponding Fourier eigenvalues of the integral operator \(T\) introduced in
-Chapter~\ref{cha:methodology}. The derivation is deferred to Appendix~\ref{app:continuum-kernel}.
+Chapter~\ref{cha:methodology}. The calculation uses the standard infinite-width NTK
+description of \citet{jacot2018ntk}, together with the
+arc-cosine formulas for ReLU Gaussian averages \citep{cho2009kernel}. Related spectral
+calculations for ReLU NTKs on the sphere appear in
+\citet{basri2019convergence,bietti2019inductivebiasneuraltangent,cao2020understandingspectralbiasdeep}. The derivation in the
+assumptions used here is deferred to Appendix~\ref{app:continuum-kernel}.
 
 \begin{proposition}[Limiting NTK on \(S^1\)]
 	\label{prop:results-continuum-ntk}
@@ -58,13 +63,91 @@ introduced in \eqref{eq:method-fourier-basis-phi0}--\eqref{eq:method-fourier-bas
 	these eigenvalues.
 \end{theorem}
 
-\begin{remark}[Role of trainable bias]
-	\label{rem:results-bias}
-	The trainable bias contributes an additional term to the limiting kernel and changes the
-	parity structure of the spectrum. In particular, in the present model the odd Fourier modes
-	have nonzero eigenvalues. By contrast, if the bias contribution is removed, the odd modes
-	disappear from the fixed-kernel dynamics.
-\end{remark}
+\begin{corollary}[Spectrum without the trainable bias]
+	\label{cor:results-bias-spectrum}
+	Let \(\Theta^{(\mathrm{nb})}\) denote the limiting NTK obtained by removing the
+	trainable hidden-bias contribution, while keeping the output-weight and input-weight
+	contributions. Then, on \(S^1\),
+	\begin{equation}
+		\Theta^{(\mathrm{nb})}(\delta)
+		=
+		\frac{1}{2\pi}
+		\Bigl(
+		\sin\delta+2(\pi-\delta)\cos\delta
+		\Bigr).
+		\label{eq:results-no-bias-kernel}
+	\end{equation}
+	Let \(\lambda_k^{(\mathrm{nb})}\) denote the corresponding Fourier eigenvalue. Then
+	\begin{equation}
+		\lambda_0^{(\mathrm{nb})}=\frac{3}{\pi^2},
+		\qquad
+		\lambda_1^{(\mathrm{nb})}=\frac14,
+		\label{eq:results-no-bias-lambda-0-1}
+	\end{equation}
+	and, for \(k\ge 2\),
+	\begin{equation}
+		\lambda_k^{(\mathrm{nb})}
+		=
+		\begin{cases}
+			\dfrac{k^2+3}{\pi^2(k^2-1)^2}, & k\ge 2 \text{ even}, \\[1em]
+			0,                             & k\ge 3 \text{ odd}.
+		\end{cases}
+		\label{eq:results-no-bias-lambda-k}
+	\end{equation}
+	Consequently, comparing with Theorem~\ref{thm:results-continuum-spectrum}, the
+	trainable bias leaves the even frequencies \(k\ge 2\) unchanged, increases the constant
+	and \(k=1\) eigenvalues, and supplies the nonzero eigenvalues of all odd modes
+	\(k\ge 3\). Thus the odd modes \(k\ge 3\) are absent from the no-bias fixed-kernel
+	dynamics but present in the model studied here.
+\end{corollary}
+
+\subsection{Continuum fixed-kernel dynamics}
+\label{subsec:results-continuum-fixed-kernel-dynamics}
+
+The eigenvalues in Theorem~\ref{thm:results-continuum-spectrum} determine the
+ideal fixed-kernel dynamics. If
+\[
+	r_t=\sum_p \alpha_p(t)\phi_p,
+\]
+then gradient flow gives
+\begin{equation}
+	\alpha_p(t)
+	=
+	\exp(-\lambda_p t)\alpha_p(0).
+	\label{eq:results-continuum-gradient-flow-mode-decay}
+\end{equation}
+
+The normalized amplitude \(|\alpha_p(t)|/|\alpha_p(0)|\) is therefore
+set by the eigenvalue of the corresponding mode.
+
+Figure~\ref{fig:results-continuum-spectral-bias-first200} shows this diagonal
+continuum dynamics for the kernel with and without the trainable-bias
+contribution. Low-frequency components decay faster than high-frequency
+components.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{images/finite_sample_results/story_01_spectral_bias_two_panel_first200.png}
+	\caption{Continuum fixed-kernel dynamics for the first \(200\) gradient
+		descent steps, comparing the kernel with and without the trainable-bias
+		contribution. The curves show normalized mode amplitudes of the residual
+		\(|\alpha_p(t)|/|\alpha_p(0)|\) under the diagonal Fourier dynamics.}
+	\label{fig:results-continuum-spectral-bias-first200}
+\end{figure}
+
+Figure~\ref{fig:results-continuum-odd-modes} isolates odd Fourier modes. With the bias contribution, these modes have nonzero eigenvalues. Without the
+bias contribution, the plotted odd modes have zero eigenvalues and remain
+constant under the fixed-kernel dynamics.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{images/finite_sample_results/story_01_spectral_bias_two_panel_high_freq_odd.png}
+	\caption{Odd-mode continuum fixed-kernel dynamics with and without the
+		trainable-bias contribution. With the bias contribution, the plotted odd modes
+		have nonzero eigenvalues. Without it, the plotted odd modes have zero
+		eigenvalues and therefore remain constant under the fixed-kernel dynamics.}
+	\label{fig:results-continuum-odd-modes}
+\end{figure}
 
 \section{Finite-sample control on a truncated Fourier subspace}
 \label{sec:results-finite-sample}
@@ -76,7 +159,7 @@ function \(\phi_p\), and write
 \]
 
 We now turn to the sampled setting introduced in Chapter~\ref{cha:methodology}. Throughout,
-\(K\geq 1\) is fixed, \(d=2K+1\), and the truncated Fourier subspace \(H_K\) is given by
+\(K\geq 1\) is fixed, \(d=2K+1\), and the truncated Fourier subspace \(\mathcal H_K\) is given by
 \eqref{eq:method-low-frequency-subspace}. The matrices \(\Phi\), \(A\), \(G\), and \(H\) are
 defined in \eqref{eq:method-feature-matrix}--\eqref{eq:method-compressed-operator}.
 
@@ -115,7 +198,7 @@ appear in the methodology chapter.
 	\begin{equation}
 		\mathbb P\!\left(\|G-I_d\|_{\max}\ge \varepsilon\right)
 		\le
-		2d^2\exp\!\left(-\frac{n\varepsilon^2}{8}\right),
+		d(d+1)\exp\!\left(-\frac{n\varepsilon^2}{4+\frac43\varepsilon}\right),
 		\label{eq:results-gram-concentration}
 	\end{equation}
 	\begin{equation}
@@ -124,35 +207,64 @@ appear in the methodology chapter.
 		2d^2\exp\!\left(-\frac{n\varepsilon^2}{32\kappa^2}\right),
 		\label{eq:results-H-concentration}
 	\end{equation}
-	and
+	and, for \(n\ge 2\),
 	\begin{equation}
 		\mathbb P\!\left(\|A\Phi-\Phi\Lambda^{(n)}\|_{\max}\ge \varepsilon\right)
 		\le
-		2nd\exp\!\left(-\frac{n\varepsilon^2}{4\kappa^2}\right).
+		2nd\exp\!\left(-\frac{n\varepsilon^2}{2\kappa^2+2\kappa\varepsilon}\right).
 		\label{eq:results-APhi-concentration}
 	\end{equation}
 \end{theorem}
 
-\begin{corollary}[Simultaneous high-probability bounds]
-	\label{thm:results-simultaneous-control}
+\textcolor{red}{[Draft note for David \& Alexander: The following corollary is useful for the bounds plotted below,
+			but it may be too technical for the main Results chapter. I was thinking
+			I could say something like: "Combining the three concentration bounds gives simultaneous high-probability
+			control of \(G-I_d\), \(H-\Lambda^{(n)}\), and
+			\(A\Phi-\Phi\Lambda^{(n)}\). The explicit statement is given in
+			the appendix."]}
+
+\begin{corollary}[High-probability bounds]
+	\label{cor:results-simultaneous-control}
 	Let \(\delta\in(0,1)\), and define
+	\begin{equation}
+		u_{n,d,\delta}^{(G)}
+		:=
+		\log\!\left(\frac{3d(d+1)}{\delta}\right),
+		\label{eq:results-uG}
+	\end{equation}
+	\begin{equation}
+		u_{n,d,\delta}^{(H)}
+		:=
+		\log\!\left(\frac{6d^2}{\delta}\right),
+		\label{eq:results-uH}
+	\end{equation}
+	and
+	\begin{equation}
+		u_{n,d,\delta}^{(A)}
+		:=
+		\log\!\left(\frac{6nd}{\delta}\right).
+		\label{eq:results-uA}
+	\end{equation}
+	Now set
 	\begin{equation}
 		\alpha_{n,d,\delta}
 		:=
-		\sqrt{\frac{8}{n}\log\!\left(\frac{6d^2}{\delta}\right)},
+		2\sqrt{\frac{u_{n,d,\delta}^{(G)}}{n}}
+		+\frac{2}{3}\frac{u_{n,d,\delta}^{(G)}}{n},
 		\label{eq:results-alpha}
 	\end{equation}
 	\begin{equation}
 		\beta_{n,d,\delta}
 		:=
-		\kappa\sqrt{\frac{32}{n}\log\!\left(\frac{6d^2}{\delta}\right)},
+		\kappa\sqrt{\frac{32}{n}u_{n,d,\delta}^{(H)}},
 		\label{eq:results-beta}
 	\end{equation}
 	and
 	\begin{equation}
 		\gamma_{n,d,\delta}
 		:=
-		\kappa\sqrt{\frac{4}{n}\log\!\left(\frac{6nd}{\delta}\right)}.
+		\kappa\sqrt{\frac{2}{n}u_{n,d,\delta}^{(A)}}
+		+\kappa\frac{u_{n,d,\delta}^{(A)}}{n}.
 		\label{eq:results-gamma}
 	\end{equation}
 	Then, with probability at least \(1-\delta\),
@@ -167,7 +279,7 @@ appear in the methodology chapter.
 \end{corollary}
 
 The previous theorem shows that the sampled operator remains close to the continuum Fourier
-decomposition on the truncated subspace \(H_K\). To express this directly at the level of the
+decomposition on the truncated subspace \(\mathcal H_K\). To express this directly at the level of the
 induced matrix on coefficients, define
 \begin{equation}
 	C:=G^{-1}H,
@@ -175,22 +287,442 @@ induced matrix on coefficients, define
 \end{equation}
 whenever \(G\) is invertible.
 
-\begin{corollary}[Restricted sampled operator]
-	\label{cor:results-restricted-operator}
-	Assume that \(d\,\alpha_{n,d,\delta}<1\). Then, on the event
-	\eqref{eq:results-simultaneous-bounds}, the matrix \(G\) is invertible and
-	\begin{equation}
-		\|C-\Lambda^{(n)}\|_{\infty}
-		\le
-		\frac{d\,\beta_{n,d,\delta}+d\,\kappa\,\alpha_{n,d,\delta}}
-		{1-d\,\alpha_{n,d,\delta}}.
-		\label{eq:results-restricted-operator-bound}
-	\end{equation}
-	In particular, the sampled operator restricted to \(H_K\) remains close to the diagonal
-	Fourier operator predicted by the continuum theory.
-\end{corollary}
+% \begin{corollary}[Restricted sampled operator]
+% 	\label{cor:results-restricted-operator}
+% 	Assume that \(d\,\alpha_{n,d,\delta}<1\). Then, on the event
+% 	\eqref{eq:results-simultaneous-bounds}, the matrix \(G\) is invertible and
+% 	\begin{equation}
+% 		\|C-\Lambda^{(n)}\|_{\infty}
+% 		\le
+% 		\frac{d\,\beta_{n,d,\delta}+d\,\kappa\,\alpha_{n,d,\delta}}
+% 		{1-d\,\alpha_{n,d,\delta}}.
+% 		\label{eq:results-restricted-operator-bound}
+% 	\end{equation}
+% 	In particular, the sampled operator restricted to \(H_K\) remains close to the diagonal
+% 	Fourier operator predicted by the continuum theory.
+% \end{corollary}
 
-Equations \eqref{eq:results-gram-concentration}--\eqref{eq:results-restricted-operator-bound}
-show that, on any fixed truncated Fourier subspace, the sampled operator is a controlled
-perturbation of the continuum operator. Thus the ordering of low Fourier modes predicted by
-the continuum kernel persists with high probability after sampling.
+Thus, when the sampled Gram matrix is well conditioned, the coefficient-level
+restricted operator \(C=G^{-1}H\) is close to the diagonal finite-sample
+prediction \(\Lambda^{(n)}\).
+
+\subsection{Empirical validation of finite-sample Fourier structure}
+\label{subsec:results-finite-sample-validation}
+
+The finite-sample bounds above control three target-independent quantities: the
+sampled Fourier Gram matrix, the compressed sampled operator on the retained
+Fourier coordinates, and the sampled eigen-action error. We first evaluate these
+quantities directly before considering residual dynamics for a particular
+target.
+
+Figure~\ref{fig:results-finite-sample-diagnostics} shows the empirical behavior
+of the three errors appearing in
+Theorem~\ref{thm:results-finite-sample-concentration}:
+\[
+	\|G-I_d\|_{\max},
+	\qquad
+	\|H-\Lambda^{(n)}\|_{\max},
+	\qquad
+	\|A\Phi-\Phi\Lambda^{(n)}\|_{\max}.
+\]
+All three errors decrease as \(n\) increases. The plotted high-probability
+envelopes are conservative, but they have the same decreasing trend.
+
+\begin{figure}[H]
+	\centering
+
+	\begin{subfigure}[t]{0.32\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{images/finite_sample_results/theory_envelope_compare_gram_err_max.png}
+		\caption{\(\|G-I_d\|_{\max}\)}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.32\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{images/finite_sample_results/theory_envelope_compare_comp_err_max.png}
+		\caption{\(\|H-\Lambda^{(n)}\|_{\max}\)}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.32\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{images/finite_sample_results/theory_envelope_compare_action_err_max.png}
+		\caption{\(\|A\Phi-\Phi\Lambda^{(n)}\|_{\max}\)}
+	\end{subfigure}
+
+	\caption{Finite-sample diagnostics for the sampled Fourier approximation.
+		The three plotted errors decrease with \(n\). The theoretical envelopes are
+		conservative, but they show the same decreasing trend.
+		\textcolor{red}{[Draft note for David \& Alexander: I was trying to use
+					Bernstein's inequality and I managed to improve the bounds slightly, still not as
+					tight but they seem to be better in the first and the third plot than the previous
+					bound I had derived (the green line is the previous bound I came up with
+					and the red is the new one).]}
+	}
+	\label{fig:results-finite-sample-diagnostics}
+\end{figure}
+
+
+Under random sampling, the continuum mode-decay identity
+\eqref{eq:results-continuum-gradient-flow-mode-decay} is no longer exact,
+because the sampled Fourier modes are not exact eigenvectors of the sampled
+operator. The finite-sample theory therefore predicts approximate mode-wise
+decay.
+
+Figure~\ref{fig:results-random-sampling-first200} shows the first \(200\)
+gradient descent steps of sampled kernel dynamics for \(n=4096\) uniformly
+sampled points. The solid curves show the observed normalized residual
+amplitudes, while the dashed curves show the diagonal prediction from
+\(\lambda_p^{(n)}\). The observed curves closely follow the diagonal prediction
+during early training, especially for the dominant low-frequency modes.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{images/finite_sample_results/story_02_random_n4096_components_first200.png}
+	\caption{Random sampling with \(n=4096\), first \(200\) gradient descent
+		steps. Solid curves show the observed normalized residual amplitudes
+		\(|\alpha_p(t)|/|\alpha_p(0)|\), while dashed curves show the diagonal
+		prediction from the finite-sample corrected eigenvalues
+		\(\lambda_p^{(n)}\).}
+	\label{fig:results-random-sampling-first200}
+\end{figure}
+
+Figure~\ref{fig:results-random-sampling-highfreq} shows the higher-frequency
+retained components over \(2000\) steps. The initial decay rates are still well
+predicted by the diagonal model. At later times, the observed curves deviate
+from the diagonal prediction and can stop above the ideal prediction.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{images/finite_sample_results/story_02_random_n4096_components_all_steps_high_freq_only.png}
+	\caption{Random sampling with \(n=4096\), higher-frequency retained modes over
+		\(2000\) gradient descent steps. The diagonal prediction captures the initial
+		decay rates, while small deviations from this prediction become visible at
+		later times.}
+	\label{fig:results-random-sampling-highfreq}
+\end{figure}
+
+\textcolor{red}{[Draft note for David \& Alexander: I wonder if I should also include the following
+			figure which used more samples to show that the deviation in \(\cos(2\gamma)\) occur
+			slightly later (the earlier figure with n=4096 starts deviating before \(10^{-3}\) but
+			n=32768 starts after that point.)]}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{images/finite_sample_results/story_02_random_n32768_components_all_steps_high_freq_only.png}
+	\caption{Random sampling with \(n=32768\), higher-frequency retained modes over
+		\(2000\) gradient descent steps. The diagonal prediction captures the initial
+		decay rates, while small deviations from this prediction become visible at
+		later times than \(n=4096\) case.}
+	\label{fig:results-random-sampling-highfreq-2}
+\end{figure}
+
+
+
+\section{Preconditioned sampled dynamics}
+\label{sec:results-preconditioned-sampled-dynamics}
+
+We next apply the Fourier-block preconditioning construction from
+Section~\ref{sec:method-preconditioning}. The goal is to compare the baseline
+sampled dynamics with two block-corrected dynamics: one using the diagonal
+finite-sample prediction and one using the observed sampled Fourier block.
+
+\subsection{Experimental setup}
+\label{subsec:results-preconditioned-setup}
+
+The three sampled dynamics are
+\[
+	B_{\mathrm{base}}=A,
+	\qquad
+	B_{\mathrm{th}}=P_{\mathrm{th}}A,
+	\qquad
+	B_{\mathrm{emp}}=P_{\mathrm{emp}}A.
+\]
+Here \(P_{\mathrm{th}}\) is defined in
+\eqref{eq:method-theory-preconditioner} and uses the diagonal prediction
+\(\Lambda^{(n)}\). The empirical preconditioner \(P_{\mathrm{emp}}\), defined in
+\eqref{eq:method-empirical-preconditioner}, uses the observed coefficient-space
+block \(C_n^{(K)}=G^{-1}H\).
+
+In this experiment, we use the target
+\begin{equation}
+	f^*(\gamma)
+	=
+	1
+	+0.9\cos(\gamma)
+	+0.5\cos(2\gamma)
+	-0.35\sin(3\gamma)
+	+0.25\cos(7\gamma).
+	\label{eq:results-preconditioned-in-block-target}
+\end{equation}
+The retained preconditioning block contains all active target frequencies shown
+in the residual plots.
+
+\subsection{Mode-wise residual decay}
+\label{subsec:results-preconditioned-mode-decay}
+
+Figure~\ref{fig:results-preconditioned-mode-decay} shows the
+residual amplitudes for the baseline, theory-preconditioned, and empirically
+preconditioned dynamics. The baseline dynamics shows separated decay rates
+across retained modes. Both preconditioned dynamics reduce this separation, with
+the empirical preconditioner giving the flattest curves.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{images/finite_sample_results/all_mode_decay_three_panel_mean_std_n4096.png}
+	\caption{Preconditioned sampled dynamics at \(n=4096\). The baseline dynamics
+		shows separated decay rates across retained Fourier modes. Both
+		preconditioned dynamics make the retained residual amplitudes decay on more
+		similar time scales. The empirical preconditioner gives the most uniform
+		decay, while the theory preconditioner uses only the predicted diagonal
+		scaling.}
+	\label{fig:results-preconditioned-mode-decay}
+\end{figure}
+
+\subsection{Function-space fit}
+\label{subsec:results-preconditioned-function-fit}
+
+Figure~\ref{fig:results-preconditioned-probe-fit} compares the final prediction
+on a dense probe grid. The baseline fit leaves a visible residual, while both
+preconditioned flows more closely match the target.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{images/finite_sample_results/probe_target_vs_prediction_three_panel_mean_std_n4096.png}
+	\caption{Final prediction on a dense probe grid for the same experiment as
+		Figure~\ref{fig:results-preconditioned-mode-decay}. The baseline fit leaves a
+		visible residual, while both preconditioned dynamics closely match the target.
+		The theory and empirical preconditioners are nearly indistinguishable at the
+		level of the final fitted function.}
+	\label{fig:results-preconditioned-probe-fit}
+\end{figure}
+
+\subsection{Theory versus empirical preconditioning}
+\label{subsec:results-theory-vs-empirical-preconditioning}
+
+Figure~\ref{fig:results-theory-precond-spectrum} shows the spectrum of the
+theory-preconditioned block as \(n\) varies. The ideal flattened spectrum is
+equal to \(1\). The plotted spectrum becomes flatter as \(n\) increases.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.72\textwidth]{images/finite_sample_results/theory_preconditioned_spectrum_all_n.png}
+	\caption{Theory-preconditioned block spectrum as a function of sample size.
+		The ideal flattened spectrum is \(1\). As \(n\) increases, the spectrum becomes
+		flatter, showing that the theory preconditioner approaches the empirical block
+		inverse in the large-sample regime.}
+	\label{fig:results-theory-precond-spectrum}
+\end{figure}
+
+Figure~\ref{fig:results-preconditioner-gap} compares the theory and empirical
+constructions at two levels. The preconditioner \(P\) is an operator on sampled
+function values. Given a vector in \(\mathbb R^n\), it projects that vector onto
+the retained Fourier block, rescales the retained Fourier coefficients, and
+maps the result back to \(\mathbb R^n\). Thus the gap between
+\(P_{\mathrm{th}}\) and \(P_{\mathrm{emp}}\) measures how different the two
+correction steps are before they are combined with the sampled kernel operator.
+
+The product \(PA\) is the operator that is actually used in the residual
+dynamics. It first applies the sampled kernel operator \(A\) to the residual,
+and then applies the correction \(P\) to the retained Fourier components of the
+result. Thus the gap between \(B_{\mathrm{th}}\) and \(B_{\mathrm{emp}}\)
+measures how different the resulting training dynamics are. Both gaps decrease
+with sample size.
+
+\begin{figure}[H]
+	\centering
+
+	\begin{subfigure}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{images/finite_sample_results/precond_diagnostic_B_th_vs_emp_max.png}
+		\caption{\(\|B_{\mathrm{th}}-B_{\mathrm{emp}}\|_{\max}\)}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{images/finite_sample_results/precond_diagnostic_P_th_vs_emp_max.png}
+		\caption{\(\|P_{\mathrm{th}}-P_{\mathrm{emp}}\|_{\max}\)}
+	\end{subfigure}
+
+	\caption{Gap between the theory and empirical preconditioners as sample size
+	increases. The empirical preconditioner uses the observed block \(C=G^{-1}H\),
+	while the theory preconditioner uses the diagonal approximation
+	\(\Lambda^{(n)}\). The decreasing gap is consistent with the finite-sample
+	result \(C\approx\Lambda^{(n)}\).}
+	\label{fig:results-preconditioner-gap}
+\end{figure}
+
+\section{Finite-width control of the frozen tangent operator}
+\label{sec:results-finite-width-frozen}
+
+We now turn from sampling error to width-induced error. Throughout this section, the input
+space remains the continuum \(S^1\), and the object of interest is the frozen finite-width
+operator \(B_m^{(K)}\) on the truncated Fourier subspace \(\mathcal H_K\), introduced in
+\eqref{eq:method-finite-width-block}. The corresponding continuum reference block
+\(\Lambda_K\) was defined in \eqref{eq:method-continuum-fourier-block}.
+
+The next theorem shows that, for each fixed \(K\), the frozen finite-width block is a
+controlled perturbation of the continuum Fourier block.
+
+\begin{theorem}[Finite-width concentration of the frozen low-mode operator]
+	\label{thm:results-finite-width-frozen-concentration}
+	Fix \(K\ge 1\), and let \(d=2K+1\). Then
+	\begin{equation}
+		\mathbb E[B_m^{(K)}]=\Lambda_K.
+		\label{eq:results-finite-width-mean}
+	\end{equation}
+	Moreover, there exists a universal constant \(c>0\) such that, for every
+	\(\varepsilon>0\),
+	\begin{equation}
+		\mathbb P\!\left(
+		\|B_m^{(K)}-\Lambda_K\|_{\max}\ge \varepsilon
+		\right)
+		\le
+		2d^2
+		\exp\!\left(
+		-cm\min\!\left(\frac{\varepsilon^2}{32^2},\frac{\varepsilon}{32}\right)
+		\right).
+		\label{eq:results-finite-width-max-bound}
+	\end{equation}
+	In particular, for fixed \(K\),
+	\begin{equation}
+		\|B_m^{(K)}-\Lambda_K\|_{\max}
+		=
+		O_{\mathbb P}\!\left(\sqrt{\frac{\log K}{m}}\right).
+		\label{eq:results-finite-width-rate}
+	\end{equation}
+\end{theorem}
+
+% \begin{corollary}[Operator-norm finite-width concentration]
+% 	\label{cor:results-finite-width-frozen-op}
+% 	Under the assumptions of
+% 	Theorem~\ref{thm:results-finite-width-frozen-concentration}, for every \(\delta>0\),
+% 	\begin{equation}
+% 		\mathbb P\!\left(
+% 		\|B_m^{(K)}-\Lambda_K\|_{\mathrm{op}}\ge \delta
+% 		\right)
+% 		\le
+% 		2d^2
+% 		\exp\!\left(
+% 		-cm\min\!\left(
+% 			\frac{\delta^2}{32^2d^2},
+% 			\frac{\delta}{32d}
+% 			\right)
+% 		\right).
+% 		\label{eq:results-finite-width-op-bound}
+% 	\end{equation}
+% \end{corollary}
+
+Theorem~\ref{thm:results-finite-width-frozen-concentration} shows that, on a
+fixed truncated Fourier subspace, the frozen finite-width tangent block is a
+random perturbation of the continuum Fourier block. The perturbation decreases
+with width at the usual \(m^{-1/2}\) concentration scale, up to logarithmic
+factors in the block dimension.
+
+We next check this concentration behavior numerically. For each width \(m\), we
+sample 100 independent initializations and compute
+\[
+	\|B_m^{(K)}-\Lambda_K\|_{\max}.
+\]
+Figure~\ref{fig:results-finite-width-concentration} shows the median and
+\(95\%\) quantile of this error, together with the rate envelope suggested by
+Theorem~\ref{thm:results-finite-width-frozen-concentration}. For visualization,
+we plot the envelope with \(c=0.2\). This is a conservative representative value
+for the universal constant in the sub-exponential Bernstein inequality; we
+discuss this choice in Section~\ref{subsec:discussion-limitations-concentration}.
+The empirical errors decrease steadily with width. The theoretical envelope is
+much larger than the observed errors, but it has the correct qualitative trend:
+the finite-width block concentrates around the continuum Fourier block as \(m\)
+increases.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.82\textwidth]{images/finite_width_results/03_concentration_B_m.png}
+	\caption{Finite-width concentration of the frozen tangent block. For each
+	width \(m\), the plot shows the median and \(95\%\) quantile of
+	\(\|B_m^{(K)}-\Lambda_K\|_{\max}\) across 100 independent initializations. The
+	dashed curve shows the rate envelope from
+	Theorem~\ref{thm:results-finite-width-frozen-concentration} with
+	\(\delta=0.05\) and the illustrative constant \(c=0.2\). The empirical errors
+	decrease with width, while the explicit envelope is conservative.}
+	\label{fig:results-finite-width-concentration}
+\end{figure}
+
+\subsection{Empirical alignment of Fourier frequency subspaces}
+\label{subsec:results-finite-width-subspace-alignment}
+
+The block concentration result controls the matrix \(B_m^{(K)}\) on the retained
+Fourier coordinates. We next examine the corresponding eigenspaces directly.
+Using the quantities introduced in
+Section~\ref{subsec:method-projector-error}, we compare each Fourier frequency
+subspace \(\mathcal F_k\) with a matched empirical eigenspace
+\(\widehat{\mathcal F}_k\) of the frozen finite-width operator.
+
+We first summarize the comparison using the projector error
+\[
+	\varepsilon_{k,F}^{(m)}
+	=
+	\|\widehat P_k-P_k\|_F .
+\]
+This gives one scalar mismatch measure for each frequency subspace. By
+\eqref{eq:method-projector-angle-identity}, it is equivalent to combining the
+principal angles between \(\mathcal F_k\) and \(\widehat{\mathcal F}_k\).
+
+Figure~\ref{fig:results-finite-width-projector-error} shows the mean and
+standard deviation of \(\|\widehat P_k-P_k\|_F\) across random initializations.
+For all displayed frequencies, the projector error decreases as the width
+increases. Higher frequencies generally have larger projector error at a fixed
+width. One exception in this experiment is \(k=2\), which has the smallest
+projector error among the displayed frequencies. We return to this point in the
+discussion.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.78\textwidth]{images/finite_width_results/projector_error_vs_width.png}
+	\caption{Projector error
+		\(\|\widehat P_k-P_k\|_F\) between the Fourier frequency subspace
+		\(\mathcal F_k\) and the matched empirical eigenspace
+		\(\widehat{\mathcal F}_k\) of the frozen finite-width operator at
+		initialization. The markers show the mean over random initializations and the
+		shaded regions show one standard deviation. The error decreases with width
+		for all displayed frequencies.}
+	\label{fig:results-finite-width-projector-error}
+\end{figure}
+
+The projector error gives a single number for each frequency subspace. For
+\(k\ge 1\), however, each frequency subspace is two-dimensional. We therefore
+also inspect the two principal angles
+\(\theta_{k,1}\) and \(\theta_{k,2}\) between \(\mathcal F_k\) and
+\(\widehat{\mathcal F}_k\).
+
+Figure~\ref{fig:results-finite-width-principal-angles} shows the mean and
+standard deviation of these angles across random initializations. The principal
+angles tend to decrease as the width increases. The lower-frequency subspaces
+are already relatively well aligned at small width. Higher-frequency subspaces
+start with larger angles and improve visibly with \(m\), but they remain less
+aligned than the lower-frequency subspaces at the same width. As in the
+projector-error plot, the frequency \(k=2\) is unusually well aligned compared
+with neighbouring displayed frequencies.
+
+For \(k\ge 1\), the second principal angle is usually larger than the first. It
+therefore gives the stricter test of whether the full two-dimensional Fourier
+plane has been recovered.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{images/finite_width_results/principal_angles_vs_width.png}
+	\caption{Principal angles between the Fourier frequency subspace
+		\(\mathcal F_k\) and the matched empirical eigenspace
+		\(\widehat{\mathcal F}_k\) of the frozen finite-width operator at
+		initialization. The left panel shows the first principal angle
+		\(\theta_{k,1}\), and the right panel shows the second principal angle
+		\(\theta_{k,2}\). The markers show the mean over random initializations and
+		the shaded regions show one standard deviation. The principal angles tend to
+		decrease with width.}
+	\label{fig:results-finite-width-principal-angles}
+\end{figure}
+
+Taken together, Figures~\ref{fig:results-finite-width-concentration},
+\ref{fig:results-finite-width-projector-error}, and
+\ref{fig:results-finite-width-principal-angles} show the same finite-width
+trend from complementary viewpoints. The matrix block \(B_m^{(K)}\) approaches
+the continuum block \(\Lambda_K\) as \(m\) increases, and the matched empirical
+eigenspaces become closer to the corresponding Fourier frequency subspaces.

@@ -60,6 +60,20 @@ def _fourier_subspace_for_frequency(
     return U
 
 
+def _fourier_cumulative_subspace_for_cutoff(
+    Phi_unit: np.ndarray,
+    mode_freqs: np.ndarray,
+    cutoff_k: int,
+) -> np.ndarray:
+    idx = np.where(mode_freqs <= int(cutoff_k))[0]
+    expected_dim = 1 + 2 * int(cutoff_k)
+    if len(idx) != expected_dim:
+        raise ValueError(
+            f"Cutoff k={cutoff_k} expected cumulative dim {expected_dim}, got {len(idx)}."
+        )
+    return np.asarray(Phi_unit[:, idx], dtype=np.float64)
+
+
 def _principal_angles(U: jnp.ndarray, V: jnp.ndarray) -> jnp.ndarray:
     # U, V: orthonormal basis columns of two subspaces with the same dimension.
     svals = jnp.linalg.svd(U.T @ V, compute_uv=False)
@@ -74,6 +88,61 @@ def _projector_distances_from_angles(
     fro = jnp.sqrt(2.0 * jnp.sum(sin_t**2))
     op = jnp.max(sin_t)
     return fro, op
+
+
+def _cumulative_subspace_metrics(
+    evals: np.ndarray,
+    evecs: np.ndarray,
+    cumulative_frames: list[np.ndarray],
+    cumulative_dims: np.ndarray,
+) -> dict:
+    evals = np.asarray(evals, dtype=np.float64)
+    evecs = np.asarray(evecs, dtype=np.float64)
+
+    n_cutoff = len(cumulative_frames)
+    d_max = int(np.max(cumulative_dims))
+
+    projector_fro = np.full((n_cutoff,), np.nan, dtype=np.float32)
+    projector_op = np.full((n_cutoff,), np.nan, dtype=np.float32)
+    principal_angles = np.full((n_cutoff, d_max), np.nan, dtype=np.float32)
+    affinity_rms = np.full((n_cutoff,), np.nan, dtype=np.float32)
+    selected_eigvals = np.full((n_cutoff, d_max), np.nan, dtype=np.float32)
+    selected_eig_indices = np.full((n_cutoff, d_max), -1, dtype=np.int32)
+    mu = np.full((n_cutoff,), np.nan, dtype=np.float32)
+
+    for c_idx, U in enumerate(cumulative_frames):
+        d = int(cumulative_dims[c_idx])
+
+        overlaps = np.sum((U.T @ evecs) ** 2, axis=0)
+        top_idx = np.argsort(overlaps)[::-1][:d]
+        V = evecs[:, top_idx]
+
+        svals = np.linalg.svd(U.T @ V, compute_uv=False)
+        svals = np.clip(svals, -1.0, 1.0)
+        angles = np.arccos(svals)
+        sin_t = np.sin(angles)
+
+        projector_fro[c_idx] = np.sqrt(2.0 * np.sum(sin_t**2))
+        projector_op[c_idx] = np.max(sin_t)
+        principal_angles[c_idx, :d] = np.asarray(angles, dtype=np.float32)
+        affinity_rms[c_idx] = np.sqrt(np.mean(svals**2))
+
+        sel_vals = np.asarray(evals[top_idx], dtype=np.float32)
+        selected_eigvals[c_idx, :d] = sel_vals
+        selected_eig_indices[c_idx, :d] = np.asarray(top_idx, dtype=np.int32)
+
+        # Effective spectral scale inside the cumulative Fourier subspace.
+        mu[c_idx] = float(np.sum(evals * overlaps) / max(d, 1))
+
+    return {
+        "projector_fro": projector_fro,
+        "projector_op": projector_op,
+        "principal_angles": principal_angles,
+        "affinity_rms": affinity_rms,
+        "selected_eigvals": selected_eigvals,
+        "selected_eig_indices": selected_eig_indices,
+        "mu": mu,
+    }
 
 
 def _pad_two(values: np.ndarray) -> np.ndarray:
@@ -345,6 +414,7 @@ def run(config_path: str):
     basis = build_real_fourier_basis(theta, K_max=K_max)
     Phi = np.asarray(basis["Phi"], dtype=np.float64)
     Phi_unit = jnp.asarray(basis["Phi_unit"])
+    Phi_unit_np = np.asarray(basis["Phi_unit"], dtype=np.float64)
     mode_names = np.asarray(basis["mode_names"])
     mode_freqs = np.asarray(basis["mode_freqs"], dtype=np.int32)
     mode_types = np.asarray(basis["mode_types"])
@@ -406,6 +476,15 @@ def run(config_path: str):
         U_k, _ = jnp.linalg.qr(U_k_raw)
         fourier_frames.append(U_k)
 
+    cumulative_cutoffs = np.asarray(frequencies, dtype=np.int32)
+    cumulative_dims = np.asarray([1 + 2 * int(k) for k in cumulative_cutoffs], dtype=np.int32)
+    cumulative_dmax = int(np.max(cumulative_dims))
+    cumulative_frames = []
+    for k in cumulative_cutoffs:
+        U_c_raw = _fourier_cumulative_subspace_for_cutoff(Phi_unit_np, mode_freqs, int(k))
+        U_c, _ = np.linalg.qr(U_c_raw)
+        cumulative_frames.append(np.asarray(U_c, dtype=np.float32))
+
     runs_manifest = {}
     runs_dir = save_dir / "runs"
 
@@ -443,6 +522,16 @@ def run(config_path: str):
     support_max_relative_center_error_std_by_width = []
     support_max_relative_leakage_mean_by_width = []
     support_max_relative_leakage_std_by_width = []
+    cumulative_projector_fro_mean_by_width = []
+    cumulative_projector_fro_std_by_width = []
+    cumulative_projector_op_mean_by_width = []
+    cumulative_projector_op_std_by_width = []
+    cumulative_affinity_rms_mean_by_width = []
+    cumulative_affinity_rms_std_by_width = []
+    cumulative_mu_mean_by_width = []
+    cumulative_mu_std_by_width = []
+    cumulative_principal_angles_mean_by_width = []
+    cumulative_principal_angles_std_by_width = []
 
     n_freq = len(frequencies)
     n_support = len(target_specs)
@@ -465,6 +554,26 @@ def run(config_path: str):
         fourier_coeffs_raw = np.full((n_seed, n_freq, 2, 2), np.nan, dtype=np.float32)
         fourier_coeffs_aligned = np.full(
             (n_seed, n_freq, 2, 2), np.nan, dtype=np.float32
+        )
+
+        cumulative_projector_fro = np.full((n_seed, n_freq), np.nan, dtype=np.float32)
+        cumulative_projector_op = np.full((n_seed, n_freq), np.nan, dtype=np.float32)
+        cumulative_affinity_rms = np.full((n_seed, n_freq), np.nan, dtype=np.float32)
+        cumulative_mu = np.full((n_seed, n_freq), np.nan, dtype=np.float32)
+        cumulative_principal_angles = np.full(
+            (n_seed, n_freq, cumulative_dmax),
+            np.nan,
+            dtype=np.float32,
+        )
+        cumulative_selected_eigvals = np.full(
+            (n_seed, n_freq, cumulative_dmax),
+            np.nan,
+            dtype=np.float32,
+        )
+        cumulative_selected_eig_indices = np.full(
+            (n_seed, n_freq, cumulative_dmax),
+            -1,
+            dtype=np.int32,
         )
 
         block_err_max = np.full((n_seed,), np.nan, dtype=np.float32)
@@ -571,6 +680,26 @@ def run(config_path: str):
             evals = evals[perm]
             evecs = evecs[:, perm]
 
+            cumulative_metrics = _cumulative_subspace_metrics(
+                np.asarray(evals, dtype=np.float64),
+                np.asarray(evecs, dtype=np.float64),
+                cumulative_frames,
+                cumulative_dims,
+            )
+            cumulative_projector_fro[s_idx, :] = cumulative_metrics["projector_fro"]
+            cumulative_projector_op[s_idx, :] = cumulative_metrics["projector_op"]
+            cumulative_affinity_rms[s_idx, :] = cumulative_metrics["affinity_rms"]
+            cumulative_mu[s_idx, :] = cumulative_metrics["mu"]
+            cumulative_principal_angles[s_idx, :, :] = cumulative_metrics[
+                "principal_angles"
+            ]
+            cumulative_selected_eigvals[s_idx, :, :] = cumulative_metrics[
+                "selected_eigvals"
+            ]
+            cumulative_selected_eig_indices[s_idx, :, :] = cumulative_metrics[
+                "selected_eig_indices"
+            ]
+
             for f_idx, k in enumerate(frequencies):
                 U_k = fourier_frames[f_idx]
                 d_k = U_k.shape[1]
@@ -671,6 +800,15 @@ def run(config_path: str):
             "selected_eig_indices": selected_eig_indices,
             "fourier_coeffs_raw": fourier_coeffs_raw,
             "fourier_coeffs_aligned": fourier_coeffs_aligned,
+            "cumulative_cutoffs": cumulative_cutoffs,
+            "cumulative_dims": cumulative_dims,
+            "cumulative_projector_fro": cumulative_projector_fro,
+            "cumulative_projector_op": cumulative_projector_op,
+            "cumulative_affinity_rms": cumulative_affinity_rms,
+            "cumulative_mu": cumulative_mu,
+            "cumulative_principal_angles": cumulative_principal_angles,
+            "cumulative_selected_eigvals": cumulative_selected_eigvals,
+            "cumulative_selected_eig_indices": cumulative_selected_eig_indices,
             "block_err_max": block_err_max,
             "block_err_fro": block_err_fro,
             "block_err_op": block_err_op,
@@ -764,6 +902,31 @@ def run(config_path: str):
         support_max_relative_leakage_std_by_width.append(
             np.nanstd(support_max_relative_leakage, axis=0)
         )
+        cumulative_projector_fro_mean_by_width.append(
+            np.nanmean(cumulative_projector_fro, axis=0)
+        )
+        cumulative_projector_fro_std_by_width.append(
+            np.nanstd(cumulative_projector_fro, axis=0)
+        )
+        cumulative_projector_op_mean_by_width.append(
+            np.nanmean(cumulative_projector_op, axis=0)
+        )
+        cumulative_projector_op_std_by_width.append(
+            np.nanstd(cumulative_projector_op, axis=0)
+        )
+        cumulative_affinity_rms_mean_by_width.append(
+            np.nanmean(cumulative_affinity_rms, axis=0)
+        )
+        cumulative_affinity_rms_std_by_width.append(
+            np.nanstd(cumulative_affinity_rms, axis=0)
+        )
+        cumulative_mu_mean_by_width.append(np.nanmean(cumulative_mu, axis=0))
+        cumulative_mu_std_by_width.append(np.nanstd(cumulative_mu, axis=0))
+        cumulative_angle_mean, cumulative_angle_std = _nanmean_std_axis0(
+            cumulative_principal_angles
+        )
+        cumulative_principal_angles_mean_by_width.append(cumulative_angle_mean)
+        cumulative_principal_angles_std_by_width.append(cumulative_angle_std)
 
     projector_fro_mean = np.stack(projector_fro_mean_by_width, axis=0)
     projector_fro_std = np.stack(projector_fro_std_by_width, axis=0)
@@ -835,12 +998,34 @@ def run(config_path: str):
         support_max_relative_leakage_std_by_width,
         axis=0,
     )
+    cumulative_projector_fro_mean = np.stack(cumulative_projector_fro_mean_by_width, axis=0)
+    cumulative_projector_fro_std = np.stack(cumulative_projector_fro_std_by_width, axis=0)
+    cumulative_projector_op_mean = np.stack(cumulative_projector_op_mean_by_width, axis=0)
+    cumulative_projector_op_std = np.stack(cumulative_projector_op_std_by_width, axis=0)
+    cumulative_affinity_rms_mean = np.stack(cumulative_affinity_rms_mean_by_width, axis=0)
+    cumulative_affinity_rms_std = np.stack(cumulative_affinity_rms_std_by_width, axis=0)
+    cumulative_mu_mean = np.stack(cumulative_mu_mean_by_width, axis=0)
+    cumulative_mu_std = np.stack(cumulative_mu_std_by_width, axis=0)
+    cumulative_principal_angles_mean = np.stack(
+        cumulative_principal_angles_mean_by_width,
+        axis=0,
+    )
+    cumulative_principal_angles_std = np.stack(
+        cumulative_principal_angles_std_by_width,
+        axis=0,
+    )
 
     min_width_for_small_error = np.full((n_freq,), -1, dtype=np.int32)
     for f_idx in range(n_freq):
         good = np.where(projector_fro_mean[:, f_idx] <= projector_fro_tol)[0]
         if len(good) > 0:
             min_width_for_small_error[f_idx] = widths[int(good[0])]
+
+    min_width_for_small_cumulative_error = np.full((n_freq,), -1, dtype=np.int32)
+    for c_idx in range(n_freq):
+        good = np.where(cumulative_projector_fro_mean[:, c_idx] <= projector_fro_tol)[0]
+        if len(good) > 0:
+            min_width_for_small_cumulative_error[c_idx] = widths[int(good[0])]
 
     failing_freqs_at_max_width = frequencies[
         projector_fro_mean[-1, :] > projector_fro_tol
@@ -867,6 +1052,18 @@ def run(config_path: str):
         pair_splitting_over_lambda_std=pair_splitting_over_lambda_std,
         pair_splitting_over_gap_mean=pair_splitting_over_gap_mean,
         pair_splitting_over_gap_std=pair_splitting_over_gap_std,
+        cumulative_cutoffs=cumulative_cutoffs,
+        cumulative_dims=cumulative_dims,
+        cumulative_projector_fro_mean=cumulative_projector_fro_mean,
+        cumulative_projector_fro_std=cumulative_projector_fro_std,
+        cumulative_projector_op_mean=cumulative_projector_op_mean,
+        cumulative_projector_op_std=cumulative_projector_op_std,
+        cumulative_affinity_rms_mean=cumulative_affinity_rms_mean,
+        cumulative_affinity_rms_std=cumulative_affinity_rms_std,
+        cumulative_mu_mean=cumulative_mu_mean,
+        cumulative_mu_std=cumulative_mu_std,
+        cumulative_principal_angles_mean=cumulative_principal_angles_mean,
+        cumulative_principal_angles_std=cumulative_principal_angles_std,
         local_gap=local_gap.astype(np.float32),
         lambda_basis=lambda_basis.astype(np.float32),
         block_max_mean=block_max_mean,
@@ -897,6 +1094,7 @@ def run(config_path: str):
         support_max_relative_leakage_mean=support_max_relative_leakage_mean,
         support_max_relative_leakage_std=support_max_relative_leakage_std,
         min_width_for_small_error=min_width_for_small_error,
+        min_width_for_small_cumulative_error=min_width_for_small_cumulative_error,
         failing_freqs_at_max_width=failing_freqs_at_max_width,
         projector_fro_tol=np.asarray([projector_fro_tol], dtype=np.float32),
         reliability_tau=np.asarray([reliability_tau], dtype=np.float32),
@@ -905,6 +1103,13 @@ def run(config_path: str):
     diagnostics = {
         str(int(k)): (None if int(w) < 0 else int(w))
         for k, w in zip(frequencies.tolist(), min_width_for_small_error.tolist())
+    }
+    cumulative_diagnostics = {
+        str(int(k)): (None if int(w) < 0 else int(w))
+        for k, w in zip(
+            cumulative_cutoffs.tolist(),
+            min_width_for_small_cumulative_error.tolist(),
+        )
     }
 
     support_reliability_widths = {}
@@ -932,6 +1137,8 @@ def run(config_path: str):
             "b_std": b_std,
             "parameterization": parameterization,
             "max_frequency": K_max,
+            "cumulative_cutoffs": cumulative_cutoffs.tolist(),
+            "cumulative_dims": cumulative_dims.tolist(),
             "projector_fro_tol": projector_fro_tol,
             "save_aligned_eigvecs": save_aligned_eigvecs,
             "save_blocks": save_blocks,
@@ -951,6 +1158,7 @@ def run(config_path: str):
         },
         "diagnostics": {
             "min_width_for_small_projector_error_by_frequency": diagnostics,
+            "min_width_for_small_cumulative_projector_error_by_cutoff": cumulative_diagnostics,
             "failing_frequencies_at_max_width": failing_freqs_at_max_width.tolist(),
             "min_width_for_reliability_ratio_by_support": support_reliability_widths,
             "min_width_for_target_prediction_error_by_support": support_target_error_widths,

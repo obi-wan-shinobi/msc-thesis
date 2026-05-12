@@ -19,10 +19,10 @@ SMOKE_CONFIGS = [
 ]
 
 FULL_CONFIGS = [
-    "configs/ntk_frozen_vs_evolving_mode_dynamics_k0256_equalamp_w128.yaml",
-    "configs/ntk_frozen_vs_evolving_mode_dynamics_k0256_equalamp_w256.yaml",
-    "configs/ntk_frozen_vs_evolving_mode_dynamics_k0256_equalamp_w512.yaml",
-    "configs/ntk_frozen_vs_evolving_mode_dynamics_k0256_equalamp_w1024.yaml",
+    "configs/ntk_frozen_vs_evolving_mode_dynamics_k0256_revamp_w128.yaml",
+    "configs/ntk_frozen_vs_evolving_mode_dynamics_k0256_revamp_w256.yaml",
+    "configs/ntk_frozen_vs_evolving_mode_dynamics_k0256_revamp_w512.yaml",
+    "configs/ntk_frozen_vs_evolving_mode_dynamics_k0256_revamp_w1024.yaml",
     # "configs/ntk_frozen_vs_evolving_mode_dynamics_k0256_78_w128.yaml",
     # "configs/ntk_frozen_vs_evolving_mode_dynamics_k0256_78_w256.yaml",
     # "configs/ntk_frozen_vs_evolving_mode_dynamics_k0256_78_w512.yaml",

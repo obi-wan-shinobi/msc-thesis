@@ -1,4 +1,4 @@
-\chapter{\label{cha:related}Related Work}
+\chapter{Related Work}\label{cha:related}
 
 \section{Neural Tangent Kernel}\label{sec:ntk}
 
@@ -11,7 +11,7 @@ linearly around its random initialization. The \emph{Neural Tangent Kernel}
 training dynamics through a first-order linearization in parameter space,
 leading to a kernel-based description of learning in wide neural networks.
 
-\subsection{Linearization around initialization}
+\paragraph{Linearization around initialization}
 
 Let $f(x;\theta)$ denote a neural network with parameters
 $\theta \in \mathbb{R}^p$, initialized at $\theta_0$. A first-order Taylor
@@ -48,7 +48,7 @@ The NTK measures how infinitesimal parameter updates couple the network outputs
 at different inputs and plays the role of an empirical covariance operator in
 the tangent feature space.
 
-\subsection{Training dynamics induced by the NTK}
+\paragraph{Training dynamics induced by the NTK}
 
 We consider training with the squared loss using gradient descent with step size $\eta>0$,
 \[
@@ -117,7 +117,7 @@ where $
 In general, $\Theta_t$ evolves during training, reflecting changes in the
 network’s tangent features.
 
-\subsection{One-hidden-layer NTK and infinite-width limit}
+\paragraph{One-hidden-layer NTK and infinite-width limit}
 
 To make the NTK explicit, consider a two-layer network of width $m$,
 \begin{equation}
@@ -131,11 +131,11 @@ To make the NTK explicit, consider a two-layer network of width $m$,
 	\label{eq:1hl-network}
 \end{equation}
 Each neuron is parameterized by $\theta_\alpha = (v_\alpha,w_\alpha)$ and
-initialized as
+randomly initialized as
 \[
 	v_\alpha \sim \mathcal{N}(0,\sigma_v^2),
 	\qquad
-	w_\alpha \sim \mathcal{N}\!\left(0,\frac{\sigma_w^2}{d}I_d\right),
+	w_\alpha \sim \mathcal{N}\!\left(0,\sigma_w^2I_d\right),
 \]
 independently across $\alpha = 1,\dots,m$. $\varphi: \mathbb{R} \to \mathbb{R}$ is a non-linear activation function.
 
@@ -210,7 +210,7 @@ As in the linear setting of Chapter~\ref{cha:intro}, convergence occurs
 independently along the eigenvectors of $\bar\Theta$, with geometric rates
 determined by the corresponding eigenvalues.
 
-\subsection{NTK dynamics, solution structure, and implicit bias}
+\paragraph{NTK dynamics, solution structure, and implicit bias}
 
 In the constant-kernel (infinite-width) regime, the NTK prediction dynamics
 reduce to a linear iteration in prediction space. Eq \ref{eq:ntk-constant-kernel},
@@ -346,7 +346,7 @@ where each neuron is parameterized by
 \theta_\alpha = (v_\alpha, w_\alpha)
 \), $\alpha \in \{1,\ldots,m\}$.
 
-\subsection{Integral representation and empirical measure}
+\paragraph{Integral representation and empirical measure}
 
 Let $\Omega := \mathbb{R} \times \mathbb{R}^d$ denote the parameter space, and define
 the empirical neuronal measure
@@ -391,7 +391,7 @@ pointwise to the deterministic limit
 For instance, under i.i.d.\ Gaussian initialization of the parameters, the
 limiting initial measure $\mu_0$ is Gaussian on $\Omega$.
 
-\subsection{Training dynamics and evolving kernel}
+\paragraph{Training dynamics and evolving kernel}
 
 Let $X=(x_1,\dots,x_n)\in\mathbb R^{d\times n}$ and
 $y=(y_1,\ldots,y_n)\in\mathbb R^n$ denote the training set, and consider the
@@ -448,7 +448,7 @@ the limit $\mu_t$ satisfies
 	\label{eq:mf-continuity-with-initial-conditions}
 \end{equation}
 
-\paragraph{Advantages over the NTK limit.}
+\subsection{Advantages over the NTK limit.}
 Recall the finite-width NTK expression \eqref{eq:ntk-1hl-finite}. In the
 mean-field parameterization
 $f(x)=\frac1m\sum_{\alpha=1}^m v_\alpha\varphi(w_\alpha^\top x)$, the empirical
@@ -720,32 +720,79 @@ description on \(S^1\) is altered first by replacing the continuum measure with 
 uniform samples, and then by replacing the infinite-width kernel with the kernel induced by
 a finite-width network.
 
-\section{Research questions}\label{sec:rq}
-
-This thesis studies spectral bias on \(S^1\) by comparing the residual dynamics induced by
-the continuum infinite-width NTK operator with those induced by its finite-sample and
-finite-width counterparts.
+This thesis studies spectral bias on \(S^1\) by comparing the residual dynamics
+induced by the continuum infinite-width NTK operator with those induced by
+finite-sample and finite-width perturbations. Since the continuum operator acts
+on an infinite-dimensional function space, asking whether the entire Fourier
+decomposition persists under perturbations is too strong for the scope of this
+thesis. The high-frequency part of the spectrum is also the most delicate because the
+eigenvalues become smaller, the gaps between eigenvalues can shrink, and finite samples or
+finite-width fluctuations have a comparatively larger effect on these modes. We
+therefore study the question locally in frequency, by fixing a low-frequency
+cutoff \(K\) and analyzing the corresponding truncated Fourier subspace.
+Throughout the thesis, these comparisons are made after projection onto a fixed
+truncated Fourier subspace \(\mathcal H_K\), consisting of the first \(K\)
+Fourier frequencies.
 
 \paragraph{Main research question.}
-To what extent does the spectral decomposition of the continuum infinite-width NTK operator
-on \(S^1\) persist under finite-sample and finite-width perturbations?
+To what extent does the spectral decomposition of the continuum infinite-width
+NTK operator on \(S^1\) persist on a fixed low-frequency Fourier subspace
+\(\mathcal H_K\) under finite-sample and finite-width perturbations?
 
 \paragraph{Subquestions.}
 \begin{enumerate}
 	\item[(Q1)] \textbf{Finite-sample perturbation of the continuum operator.}
-	      In the infinite-width regime, how does replacing the uniform measure on \(S^1\) by
-	      \(n\) i.i.d.\ sampled points affect the action of the continuum NTK operator on a fixed
-	      low-frequency Fourier subspace?
-
-	      More precisely, how does the sampled operator differ from the continuum convolution
-	      operator on this subspace, and what are the consequences for the associated residual
-	      dynamics?
-
+	      In the infinite-width regime, how does replacing the uniform measure
+	      on \(S^1\) by \(n\) i.i.d.\ sampled points affect the action of the
+	      continuum NTK operator on the fixed truncated Fourier subspace
+	      \(\mathcal H_K\)?
+	      More precisely, how close is the sampled operator to the diagonal
+	      Fourier prediction on this subspace, and what are the consequences
+	      for the associated residual dynamics?
 	\item[(Q2)] \textbf{Finite-width perturbation in the continuum setting.}
-	      With the continuum measure on \(S^1\) kept fixed, how does finite width perturb the
-	      limiting NTK operator and the associated residual dynamics?
-
-	      More precisely, how does the kernel induced by a finite-width network differ from the
-	      continuum convolution operator, and how do these differences affect its spectrum, its
-	      Fourier eigenspaces, and the decay of residual components during training?
+	      With the continuum measure on \(S^1\) kept fixed, how does finite
+	      network width perturb the frozen tangent operator on the fixed
+	      truncated Fourier subspace \(\mathcal H_K\)?
+	      More precisely, how close is the projected finite-width operator
+	      \(P_KT_0^{(m)}P_K\) to the continuum Fourier block
+	      \(P_KT_\infty P_K\), and how does this perturbation affect the
+	      alignment between finite-width eigenspaces and the corresponding
+	      Fourier frequency subspaces?
 \end{enumerate}
+
+\section{Contributions}
+\label{sec:contributions}
+
+\begin{itemize}
+	\item We derive the infinite-width reference model for the specific network
+	      studied in this thesis. Closely related two-layer analyses often
+	      simplify the NTK by training only the first-layer weights and biases
+	      while keeping the output weights fixed
+	      \citep{basri2019convergence,basri2020frequencybiasneuralnetworks}.
+	      Here, we keep the output weights trainable and include their
+	      contribution to the NTK. This gives an explicit kernel on \(S^1\),
+	      explicit Fourier learning rates, and the baseline used in the rest of
+	      the thesis.
+
+	\item We study how this Fourier-frequency picture changes when the continuum
+	      input distribution is replaced by finitely many sampled points. For a
+	      fixed low-frequency subspace, we prove non-asymptotic bounds showing
+	      that the sampled Fourier structure remains close to the idealized
+	      continuum prediction when the sample size is large enough.
+
+	\item We support the finite-sample analysis with numerical experiments. These
+	      experiments compare the predicted frequency-wise learning rates with
+	      the rates observed on sampled data, and show that the agreement improves
+	      as the number of samples increases.
+
+	\item We study the effect of finite network width when the tangent kernel is
+	      frozen at initialization. On the same low-frequency subspace, we prove
+	      that the finite-width operator concentrates around the infinite-width
+	      prediction as width increases, and we verify this numerically using
+	      eigenspace-alignment diagnostics.
+\end{itemize}
+
+Together, these results show how the clean Fourier description from the
+infinite-width model changes under finite data and frozen finite width. The
+fully evolving finite-width tangent kernel during training remains the main
+direction left open by the thesis.

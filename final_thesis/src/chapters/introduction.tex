@@ -1,4 +1,4 @@
-\chapter{\label{cha:intro}Introduction}
+\chapter{Introduction}\label{cha:intro}
 
 Deep neural networks have achieved remarkable empirical success across a wide
 range of application domains, most notably in computer vision and natural
@@ -35,6 +35,27 @@ neural network training in general settings
 this gap between empirical performance and theoretical understanding has
 motivated the study of neural networks through simplified models and asymptotic
 limits, where training dynamics can be analyzed more precisely.
+
+\paragraph{Structure of the thesis.}
+This thesis aims to contribute to the theoretical study of neural-network
+training by focusing on one such simplified setting in which the learning dynamics can
+be analyzed explicitly. We begin by introducing the supervised-learning
+framework and empirical risk minimization, which provide the basic language for
+describing how models are trained from data. We then consider increasingly
+expressive model classes, moving from linear models to deep linear networks and
+nonlinear neural networks, to show where training dynamics can be characterized
+cleanly and where this understanding begins to break down. This progression
+motivates the use of simplified theoretical regimes: settings that are
+restrictive enough to permit precise analysis, but still rich enough to capture
+phenomena observed in neural-network training. After this foundation, we review
+existing theoretical approaches for studying wide neural networks. This
+discussion naturally leads to spectral bias, the empirical and theoretical
+observation that neural networks often learn smooth, low-frequency components
+of a target function before more oscillatory, high-frequency components.
+Spectral bias is the main object of study in this thesis. The related work then
+summarizes existing empirical and theoretical explanations of this phenomenon,
+leading to the research gap and the research questions addressed in the
+remainder of the thesis.
 
 \section{Problem setup}
 
@@ -169,6 +190,14 @@ standard initializations converges to a particular interpolating solution,
 namely the minimum-norm solution. This illustrates how the optimization algorithm
 induces an implicit bias even in this simplest linear setting.
 
+This simple example already contains the basic spectral mechanism that will
+reappear throughout the thesis: gradient descent does not reduce all components
+of the error at the same speed; instead, the decay rate of each component is
+determined by the eigenvalue of the operator governing the dynamics. In the
+linear model above, these eigendirections are determined by the empirical
+covariance matrix \(XX^\top\), so they do not yet have to correspond to
+frequencies.
+
 \paragraph{Deep linear network.}
 Even in the absence of nonlinear activation functions, introducing an additional
 layer already leads to substantially more intricate training dynamics. Consider
@@ -245,7 +274,18 @@ parameters mixes standard matrix products with elementwise nonlinear
 operations. As a consequence, the training dynamics of nonlinear networks do not admit a
 simple closed-form or spectral description in general.
 
-\paragraph{Thesis motivation.}
+Nevertheless, the linear example suggests the kind of structure one would like
+to recover: an operator-level description in which different components of the
+error decay at different rates. For nonlinear neural networks, identifying such
+an operator and understanding its spectrum is substantially more difficult,
+because the relevant dynamics depend on the evolving parameters of the network.
+This is one reason why studying frequency-dependent learning, or spectral bias,
+is non-trivial in general neural networks. The remainder of the thesis therefore
+focuses on simplified regimes in which an operator governing the dynamics can be
+made explicit, allowing the connection between its spectrum and the observed
+learning behavior to be analyzed more precisely.
+
+\section{Thesis motivation.}
 At a high level, this thesis is motivated by the question of how these networks'
 training dynamics can be studied in a mathematically tractable setting without
 discarding the phenomena one ultimately seeks to understand. The objective is
@@ -262,9 +302,10 @@ Two prominent examples of such approaches are the neural tangent kernel and mean
 formulations, which offer complementary perspectives on the behavior of wide
 neural networks during training.
 
-% \section{Research Question(s)}
-%
-% The research question investigated in this thesis is \ldots
-
-% \lipsum{10} % add some pseudo content
-
+In this thesis, that regime is a single-hidden-layer ReLU network with inputs
+on the unit circle \(S^1\). In the infinite-width limit, the NTK defines a
+deterministic integral operator. For the uniform distribution on the circle,
+this operator is diagonalized by the Fourier basis. This gives a clean
+reference picture for spectral bias: each Fourier mode has its own learning
+rate. The rest of the thesis studies how this picture changes at finite sample
+size and finite width.

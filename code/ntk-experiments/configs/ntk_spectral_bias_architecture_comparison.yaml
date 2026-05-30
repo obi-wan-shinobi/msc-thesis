@@ -1,0 +1,57 @@
+experiment:
+  name: ntk_spectral_bias_architecture_comparison
+  save_dir: results
+  seed: 0
+
+data:
+  n_train: 512
+  n_eval: 2048
+  train_grid: equally_spaced
+
+target:
+  # Decreasing amplitudes on frequencies [1, 2, 3, 4]
+  # with 3 as a sine mode.
+  terms:
+    - {freq: 1, amp: 1.00, basis: cos}
+    - {freq: 2, amp: 0.80, basis: cos}
+    - {freq: 3, amp: 0.60, basis: sin}
+    - {freq: 4, amp: 0.40, basis: cos}
+
+train:
+  steps: 20000
+  lr: 1.0e-4
+  eval_every: 100
+  log_every: 100
+
+sweep:
+  seeds: 1
+
+models:
+  - name: mlp_single_layer
+    type: mlp
+    width: 2048
+    depth_hidden: 1
+    b_std: 1.0
+    parameterization: ntk
+
+  - name: mlp_deep_2_layer
+    type: mlp
+    width: 1024
+    depth_hidden: 2
+    b_std: 1.0
+    parameterization: ntk
+
+  - name: attention_block
+    type: attention
+    d_model: 256
+    n_heads: 4
+    d_key: 64
+    n_chan_val: 256
+    b_std: 1.0
+    parameterization: ntk
+    linear_scaling: true
+    attention_mechanism: SOFTMAX
+
+analysis:
+  # Log and decompose dynamics on the training grid.
+  probe_domain: train

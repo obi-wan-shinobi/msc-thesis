@@ -1,0 +1,3 @@
+# This file is used internally by FFMPEG.
+file 'file:/Users/shreyas/Documents/msc-cs/msc-thesis/code/ntk-experiments/media/videos/spectral_bias_manim_scene/480p15/partial_movie_files/SpectralBiasFitAndModes/793938918_2695706733_2846055048.mp4'
+file 'file:/Users/shreyas/Documents/msc-cs/msc-thesis/code/ntk-experiments/media/videos/spectral_bias_manim_scene/480p15/partial_movie_files/SpectralBiasFitAndModes/2791924351_2119330919_4116365102.mp4'

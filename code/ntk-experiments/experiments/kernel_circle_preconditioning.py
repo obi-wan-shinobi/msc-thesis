@@ -1,6 +1,7 @@
 # experiments/kernel_circle_preconditioning.py
 import sys
 import time
+from pathlib import Path
 
 import jax.numpy as jnp
 import jax.random as jr
@@ -23,7 +24,7 @@ from core.kernel_circle import (
 )
 from core.kernel_dynamics import run_operator_gd
 from core.preconditioned_operator import build_theory_preconditioned_operators
-from utils.artifacts import make_run_dir, save_json, save_npz, write_config_copy
+from utils.artifacts import ensure_dir, make_run_dir, save_json, save_npz, write_config_copy
 
 
 def _sample_uniform_gamma(key, n: int) -> jnp.ndarray:
@@ -135,6 +136,28 @@ def _final_probe_prediction_from_residuals(
     return y_pred_probe_final
 
 
+def _latest_or_none(base_dir: Path, exp_name: str) -> Path | None:
+    exp_dir = base_dir / exp_name
+    latest = exp_dir / "latest"
+    if latest.exists():
+        return latest.resolve()
+    if not exp_dir.exists():
+        return None
+    runs = [p for p in exp_dir.iterdir() if p.is_dir()]
+    return sorted(runs)[-1] if runs else None
+
+
+def _set_latest_symlink(base_dir: Path, exp_name: str, run_dir: Path) -> None:
+    exp_dir = ensure_dir(base_dir / exp_name)
+    latest = exp_dir / "latest"
+    try:
+        if latest.is_symlink() or latest.exists():
+            latest.unlink()
+        latest.symlink_to(run_dir.name)
+    except Exception:
+        pass
+
+
 def run(config_path: str):
     with open(config_path, "r") as f:
         cfg = yaml.safe_load(f)
@@ -181,14 +204,51 @@ def run(config_path: str):
         )
 
     seed_list = _resolve_seed_list(sweep_cfg["seeds"], base_seed)
+    expected_run_keys = {
+        f"size_{n_train}_seed_{seed}" for n_train in n_trains for seed in seed_list
+    }
     mode_compare = list(analysis_cfg.get("mode_compare", []))
+    mode_projection_k_max = int(analysis_cfg.get("mode_projection_k_max", K_max))
 
-    save_dir = make_run_dir(exp_cfg.get("save_dir", "results"), exp_cfg["name"])
+    base_save_dir = Path(exp_cfg.get("save_dir", "results"))
+    exp_name = exp_cfg["name"]
+    resume = bool(exp_cfg.get("resume", False))
+    resume_run_id = exp_cfg.get("resume_run_id")
+
+    if resume:
+        if resume_run_id:
+            save_dir = (base_save_dir / exp_name / str(resume_run_id)).resolve()
+            if not save_dir.exists():
+                raise FileNotFoundError(
+                    f"resume_run_id={resume_run_id!r} does not exist under "
+                    f"{base_save_dir / exp_name}."
+                )
+        else:
+            save_dir = _latest_or_none(base_save_dir, exp_name)
+
+        if save_dir is None:
+            save_dir = make_run_dir(base_save_dir, exp_name)
+            print("No previous run found; starting new run directory.")
+        else:
+            _set_latest_symlink(base_save_dir, exp_name, save_dir)
+            print(f"Resuming existing run directory: {save_dir}")
+    else:
+        save_dir = make_run_dir(base_save_dir, exp_name)
+
+    if resume and (save_dir / "config.yaml").exists():
+        try:
+            prev_cfg = yaml.safe_load((save_dir / "config.yaml").read_text())
+            if prev_cfg != cfg:
+                print("WARNING: resume config differs from existing config.yaml in run dir.")
+        except Exception:
+            pass
+
     write_config_copy(save_dir, cfg)
 
     print("=== Kernel circle preconditioning run ===")
     print(f"Saving results to: {save_dir}\n")
     print(f"Artifact profile: {save_profile}\n")
+    print(f"Expected run files for this config: {len(expected_run_keys)}\n")
     t0 = time.time()
 
     ft = FourierTarget(Ks=Ks, amps=amps, phases=phases)
@@ -204,20 +264,46 @@ def run(config_path: str):
     Phi_probe = probe_basis["Phi"]
 
     probe_path = save_dir / "probe_geometry.npz"
-    save_npz(
-        probe_path,
-        gamma_probe=np.asarray(gamma_probe),
-        X_probe=np.asarray(X_probe),
-        y_target_probe=np.asarray(y_target_probe),
-    )
+    runs_dir = save_dir / "runs"
+    ensure_dir(runs_dir)
+
+    if not (resume and probe_path.exists()):
+        save_npz(
+            probe_path,
+            gamma_probe=np.asarray(gamma_probe),
+            X_probe=np.asarray(X_probe),
+            y_target_probe=np.asarray(y_target_probe),
+        )
+
+    all_existing_keys = {p.stem for p in sorted(runs_dir.glob("size_*_seed_*.npz"))}
+    extra_existing = sorted(all_existing_keys - expected_run_keys)
+    if extra_existing:
+        print(
+            "Found existing run files from other n/seed settings; "
+            "they will be ignored for this manifest."
+        )
+        print(f"Ignored run file count: {len(extra_existing)}")
 
     runs_manifest = {}
-    runs_dir = save_dir / "runs"
+    for run_key in sorted(expected_run_keys):
+        run_path = runs_dir / f"{run_key}.npz"
+        if run_path.exists():
+            runs_manifest[run_key] = f"runs/{run_path.name}"
+
+    if runs_manifest:
+        print(f"Found {len(runs_manifest)} existing run files; completed seeds will be skipped.")
 
     for n_train in n_trains:
         print(f"=== n_train = {n_train} ===")
 
         for seed in seed_list:
+            run_key = f"size_{n_train}_seed_{seed}"
+            run_path = runs_dir / f"{run_key}.npz"
+
+            if run_key in runs_manifest and run_path.exists():
+                print(f"---- seed = {seed} ---- [skip existing]")
+                continue
+
             print(f"---- seed = {seed} ----")
 
             # ------------------------------------------------------------
@@ -241,6 +327,19 @@ def run(config_path: str):
             mode_names = basis["mode_names"]
             mode_freqs = basis["mode_freqs"]
             mode_types = basis["mode_types"]
+
+            if mode_projection_k_max == K_max:
+                basis_ext = basis
+            else:
+                basis_ext = build_real_fourier_basis(
+                    gamma_train,
+                    K_max=mode_projection_k_max,
+                )
+
+            Phi_unit_ext = basis_ext["Phi_unit"]
+            mode_names_ext = basis_ext["mode_names"]
+            mode_freqs_ext = basis_ext["mode_freqs"]
+            mode_types_ext = basis_ext["mode_types"]
 
             # ------------------------------------------------------------
             # 3. Build empirical operator A = K / n
@@ -359,6 +458,14 @@ def run(config_path: str):
             mode_curves_th = _normalized_abs_curves(mode_proj_th)
             mode_curves_emp = _normalized_abs_curves(mode_proj_emp)
 
+            mode_proj_ext_base = out_base["r_train"] @ Phi_unit_ext
+            mode_proj_ext_th = out_th["r_train"] @ Phi_unit_ext
+            mode_proj_ext_emp = out_emp["r_train"] @ Phi_unit_ext
+
+            mode_curves_ext_base = _normalized_abs_curves(mode_proj_ext_base)
+            mode_curves_ext_th = _normalized_abs_curves(mode_proj_ext_th)
+            mode_curves_ext_emp = _normalized_abs_curves(mode_proj_ext_emp)
+
             # ------------------------------------------------------------
             # 11. Reconstruct final dense probe predictions
             # ------------------------------------------------------------
@@ -394,9 +501,6 @@ def run(config_path: str):
 
             C_th_vs_emp = matrix_error_metrics(C_th - C_emp)
 
-            run_key = f"size_{n_train}_seed_{seed}"
-            run_path = runs_dir / f"{run_key}.npz"
-
             arrays_to_save = {
                 # geometry / target
                 "gamma_train": np.asarray(gamma_train),
@@ -408,6 +512,10 @@ def run(config_path: str):
                 "mode_names": np.asarray(mode_names),
                 "mode_freqs": np.asarray(mode_freqs),
                 "mode_types": np.asarray(mode_types),
+                "Phi_unit_ext": np.asarray(Phi_unit_ext),
+                "mode_names_ext": np.asarray(mode_names_ext),
+                "mode_freqs_ext": np.asarray(mode_freqs_ext),
+                "mode_types_ext": np.asarray(mode_types_ext),
                 # compact operator/theory objects
                 "G": np.asarray(G),
                 "H": np.asarray(H),
@@ -444,6 +552,12 @@ def run(config_path: str):
                 "mode_curves_base": np.asarray(mode_curves_base),
                 "mode_curves_th": np.asarray(mode_curves_th),
                 "mode_curves_emp": np.asarray(mode_curves_emp),
+                "mode_proj_ext_base": np.asarray(mode_proj_ext_base),
+                "mode_proj_ext_th": np.asarray(mode_proj_ext_th),
+                "mode_proj_ext_emp": np.asarray(mode_proj_ext_emp),
+                "mode_curves_ext_base": np.asarray(mode_curves_ext_base),
+                "mode_curves_ext_th": np.asarray(mode_curves_ext_th),
+                "mode_curves_ext_emp": np.asarray(mode_curves_ext_emp),
                 # dense probe predictions
                 "y_pred_probe_base_final": np.asarray(y_pred_probe_base_final),
                 "y_pred_probe_th_final": np.asarray(y_pred_probe_th_final),
@@ -470,6 +584,48 @@ def run(config_path: str):
 
             runs_manifest[run_key] = f"runs/{run_key}.npz"
 
+    runs_manifest = {}
+    for run_key in sorted(expected_run_keys):
+        run_path = runs_dir / f"{run_key}.npz"
+        if run_path.exists():
+            runs_manifest[run_key] = f"runs/{run_path.name}"
+
+    missing_run_keys = sorted(expected_run_keys - set(runs_manifest.keys()))
+    if missing_run_keys:
+        partial_manifest = {
+            "probe_geometry": "probe_geometry.npz",
+            "runs": runs_manifest,
+            "missing_runs": missing_run_keys,
+            "meta": {
+                "n_trains": n_trains,
+                "seeds": seed_list,
+                "K_max": K_max,
+                "kernel": kernel_name,
+                "steps": steps,
+                "eta": eta,
+                "tau": tau,
+                "reg": reg,
+                "n_probe": n_probe,
+                "target_Ks": target_cfg["Ks"],
+                "target_amps": target_cfg["amps"],
+                "target_phases": target_cfg["phases"],
+                "noise_std": noise_std,
+                "mode_compare": mode_compare,
+                "mode_projection_k_max": mode_projection_k_max,
+                "save_profile": save_profile,
+                "large_dense_keys_saved": save_profile == "full",
+            },
+            "runtime_sec": round(time.time() - t0, 2),
+        }
+        save_json(save_dir / "manifest.partial.json", partial_manifest)
+        print(
+            "\nRun incomplete. Wrote manifest.partial.json and skipped manifest.json. "
+            "Rerun with resume enabled to continue."
+        )
+        print(f"Missing run file count: {len(missing_run_keys)}")
+        print(f"First missing runs: {missing_run_keys[:10]}")
+        return
+
     manifest = {
         "probe_geometry": "probe_geometry.npz",
         "runs": runs_manifest,
@@ -488,11 +644,19 @@ def run(config_path: str):
             "target_phases": target_cfg["phases"],
             "noise_std": noise_std,
             "mode_compare": mode_compare,
+            "mode_projection_k_max": mode_projection_k_max,
             "save_profile": save_profile,
             "large_dense_keys_saved": save_profile == "full",
         },
         "runtime_sec": round(time.time() - t0, 2),
     }
+
+    partial_manifest_path = save_dir / "manifest.partial.json"
+    if partial_manifest_path.exists():
+        try:
+            partial_manifest_path.unlink()
+        except Exception:
+            pass
 
     save_json(save_dir / "manifest.json", manifest)
     print(f"\nDone. Preconditioning artifacts saved to {save_dir}")

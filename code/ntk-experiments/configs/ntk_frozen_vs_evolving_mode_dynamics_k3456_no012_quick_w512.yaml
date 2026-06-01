@@ -1,0 +1,40 @@
+experiment:
+  name: ntk_frozen_vs_evolving_mode_dynamics_k3456_no012_quick_w512
+  save_dir: results
+  seed: 0
+
+data:
+  n_train: 1024
+  n_eval: 1024
+  train_grid: equally_spaced
+  noise_std: 0.0
+
+target:
+  Ks: [3, 4, 5, 6]
+  amps: [0.7, 0.6, 0.5, 0.4]
+  phases: [0.0, 0.0, 1.57079632679, 1.57079632679]
+
+model:
+  depth_hidden: 1
+  parameterization: ntk
+  b_std: 1.0
+
+train:
+  steps: 20000
+  lr: 0.0001
+  log_every: 500
+  eval_every: 100
+
+sweep:
+  widths: [128, 256, 512, 1024]
+  seeds: 1
+
+frozen:
+  eta: null
+  eta_scale: 0.05
+
+analysis:
+  use_full_target_freqs: true
+
+artifacts:
+  save_eval_predictions: true

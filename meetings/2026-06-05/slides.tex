@@ -18,6 +18,9 @@
 % --- theme ---
 \usetheme[numbering=fraction]{metropolis}
 
+% Keep appendix slides out of the main "x/12" frame count (they restart separately)
+\usepackage{appendixnumberbeamer}
+
 \usepackage{pgfpages} % for notes layouts
 
 % --- bibliography ---
@@ -46,8 +49,51 @@
 
 \maketitle
 
+% ===========================================================
+% ===============   MAIN DECK (12 slides)   =================
+% ===========================================================
+
 % -----------------------------------------------------------
-% SETUP SLIDE
+% 1. OVERVIEW / HEADLINE  (new: states the map up front)
+% -----------------------------------------------------------
+\begin{frame}{Overview}
+
+	\textbf{Idealized reference (infinite width).}
+	The residual obeys a linear flow that is diagonal in the Fourier basis:
+	\[
+		\frac{d}{dt}r_t=-T_\infty r_t,
+		\qquad
+		T_\infty\phi_p=\lambda_p\phi_p .
+	\]
+	Each Fourier mode decays at its own rate \(\lambda_p\); this is \emph{spectral bias}.
+
+	\medskip
+	\textbf{This thesis.}
+	How much of this Fourier-diagonal picture survives away from the idealized limit?
+	\begin{enumerate}
+		\item finite samples \(n\)
+		\item finite width \(m\)
+	\end{enumerate}
+
+	\medskip
+	\textbf{Headline.}
+	Finite samples and \emph{frozen} finite width preserve the picture approximately on \(\mathcal H_K\).
+	With \emph{evolving} finite width it does not simply persist, and at small width that change can
+	\emph{help} optimization.
+
+	\note{
+		This is the one-slide map of the whole talk.
+		The reference picture is the infinite-width NTK, where training is linear and Fourier-diagonal.
+		The thesis question is how robust that picture is to finite samples and finite width.
+		The headline is the part worth focusing on in the report:
+		the controlled perturbation results hold, but evolving finite width departs from the reference,
+		and at small width that departure is actually beneficial for optimization.
+	}
+
+\end{frame}
+
+% -----------------------------------------------------------
+% 2. PROBLEM SETUP
 % -----------------------------------------------------------
 \begin{frame}{Problem setup}
 
@@ -86,7 +132,464 @@
 \end{frame}
 
 % -----------------------------------------------------------
-% TRAINING DYNAMICS SLIDE
+% 3. TRAINING DYNAMICS -> TANGENT KERNEL  (new: compressed)
+% -----------------------------------------------------------
+\begin{frame}{Training dynamics and the tangent kernel}
+
+	One-hidden-layer ReLU network, squared loss in continuous time, residual
+	\[
+		f_\theta(x)=\frac{1}{\sqrt m}\sum_{\alpha=1}^{m}v_\alpha\,\sigma(w_\alpha^\top x+b_\alpha),
+		\qquad
+		r_t(x)=f_{\theta_t}(x)-f^\star(x).
+	\]
+
+	\pause
+	Gradient flow makes the residual evolve in \emph{function space} through the neural tangent kernel
+	\(\Theta_t(x,y)=\langle\nabla_\theta f_{\theta_t}(x),\nabla_\theta f_{\theta_t}(y)\rangle\):
+	\[
+		\frac{d}{dt}r_t=-T_t r_t,
+		\qquad
+		(T_t g)(x)=\int_{S^1}\Theta_t(x,y)\,g(y)\,d\mu(y).
+	\]
+
+	\pause
+	In the infinite-width limit the kernel stays fixed, \(T_t\approx T_\infty\), giving linear dynamics
+	\[
+		r_t=e^{-tT_\infty}r_0 .
+	\]
+	So the decay of the residual is governed by the spectrum of \(T_\infty\).
+
+	\medskip
+	{\footnotesize Full derivation (parameter flow, chain rule) and the closed-form kernel on \(S^1\): see appendix.}
+
+	\note{
+		This compresses the standard NTK derivation, which the committee already knows.
+		The only things needed downstream are: the residual evolves by an operator in function space,
+		the operator is the Gram kernel of parameter gradients,
+		and in the infinite-width limit it is fixed so the dynamics are linear.
+		The detailed line-by-line derivation and the explicit angular kernel are kept in the appendix.
+	}
+
+\end{frame}
+
+% -----------------------------------------------------------
+% 4. SPECTRAL BIAS (continuum reference)
+% -----------------------------------------------------------
+\begin{frame}{Spectral bias in the continuum reference model}
+
+	Since \(\Theta_\infty(x(\gamma),x(\psi))=\Theta(\gamma-\psi)\), the operator is a convolution:
+	\[
+		(T_\infty g)(\gamma)
+		=
+		\int_{0}^{2\pi}
+		\Theta(\gamma-\psi)\,g(\psi)\,\frac{d\psi}{2\pi}.
+	\]
+
+	\pause
+	Therefore the Fourier basis diagonalizes \(T_\infty\):
+	\[
+		T_\infty \phi_p
+		=
+		\lambda_p \phi_p.
+	\]
+
+	\pause
+	Write the residual as
+	\[
+		r_t
+		=
+		\sum_p \alpha_p(t)\phi_p.
+	\]
+
+	Then
+	\[
+		\frac{d}{dt}\alpha_p(t)
+		=
+		-\lambda_p\alpha_p(t),
+		\qquad
+		\alpha_p(t)
+		=
+		e^{-\lambda_p t}\alpha_p(0).
+	\]
+
+	\pause
+	\textbf{Spectral bias:}
+	modes with larger \(\lambda_p\) decay faster.
+	\begin{tikzpicture}[remember picture, overlay]
+		\node<4->[anchor=south east, xshift=-1.0cm, yshift=2.5cm]
+		at (current page.south east)
+		{\includegraphics[width=4.5cm]{decay}};
+	\end{tikzpicture}
+
+
+	\note{
+		This is the cleanest point of the whole setup.
+		Because the limiting kernel depends only on angular distance, the operator is a convolution operator.
+		Fourier modes are eigenfunctions of convolution operators.
+		Once the residual is expanded in that eigenbasis, each coefficient follows a scalar ODE.
+		So spectral bias is not a vague statement here: it is an eigenvalue statement.
+		The learning speed of each Fourier mode is exactly controlled by the corresponding eigenvalue of the NTK integral operator.
+	}
+
+\end{frame}
+
+% -----------------------------------------------------------
+% 5. FINITE SAMPLES  (new: setup + result on one slide)
+% -----------------------------------------------------------
+\begin{frame}{Finite samples}
+
+	Sample \(\gamma_1,\dots,\gamma_n\sim\mathrm{Unif}[0,2\pi)\) and restrict to the low-frequency subspace
+	\[
+		\mathcal H_K=\mathrm{span}\{1,\sqrt{2}\cos\gamma,\sqrt{2}\sin\gamma,\ldots,
+		\sqrt{2}\cos K\gamma,\sqrt{2}\sin K\gamma\}.
+	\]
+
+	\pause
+	With sampled Fourier features \(\Phi_{i,p}=\phi_p(\gamma_i)\) and the normalized kernel matrix
+	\(A_{ij}=\tfrac1n\Theta(\gamma_i-\gamma_j)\), form
+	\[
+		G=\frac1n\Phi^\top\Phi,
+		\qquad
+		H=\frac1n\Phi^\top A\Phi .
+	\]
+
+	\pause
+	\textbf{Result.} With high probability,
+	\[
+		G\approx I,
+		\qquad
+		H\approx \Lambda^{(n)}.
+	\]
+	On the fixed subspace \(\mathcal H_K\), Fourier modes stay almost orthogonal and decay rates are still
+	governed by the continuum eigenvalues.
+
+	\medskip
+	{\footnotesize Proof idea (Bernstein / McDiarmid + union bound): see appendix.}
+
+	\note{
+		Finite sampling perturbs the Fourier-diagonal picture, but only mildly on the retained subspace.
+		\(G\approx I\) says the sampled Fourier features are almost orthonormal.
+		\(H\approx\Lambda^{(n)}\) says the compressed operator is almost diagonal with the continuum eigenvalues.
+		The concentration argument is entrywise and is kept in the appendix.
+	}
+
+\end{frame}
+
+% -----------------------------------------------------------
+% 6. FINITE-SAMPLE EMPIRICAL CONCENTRATION (evidence)
+% -----------------------------------------------------------
+\begin{frame}{Empirical finite-sample concentration}
+
+	\begin{columns}[T,onlytextwidth]
+
+		\begin{column}{0.49\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{theory_envelope_compare_gram_err_max}
+
+			\vspace{0.1cm}
+			{\scriptsize Gram matrix concentration: \(\|G-I\|_{\max}\)}
+		\end{column}
+
+		\begin{column}{0.49\textwidth}
+			\centering
+			\includegraphics[width=\textwidth]{theory_envelope_compare_comp_err_max}
+
+			\vspace{0.1cm}
+			{\scriptsize Compressed operator concentration: \(\|H-\Lambda^{(n)}\|_{\max}\)}
+		\end{column}
+
+	\end{columns}
+
+	\note{
+		This slide is the empirical counterpart of the concentration argument.
+		The left plot shows that the sampled Fourier geometry becomes closer to orthonormal as the number of samples grows.
+		The right plot shows the same kind of concentration for the compressed operator.
+		The green curve is the theoretical envelope, while the empirical means and 95 percent quantiles are much smaller.
+		So the theory is conservative, but it captures the right decay trend.
+	}
+
+\end{frame}
+
+% -----------------------------------------------------------
+% 7. FINITE WIDTH: FROZEN KERNEL  (new: setup + concentration)
+% -----------------------------------------------------------
+\begin{frame}{Finite width: frozen kernel at initialization}
+
+	Keep the input space continuous; use finite width \(m\). The frozen kernel is an average of
+	one-neuron tangent operators,
+	\[
+		T_0^{(m)}=\frac1m\sum_{r=1}^{m}T^{(r)} .
+	\]
+	Projecting to \(\mathcal H_K\) gives \(B_m^{(K)}=P_K T_0^{(m)}P_K\), with \(\E[B_m^{(K)}]=\Lambda_K\).
+
+	\pause
+	Gaussian initialization makes each entry sub-exponential, so Bernstein plus a union bound gives
+	\[
+		\bigl\|B_m^{(K)}-\Lambda_K\bigr\|_{\max}
+		\lesssim
+		\sqrt{\frac{\log d_K}{m}}
+		\qquad\text{with high probability.}
+	\]
+
+	\medskip
+	The frozen finite-width kernel concentrates on the infinite-width block over \(\mathcal H_K\).
+
+	\medskip
+	{\footnotesize Full setup, per-entry argument, and the empirical envelope: see appendix.}
+
+	\note{
+		Here the randomness comes only from the initialized neurons, since the circle is still continuous.
+		The frozen operator is an average over one-neuron operators, so its expectation is the infinite-width block.
+		The one-neuron variables are unbounded but sub-exponential under Gaussian initialization,
+		which is enough for an entrywise Bernstein bound followed by a union bound.
+	}
+
+\end{frame}
+
+% -----------------------------------------------------------
+% 8. FROZEN-WIDTH EIGENSPACE ALIGNMENT
+% -----------------------------------------------------------
+\begin{frame}{Finite-width eigenspaces vs Fourier planes}
+
+	\begin{columns}[T,onlytextwidth]
+
+		\begin{column}{0.47\textwidth}
+			For each frequency \(k\ge 1\), the continuum eigenspace is the two-dimensional Fourier plane
+			\(\mathcal F_k=\mathrm{span}\{\phi_{k,c},\phi_{k,s}\}\),
+			compared with the matched empirical eigenspace \(\widehat{\mathcal F}_k^{(m)}\).
+
+			\medskip
+			The principal angles \(0\le \theta_{k,1}\le \theta_{k,2}\le \tfrac{\pi}{2}\) are summarized by the
+			subspace cosine similarity
+			\[
+				s_k^{\mathrm{cos}}
+				=
+				\left(
+				\frac{1}{2}
+				\sum_{i=1}^{2}\cos^2\theta_{k,i}
+				\right)^{1/2},
+			\]
+			\[
+				s_k^{\mathrm{cos}}=1
+				\iff
+				\widehat{\mathcal F}_k^{(m)}=\mathcal F_k.
+			\]
+		\end{column}
+
+		\begin{column}{0.51\textwidth}
+			\centering
+			\includegraphics[
+				width=\textwidth,
+				height=0.78\textheight,
+				keepaspectratio
+			]{rms_cos_similarity_vs_width}
+		\end{column}
+
+	\end{columns}
+
+	\note{
+		For \(k\ge 1\), cosine and sine have the same continuum eigenvalue,
+		so we compare two-dimensional subspaces rather than individual basis vectors.
+		The cosine similarity aggregates the two principal angles into a single number between 0 and 1.
+		Alignment improves with width, and higher frequencies require larger width.
+	}
+
+\end{frame}
+
+% -----------------------------------------------------------
+% 9. EFFECT OF KERNEL EVOLUTION DEPENDS ON WIDTH (the flip)
+% -----------------------------------------------------------
+\begin{frame}{Effect of kernel evolution depends on width}
+
+	\[
+		\text{Frozen: } \frac{d}{dt}r_t=-T_0^{(m)}r_t
+		\qquad
+		\text{Evolving: } \frac{d}{dt}r_t=-T_t^{(m)}r_t
+	\]
+
+	\begin{columns}[T,onlytextwidth]
+
+		\begin{column}{0.49\textwidth}
+			\centering
+			\includegraphics[
+				width=\textwidth,
+				height=0.62\textheight,
+				keepaspectratio
+			]{train_ls_frozen_vs_evolving_w128}
+			{\scriptsize Width \(m=128\): evolving kernel reaches lower training error.}
+		\end{column}
+
+		\begin{column}{0.49\textwidth}
+			\centering
+			\includegraphics[
+				width=\textwidth,
+				height=0.62\textheight,
+				keepaspectratio
+			]{train_ls_frozen_vs_evolving_w1024}
+			{\scriptsize Width \(m=1024\): frozen kernel performs better.}
+		\end{column}
+
+	\end{columns}
+
+	\note{
+		At small width, allowing the kernel to evolve gives lower training objective than freezing it at initialization.
+		At large width, the frozen kernel is already close to the continuum reference, and the evolving kernel no longer helps in the same way.
+		This motivates looking at how kernel evolution changes the Fourier geometry and spectral strength during training.
+		The cross-width residual-decay version of this comparison is in the appendix.
+	}
+
+\end{frame}
+
+% -----------------------------------------------------------
+% 10. DOES EVOLUTION CHANGE FOURIER ALIGNMENT?
+% -----------------------------------------------------------
+\begin{frame}{Does kernel evolution change Fourier alignment?}
+
+	\begin{columns}[T,onlytextwidth]
+
+		\begin{column}{0.49\textwidth}
+			\centering
+			\includegraphics[
+				width=\textwidth,
+				height=0.72\textheight,
+				keepaspectratio
+			]{rms_cos_alignment_by_freq_w128}
+
+			{\scriptsize Width \(m=128\): stronger loss of alignment for higher frequencies.}
+		\end{column}
+
+		\begin{column}{0.49\textwidth}
+			\centering
+			\includegraphics[
+				width=\textwidth,
+				height=0.72\textheight,
+				keepaspectratio
+			]{rms_cos_alignment_by_freq_w1024}
+
+			{\scriptsize Width \(m=1024\): alignment still degrades, but less severely.}
+		\end{column}
+
+	\end{columns}
+
+	\note{
+		This slide checks whether the improved optimization performance of the evolving kernel
+		comes from better Fourier alignment.
+
+		The dashed curves are the frozen-kernel reference, while the solid curves track the evolving kernel.
+		For both widths, higher-frequency Fourier planes lose alignment during training.
+
+		But the effect is not worse at larger width.
+		If anything, the larger-width kernel preserves Fourier alignment better:
+		the degradation is strongest at width 128 and milder at width 1024.
+
+		So improved training performance at small width is not explained by better subspace alignment.
+		That motivates looking next at spectral strength rather than alignment alone.
+	}
+
+\end{frame}
+
+% -----------------------------------------------------------
+% 11. WHY EVOLVING CAN WIN (spectral strength)
+% -----------------------------------------------------------
+\begin{frame}{So why can the evolving kernel perform better?}
+
+	\[
+		\mu_{\mathcal F_k}(t)
+		=
+		\frac{1}{d_k}
+		\operatorname{tr}
+		\left(
+		U_k^\top T_t^{(m)} U_k
+		\right)
+	\]
+	{\small Average kernel strength on the Fourier subspace \(\mathcal F_k\).}
+
+	\vspace{0.15cm}
+
+	\begin{columns}[T,onlytextwidth]
+
+		\begin{column}{0.49\textwidth}
+			\centering
+			\includegraphics[
+				width=\textwidth,
+				height=0.62\textheight,
+				keepaspectratio
+			]{spectral_strength_by_freq_w128}
+
+			{\scriptsize Width \(m=128\): low-frequency spectral strength increases strongly.}
+		\end{column}
+
+		\begin{column}{0.49\textwidth}
+			\centering
+			\includegraphics[
+				width=\textwidth,
+				height=0.62\textheight,
+				keepaspectratio
+			]{spectral_strength_by_freq_w1024}
+
+			{\scriptsize Width \(m=1024\): spectral strength changes much less.}
+		\end{column}
+
+	\end{columns}
+
+	\note{
+		The previous slide showed that evolving kernels do not improve Fourier alignment.
+		So the better performance at small width must come from something else.
+
+		Here we inspect the average kernel strength on each Fourier subspace.
+		This is the trace of the restricted operator divided by the subspace dimension.
+		It measures the average effective learning rate available to that frequency subspace.
+
+		At width 128, the evolving kernel substantially increases spectral strength for the low frequencies.
+		At width 1024, the same effect is much weaker.
+		So at small width, feature learning seems to help by increasing the operator strength on useful low-frequency directions, even though alignment gets worse.
+	}
+
+\end{frame}
+
+% -----------------------------------------------------------
+% 12. TAKEAWAYS
+% -----------------------------------------------------------
+\begin{frame}{Takeaways}
+
+	\begin{enumerate}
+		\item The infinite-width NTK gives a clean Fourier-diagonal reference:
+		      \[
+			      \frac{d}{dt}r_t=-T_\infty r_t,
+			      \qquad
+			      T_\infty \phi_p=\lambda_p\phi_p.
+		      \]
+
+		\item Finite samples and finite frozen width perturb this picture, but preserve it approximately on \(\mathcal H_K\).
+
+		\item For evolving finite-width networks, the kernel does not simply stay close to the Fourier reference.
+
+		\item At small width, kernel evolution can improve optimization by increasing low-frequency spectral strength, even while Fourier alignment worsens.
+	\end{enumerate}
+
+	\vspace{0.25cm}
+
+	\textbf{Main message:}
+	spectral bias remains the organizing picture, but finite width changes both the geometry and the effective learning rates.
+
+\end{frame}
+
+% ===========================================================
+% =====================   APPENDIX   ========================
+% =====  Detailed derivations / proofs / extra figures  =====
+% =====  Not counted in the main slide numbering.       =====
+% ===========================================================
+\appendix
+
+\begin{frame}[standout]
+	Backup slides
+	\vspace{0.4em}
+
+	{\normalsize Detailed derivations, proofs, and additional experiments}
+\end{frame}
+
+% -----------------------------------------------------------
+% A. TRAINING DYNAMICS (full)
 % -----------------------------------------------------------
 \begin{frame}{Training dynamics}
 
@@ -94,9 +597,9 @@
 	\[
 		f_\theta(x) = \frac{1}{\sqrt m} \sum_{\alpha=1}^{m} v_\alpha\,\sigma(w_\alpha^\top x+b_\alpha), \qquad x\in S^1,
 	\]
-	where \(\theta = \{(v_\alpha, w_\alpha, b_\alpha)\}_{\alpha=1}^m$,
-		initialized via $v_\alpha, w_\alpha \sim \mathcal{N}(0, 1)$ and $b_\alpha =
-	0\) denotes the set of trainable parameters.
+	where \(\theta = \{(v_\alpha, w_\alpha, b_\alpha)\}_{\alpha=1}^m\),
+	initialized via \(v_\alpha, w_\alpha \sim \mathcal{N}(0, 1)\) and \(b_\alpha = 0\),
+	denotes the set of trainable parameters.
 
 	\pause
 	We train with squared loss in continuous time:
@@ -117,7 +620,7 @@
 \end{frame}
 
 % -----------------------------------------------------------
-% NTK DERIVATION SLIDE
+% A. NTK DERIVATION (full)
 % -----------------------------------------------------------
 \begin{frame}{From parameter flow to the tangent kernel}
 
@@ -157,7 +660,7 @@
 		\nabla_\theta f_{\theta_t}(x),
 		\dot\theta_t
 		\right\rangle
-		= \left\langle \nabla_\theta f{\theta_t}(x), -\nabla_\theta \mathcal L(\theta_t) \right\rangle.
+		= \left\langle \nabla_\theta f_{\theta_t}(x), -\nabla_\theta \mathcal L(\theta_t) \right\rangle.
 	\]
 
 	\pause
@@ -186,7 +689,7 @@
 \end{frame}
 
 % -----------------------------------------------------------
-% NTK OPERATOR SLIDE
+% A. NTK OPERATOR (full)
 % -----------------------------------------------------------
 \begin{frame}{Residual dynamics in function space}
 
@@ -245,7 +748,7 @@
 \end{frame}
 
 % -----------------------------------------------------------
-% INFINITE-WIDTH LIMITING KERNEL SLIDE
+% A. INFINITE-WIDTH LIMITING KERNEL (full, closed form)
 % -----------------------------------------------------------
 \begin{frame}{Infinite-width NTK reference}
 
@@ -312,66 +815,8 @@
 \end{frame}
 
 % -----------------------------------------------------------
-% SPECTRAL BIAS SLIDE
+% A. SPECTRAL BIAS (literature illustration)
 % -----------------------------------------------------------
-\begin{frame}{Spectral bias in the continuum reference model}
-
-	Since \(\Theta_\infty(x(\gamma),x(\psi))=\Theta(\gamma-\psi)\), the operator is a convolution:
-	\[
-		(T_\infty g)(\gamma)
-		=
-		\int_{0}^{2\pi}
-		\Theta(\gamma-\psi)\,g(\psi)\,\frac{d\psi}{2\pi}.
-	\]
-
-	\pause
-	Therefore the Fourier basis diagonalizes \(T_\infty\):
-	\[
-		T_\infty \phi_p
-		=
-		\lambda_p \phi_p.
-	\]
-
-	\pause
-	Write the residual as
-	\[
-		r_t
-		=
-		\sum_p \alpha_p(t)\phi_p.
-	\]
-
-	Then
-	\[
-		\frac{d}{dt}\alpha_p(t)
-		=
-		-\lambda_p\alpha_p(t),
-		\qquad
-		\alpha_p(t)
-		=
-		e^{-\lambda_p t}\alpha_p(0).
-	\]
-
-	\pause
-	\textbf{Spectral bias:}
-	modes with larger \(\lambda_p\) decay faster.
-	\begin{tikzpicture}[remember picture, overlay]
-		\node<4->[anchor=south east, xshift=-1.0cm, yshift=2.5cm]
-		at (current page.south east)
-		{\includegraphics[width=4.5cm]{decay}};
-	\end{tikzpicture}
-
-
-	\note{
-		This is the cleanest point of the whole setup.
-		Because the limiting kernel depends only on angular distance, the operator is a convolution operator.
-		Fourier modes are eigenfunctions of convolution operators.
-		Once the residual is expanded in that eigenbasis, each coefficient follows a scalar ODE.
-		So spectral bias is not a vague statement here: it is an eigenvalue statement.
-		The learning speed of each Fourier mode is exactly controlled by the corresponding eigenvalue of the NTK integral operator.
-	}
-
-\end{frame}
-
 \begin{frame}{Spectral bias}
 
 	\begin{tikzpicture}[remember picture, overlay]
@@ -393,43 +838,10 @@
 	\end{tikzpicture}
 
 \end{frame}
-% -----------------------
 
 % -----------------------------------------------------------
-% RESEARCH QUESTION SLIDE
+% A. FINITE SAMPLES (full setup)
 % -----------------------------------------------------------
-\begin{frame}{Main research question}
-
-	\textbf{Ideal reference:}
-	\[
-		\frac{d}{dt}r_t=-T_\infty r_t,
-		\qquad
-		T_\infty\phi_p=\lambda_p\phi_p.
-	\]
-
-	\pause
-	\textbf{Question:}
-
-	\medskip
-
-	How much of this Fourier-diagonal picture survives when we move away from the idealized setting?
-
-	\pause
-	\begin{enumerate}
-		\item finite samples \(n\)
-		\item finite width \(m\)
-	\end{enumerate}
-
-	\note{
-		This slide transitions from the clean continuum reference model to the actual thesis contributions.
-		The main question is not whether spectral bias exists in the ideal model; that follows from the spectrum.
-		The thesis asks whether this spectral picture survives under finite-sample and finite-width perturbations.
-		The first two parts are controlled perturbation results.
-		The evolving-kernel part is empirical and more exploratory.
-	}
-
-\end{frame}
-
 \begin{frame}{Finite samples}
 
 	Sample points:
@@ -468,20 +880,9 @@
 
 \end{frame}
 
-\begin{frame}{Finite samples}
-
-	With high probability,
-	\[
-		G\approx I,
-		\qquad
-		H\approx \Lambda^{(n)}.
-	\]
-
-	\textbf{Meaning:} finite sampling perturbs the Fourier-diagonal picture, but on fixed \(H_K\), Fourier modes are
-	almost orthogonal and decay rates are still governed by the continuum eigenvalues.
-
-\end{frame}
-
+% -----------------------------------------------------------
+% A. PROOF IDEA: ENTRYWISE CONCENTRATION
+% -----------------------------------------------------------
 \begin{frame}{Proof idea: entrywise concentration}
 
 	\begin{columns}[T,onlytextwidth]
@@ -551,40 +952,8 @@
 
 \end{frame}
 
-\begin{frame}{Empirical finite-sample concentration}
-
-	\begin{columns}[T,onlytextwidth]
-
-		\begin{column}{0.49\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{theory_envelope_compare_gram_err_max}
-
-			\vspace{0.1cm}
-			{\scriptsize Gram matrix concentration: \(\|G-I\|_{\max}\)}
-		\end{column}
-
-		\begin{column}{0.49\textwidth}
-			\centering
-			\includegraphics[width=\textwidth]{theory_envelope_compare_comp_err_max}
-
-			\vspace{0.1cm}
-			{\scriptsize Compressed operator concentration: \(\|H-\Lambda^{(n)}\|_{\max}\)}
-		\end{column}
-
-	\end{columns}
-
-	\note{
-		This slide is the empirical counterpart of the concentration argument.
-		The left plot shows that the sampled Fourier geometry becomes closer to orthonormal as the number of samples grows.
-		The right plot shows the same kind of concentration for the compressed operator.
-		The green curve is the theoretical envelope, while the empirical means and 95 percent quantiles are much smaller.
-		So the theory is conservative, but it captures the right decay trend.
-	}
-
-\end{frame}
-
 % -----------------------------------------------------------
-% FINITE-SAMPLE MODE DYNAMICS SLIDE
+% A. FINITE-SAMPLE MODE DYNAMICS
 % -----------------------------------------------------------
 \begin{frame}{Finite-sample dynamics: observed vs diagonal prediction}
 
@@ -624,7 +993,7 @@
 \end{frame}
 
 % -----------------------------------------------------------
-% PRECONDITIONING SLIDE
+% A. PRECONDITIONING
 % -----------------------------------------------------------
 \begin{frame}{Using the spectrum for preconditioning}
 
@@ -663,7 +1032,7 @@
 \end{frame}
 
 % -----------------------------------------------------------
-% PRECONDITIONING VS SAMPLE SIZE SLIDE
+% A. PRECONDITIONING VS SAMPLE SIZE
 % -----------------------------------------------------------
 \begin{frame}{Increasing sample size improves theory-based preconditioning}
 
@@ -700,7 +1069,7 @@
 \end{frame}
 
 % -----------------------------------------------------------
-% FINITE-WIDTH SETUP SLIDE
+% A. FINITE-WIDTH SETUP (full)
 % -----------------------------------------------------------
 \begin{frame}{Finite width: frozen operator at initialization}
 
@@ -754,7 +1123,7 @@
 \end{frame}
 
 % -----------------------------------------------------------
-% FINITE-WIDTH CONCENTRATION SLIDE
+% A. FINITE-WIDTH CONCENTRATION (full)
 % -----------------------------------------------------------
 \begin{frame}{Finite width: concentration around the infinite-width block}
 
@@ -812,7 +1181,7 @@
 \end{frame}
 
 % -----------------------------------------------------------
-% FINITE-WIDTH EMPIRICAL CONCENTRATION SLIDE
+% A. EMPIRICAL FINITE-WIDTH CONCENTRATION
 % -----------------------------------------------------------
 \begin{frame}{Empirical finite-width concentration}
 
@@ -846,7 +1215,7 @@
 \end{frame}
 
 % -----------------------------------------------------------
-% FOURIER-PLANE ALIGNMENT SLIDE
+% A. FOURIER-PLANE ALIGNMENT (lead-in)
 % -----------------------------------------------------------
 \begin{frame}{Finite-width eigenspaces vs Fourier planes}
 
@@ -891,61 +1260,9 @@
 
 \end{frame}
 
-\begin{frame}{Finite-width eigenspaces vs Fourier planes}
-
-	\begin{columns}[T,onlytextwidth]
-
-		\begin{column}{0.47\textwidth}
-			The two subspaces are both \(2\)-dimensional, so they can be viewed as
-			two planes in a high-dimensional space.
-
-			The principal angles
-			\[
-				0\le \theta_{k,1}\le \theta_{k,2}\le \frac{\pi}{2}
-			\]
-			measure how well these two planes align.
-
-			We summarize this by the subspace cosine similarity
-			\[
-				s_k^{\mathrm{cos}}
-				=
-				\left(
-				\frac{1}{2}
-				\sum_{i=1}^{2}\cos^2\theta_{k,i}
-				\right)^{1/2}.
-			\]
-
-			\[
-				s_k^{\mathrm{cos}}=1
-				\iff
-				\widehat{\mathcal F}_k^{(m)}=\mathcal F_k.
-			\]
-		\end{column}
-
-		\begin{column}{0.51\textwidth}
-			\vspace*{1.2cm}
-			\centering
-			\includegraphics[
-				width=\textwidth,
-				height=\textheight,
-				keepaspectratio
-			]{rms_cos_similarity_vs_width}
-		\end{column}
-
-	\end{columns}
-
-	\note{
-		The key point is that for \(k\ge 1\), cosine and sine have the same continuum eigenvalue,
-		so we should compare two-dimensional subspaces rather than individual basis vectors.
-		The principal angles measure how well the empirical eigenspace matches the Fourier plane.
-		If both angles are small, the two planes are well aligned.
-		The cosine similarity aggregates the two angles into a single number between 0 and 1.
-		Larger values mean better alignment, and 1 means the empirical eigenspace coincides with the Fourier plane.
-		The figure shows that alignment improves with width, and that higher frequencies require larger width.
-	}
-
-\end{frame}
-
+% -----------------------------------------------------------
+% A. FROZEN VS EVOLVING (cross-width residual decay)
+% -----------------------------------------------------------
 \begin{frame}{Frozen versus evolving finite-width dynamics}
 
 	\[
@@ -963,162 +1280,4 @@
 
 \end{frame}
 
-\begin{frame}{Effect of kernel evolution depends on width}
-
-	\begin{columns}[T,onlytextwidth]
-
-		\begin{column}{0.49\textwidth}
-			\centering
-			\includegraphics[
-				width=\textwidth,
-				height=0.72\textheight,
-				keepaspectratio
-			]{train_ls_frozen_vs_evolving_w128}
-			{\scriptsize Width \(m=128\): evolving kernel reaches lower training error.}
-		\end{column}
-
-		\begin{column}{0.49\textwidth}
-			\centering
-			\includegraphics[
-				width=\textwidth,
-				height=0.72\textheight,
-				keepaspectratio
-			]{train_ls_frozen_vs_evolving_w1024}
-			{\scriptsize Width \(m=1024\): frozen kernel performs better.}
-		\end{column}
-
-	\end{columns}
-
-	\note{
-		At small width, allowing the kernel to evolve gives lower training objective than freezing it at initialization.
-		At large width, the frozen kernel is already close to the continuum reference, and the evolving kernel no longer helps in the same way.
-		This motivates looking at how kernel evolution changes the Fourier geometry and spectral strength during training.
-	}
-
-\end{frame}
-
-\begin{frame}{Does kernel evolution change Fourier alignment?}
-
-	\begin{columns}[T,onlytextwidth]
-
-		\begin{column}{0.49\textwidth}
-			\centering
-			\includegraphics[
-				width=\textwidth,
-				height=0.72\textheight,
-				keepaspectratio
-			]{rms_cos_alignment_by_freq_w128}
-
-			{\scriptsize Width \(m=128\): stronger loss of alignment for higher frequencies.}
-		\end{column}
-
-		\begin{column}{0.49\textwidth}
-			\centering
-			\includegraphics[
-				width=\textwidth,
-				height=0.72\textheight,
-				keepaspectratio
-			]{rms_cos_alignment_by_freq_w1024}
-
-			{\scriptsize Width \(m=1024\): alignment still degrades, but less severely.}
-		\end{column}
-
-	\end{columns}
-
-	\note{
-		This slide checks whether the improved optimization performance of the evolving kernel
-		comes from better Fourier alignment.
-
-		The dashed curves are the frozen-kernel reference, while the solid curves track the evolving kernel.
-		For both widths, higher-frequency Fourier planes lose alignment during training.
-
-		But the effect is not worse at larger width.
-		If anything, the larger-width kernel preserves Fourier alignment better:
-		the degradation is strongest at width 128 and milder at width 1024.
-
-		So improved training performance at small width is not explained by better subspace alignment.
-		That motivates looking next at spectral strength rather than alignment alone.
-	}
-
-\end{frame}
-
-\begin{frame}{So why can the evolving kernel perform better?}
-
-	\[
-		\mu_{\mathcal F_k}(t)
-		=
-		\frac{1}{d_k}
-		\operatorname{tr}
-		\left(
-		U_k^\top T_t^{(m)} U_k
-		\right)
-	\]
-	{\small Average kernel strength on the Fourier subspace \(\mathcal F_k\).}
-
-	\vspace{0.15cm}
-
-	\begin{columns}[T,onlytextwidth]
-
-		\begin{column}{0.49\textwidth}
-			\centering
-			\includegraphics[
-				width=\textwidth,
-				height=0.62\textheight,
-				keepaspectratio
-			]{spectral_strength_by_freq_w128}
-
-			{\scriptsize Width \(m=128\): low-frequency spectral strength increases strongly.}
-		\end{column}
-
-		\begin{column}{0.49\textwidth}
-			\centering
-			\includegraphics[
-				width=\textwidth,
-				height=0.62\textheight,
-				keepaspectratio
-			]{spectral_strength_by_freq_w1024}
-
-			{\scriptsize Width \(m=1024\): spectral strength changes much less.}
-		\end{column}
-
-	\end{columns}
-
-	\note{
-		The previous slide showed that evolving kernels do not improve Fourier alignment.
-		So the better performance at small width must come from something else.
-
-		Here we inspect the average kernel strength on each Fourier subspace.
-		This is the trace of the restricted operator divided by the subspace dimension.
-		It measures the average effective learning rate available to that frequency subspace.
-
-		At width 128, the evolving kernel substantially increases spectral strength for the low frequencies.
-		At width 1024, the same effect is much weaker.
-		So at small width, feature learning seems to help by increasing the operator strength on useful low-frequency directions, even though alignment gets worse.
-	}
-
-\end{frame}
-
-\begin{frame}{Takeaways}
-
-	\begin{enumerate}
-		\item The infinite-width NTK gives a clean Fourier-diagonal reference:
-		      \[
-			      \frac{d}{dt}r_t=-T_\infty r_t,
-			      \qquad
-			      T_\infty \phi_p=\lambda_p\phi_p.
-		      \]
-
-		\item Finite samples and finite frozen width perturb this picture, but preserve it approximately on \(\mathcal H_K\).
-
-		\item For evolving finite-width networks, the kernel does not simply stay close to the Fourier reference.
-
-		\item At small width, kernel evolution can improve optimization by increasing low-frequency spectral strength, even while Fourier alignment worsens.
-	\end{enumerate}
-
-	\vspace{0.25cm}
-
-	\textbf{Main message:}
-	spectral bias remains the organizing picture, but finite width changes both the geometry and the effective learning rates.
-
-\end{frame}
 \end{document}
